@@ -1,0 +1,192 @@
+% MMSP.chapter2.tex
+
+\chapter{{\tt MMSP} data classes}
+
+\section{Introduction}
+Aside from the dimension, the other defining characteristic of a {\tt grid} object is the type of data stored at each node or cell.  In {\tt MMSP}, valid {\tt grid} data may be either built-in variable types or one of several {\tt MMSP} data classes.  This chapter presents a more detailed look at using both kinds of data types.
+
+\section{Common features}
+{\tt MMSP} data classes share a number of common features.  Most importantly, the way we interact with them through functions and symbolic operators has been designed to be as intuitive and self-consistent as possible.  In this section, we list the functions common to all {\tt MMSP} data classes and built-in types, and in following sections we describe additional functions specific to each particular class.
+
+The member functions common to every {\tt MMSP} data class include
+\begin{itemize}
+\item {\tt length()} \\
+This function is used to determine the ``length'' of a given data object.  For example, the length of a {\tt scalar} is always one, the length of a {\tt vector} object is the number of values stored in it, and so on.
+
+\item {\tt resize({\it integral\_value})} \\
+This function is used to ``resize'' data types that contain more than one value, such as a {\tt vector} object.  When an object inherently has length one (e.g. {\tt scalar} objects), this function does nothing at all.
+
+\item {\tt copy({\it data\_object})} \\
+The {\tt copy} function copies all data from the object in the parameter list to the calling object, i.e.\ the one that called the function.
+
+\item {\tt swap({\it data\_object})} \\
+The {\tt swap} function swaps all data of the object in the parameter list with the calling object.
+
+\item {\tt buffer\_size()} \\
+This function returns the number of bytes that would be used if the calling object were stored in a character buffer.
+
+\item {\tt to\_buffer({\it character\_buffer})} \\
+This function packs the data of the calling object into the character buffer object given in the parameter list.  It also returns the number of bytes that were used.
+
+\item {\tt from\_buffer({\it character\_buffer})} \\
+This function reads data from the character buffer object given in the parameter list and writes it to the calling function.  It also returns the number of bytes that were read.
+
+\item {\tt read({\it ifstream\_object})} \\
+The {\tt read} function reads data from the given {\tt c++ ifstream} object to the calling data object.
+
+\item {\tt write({\it ofstream\_object})} \\
+The {\tt write} function writes the data of the calling object to the the {\tt c++ ofstream} object given in the parameter list.
+
+\item {\tt operator=({\it data\_object})} \\
+The assignment operator is overloaded for all {\tt MMSP} data classes to have the usual ``copy'' behavior.
+\end{itemize}
+Each of these functions may be called in either of two ways: as a class member function or as a globally defined function.  In the first case, calls to a member function {\tt f(...)} look like this:
+\begin{center}
+{\it data\_object}{\tt .f(}{\it parameter\_list}{\tt );}
+\end{center}
+In the second case, the global function {\tt f} is called with a similar syntax, but now the data object becomes the first function parameter:
+\begin{center}
+{\tt f(}{\it data\_object}{\tt, }{\it parameter\_list}{\tt );}
+\end{center}
+Globally defined functions have the same behavior as their associated grid member function.  The user is free to choose either based on convenience or aesthetics.  Symbolic operators are the only member functions that do not have associated functions.
+
+It is, of course, also possible to use built-in data types such as {\tt int}, {\tt float}, and {\tt double} anywhere an {\tt MMSP} data object might be used.  The functions listed above have been redefined to work for all built-in types, but note that because it's impossible to write member functions for built-ins, only the global function calls may be used.
+
+\section{Using {\tt MMSP} data types}
+All {\tt MMSP} data types are defined as template classes.  Just as a declaration of a {\tt grid} objects requires dimension and data type template parameters, each {\tt MMSP} data class object requires a single template parameter.
+
+Most of the time, the user won't work with {\tt MMSP} data types directly, but through nodal data on {\tt grid}s.  It's important to know some of the basic workings of the {\tt MMSP} data classes for this reason.
+
+\subsection{The {\tt scalar} class}
+The {\tt scalar} class is essentially a wrapper for built-in data types.  It was defined primarily for consistency, i.e.\ as a complement to the {\\ vector} class discussed below.  {\tt MMSP} does not define any functions for {\tt scalar} objects other than the common functions discussed in the previous section.  However, because a {\tt scalar} object is an instantiation of a class, it is possible to use both the member function and global function calling syntax.
+\begin{shadebox}
+\begin{verbatim}
+    // MMSP scalar example
+
+    // declaration of a "scalar" object
+    scalar<double> s;
+
+    // use a "scalar" as you would use the corresponding built-in
+    s = 1.2345;
+    double square = s*s;
+    std::cout<<"s = "<<s<<std::endl;
+
+    // the following two lines are equivalent
+    // and both write "1" to standard output
+    std::cout<<"length = "<<length(s)<<std::endl;
+    std::cout<<"length = "<<s.length()<<std::endl;
+
+    // how a "scalar" is used in a "grid"
+    grid<2,scalar<int> > GRID(1,0,10,0,10);
+    for (int x=xmin(GRID); x<xmax(GRID); x++)
+        for (int y=ymin(GRID); y<ymay(GRID); y++)
+            GRID[x][y] = x+y;
+
+    // this writes the value "1" to standard output
+    std::cout<<"fields = "<<fields(GRID)<<std::endl;
+\end{verbatim}
+\end{shadebox}
+\subsection{The {\tt vector} class}
+The {\tt vector} class is meant to be used primarily as a fixed-length container for nodal data.  Just like a usual {\tt c} or {\tt c++} array, {\tt vector} data is accessed by use of the subscript operator.
+
+When a {\tt vector} is used as the data associated with a {\tt grid} node, its length is initialized to the number of fields assigned to the {\tt grid}.  Otherwise, a {\tt vector}'s length must be initialized with the {\tt resize} funtion.
+
+If a {\tt vector} of nonzero length is {\tt resize}d to a greater length, the original data it contains is preserved.  Thus a {\tt vector} may be used, e.g.\ to a generate list even when its final length is not known {\em a priori}.  Trying to {\tt resize} a {\tt vector} being used as {\tt grid} data is {\em not} reccomended.
+\begin{shadebox}
+\begin{verbatim}
+    // MMSP vector example
+
+    // declaration of a "vector"
+    vector<double> v;
+
+    // a "vector" must be resized before use
+    resize(v,10);
+
+    // the following two lines are equivalent
+    // and both write "10" to standard output
+    std::cout<<"length = "<<length(v)<<std::endl;
+    std::cout<<"length = "<<v.length()<<std::endl;
+
+    // set and get values with the subscript operator
+    v[0] = 1.2345;
+    for (int i=1; i<length(v); i++)
+        v[i] = 2.0*v[i-1];
+
+    // how a "vector" is used in a "grid"
+    grid<2,vector<int> > GRID(4,0,10,0,10);
+    for (int x=xmin(GRID); x<xmax(GRID); x++)
+        for (int y=ymin(GRID); y<ymay(GRID); y++)
+            for (int i=0; i<fields(GRID); i++)
+                 GRID[x][y][i] = x+y+i;
+    
+    // this writes the value "4" to standard output
+    std::cout<<"fields = "<<fields(GRID)<<std::endl;
+\end{verbatim}
+\end{shadebox}
+\hfill
+\pagebreak
+
+\subsection{The {\tt sparse} class}
+The {\tt MMSP} {\tt sparse} data class contains {\tt vector}-like data, but rather than maintaining a fixed length of data, {\tt sparse} objects grow as values are {\tt set} by the user.  {\tt sparse} data is most useful in situations where a large number of fields are defined, but only a small number of them have values that differ from some ``nominal'' value.
+\begin{shadebox}
+\begin{verbatim}
+    // MMSP sparse example
+
+    // declaration of a "sparse"
+    sparse<double> s;
+
+    // the following two lines are equivalent
+    // and both write "0" to standard output
+    std::cout<<"length = "<<length(s)<<std::endl;
+    std::cout<<"length = "<<s.length()<<std::endl;
+
+    // all of the following lines
+    // write "0" to standard output
+    for (int i=0; i<10; i++)
+        std::cout<<"s["<<i<<"] = "<<s[i]<<std::endl;
+
+    // use of the "set" function
+    set(s,0) = 1.2345;
+    set(s,1) = s[0];
+    set(s,2) = s[1];
+
+    // now the length is "3" ...
+    std::cout<<"length = "<<length(s)<<std::endl;
+
+    // ... and we can output only those values that are stored
+    // Note that both calls to "cout" produce the same output
+    for (int i=0; i<length(s); i++) {
+        int ind = index(s,i);
+        double val = value(s,i);
+        std::cout<<"s["<<ind<<"] = "<<val<<std::endl;
+        std::cout<<"s["<<ind<<"] = "<<s[ind]<<std::endl;
+	}
+
+    // how a "sparse" is used in a "grid"
+    grid<2,vector<int> > GRID(0,0,10,0,10);
+    for (int x=xmin(GRID); x<xmax(GRID); x++)
+        for (int y=ymin(GRID); y<ymay(GRID); y++)
+            for (int i=0; i<10; i++)
+                 set(GRID[x][y],i) = x+y+i;
+\end{verbatim}
+\end{shadebox}
+The {\tt sparse} data class achieves its function by storing index/value pairs as they are {\tt set} by the user.  Obviously, this requires more memory than storing a single value, so that there's some point where, for a small enough number of fields, using {\tt sparse} data becomes impractical.
+
+The subscript operator applied to {\tt sparse} data returns the value associated with the index given as the operator's argument.  If the value for the given index has not been {\tt set} by the user, the subscript operator returns zero.
+
+The {\tt length} function applied to a {\tt sparse} object returns the number of values that have been {\tt set}.  The user may iterate through only those values that have been {\tt set} by using the {\tt value} and {\tt index} functions.  A synopsis of the functions unique to the {\tt sparse} data type follow.
+\begin{itemize}
+\item {\tt set({\it integral\_value index})} \\
+This function set the value of a particular index/value pair of a {\tt sparse} object.
+
+\item {\tt value({\it integral\_value i})} \\
+This function returns the value of the $i^{th}$ index/value pair of a {\tt sparse} object.
+
+\item {\tt index({\it integral\_value i})} \\
+This function returns the index of the $i^{th}$ index/value pair of a {\tt sparse} object.
+\end{itemize}
+
+\section{Using built-in data types}
+
+\section{Writing new data classes}
+
