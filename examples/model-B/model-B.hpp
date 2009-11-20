@@ -56,24 +56,24 @@ void update(MMSP::grid<2,double>& grid, int steps)
 			for (int y=y0(grid); y<y1(grid); y++) {
 				double value = grid[x][y];
 				double lap = (grid[x+1][y]-2.0*grid[x][y]+grid[x-1][y])/(dx(grid)*dx(grid))
-					        +(grid[x][y+1]-2.0*grid[x][y]+grid[x][y-1])/(dy(grid)*dy(grid));
+				            +(grid[x][y+1]-2.0*grid[x][y]+grid[x][y-1])/(dy(grid)*dy(grid));
 
 				space[x][y] = -K*lap-r*value+u*pow(value,3);
-				noise[x][y][0] = gaussian(0.0,2.0*kT*M/dV);
-				noise[x][y][1] = gaussian(0.0,2.0*kT*M/dV);
+				noise[x][y][0] = gaussian(0.0,sqrt(2.0*kT*M/dV/dt));
+				noise[x][y][1] = gaussian(0.0,sqrt(2.0*kT*M/dV/dt));
 			}
 		ghostswap(space);
 		ghostswap(noise);
 
 		for (int x=x0(grid); x<x1(grid); x++)
 			for (int y=y0(grid); y<y1(grid); y++) {
-				double lap1 = (space[x+1][y]-2.0*space[x][y]+space[x-1][y])/(dx(grid)*dx(grid))
-					         +(space[x][y+1]-2.0*space[x][y]+space[x][y-1])/(dy(grid)*dy(grid));
+				double lap = (space[x+1][y]-2.0*space[x][y]+space[x-1][y])/(dx(grid)*dx(grid))
+				            +(space[x][y+1]-2.0*space[x][y]+space[x][y-1])/(dy(grid)*dy(grid));
 
-				double lap2 = (noise[x+1][y][0]-noise[x-1][y][0])/(2.0*dx(grid))
-				             +(noise[x][y+1][1]-noise[x][y-1][1])/(2.0*dy(grid));
+				double div = (noise[x+1][y][0]-noise[x-1][y][0])/(2.0*dx(grid))
+				            +(noise[x][y+1][1]-noise[x][y-1][1])/(2.0*dy(grid));
 
-				update[x][y] = grid[x][y]+M*dt*(lap1+lap2);
+				update[x][y] = grid[x][y]+M*dt*lap+dt*div;
 			}
 		swap(grid,update);
 		ghostswap(grid);
@@ -104,9 +104,9 @@ void update(MMSP::grid<3,double>& grid, int steps)
 						        +(grid[x][y][z+1]-2.0*grid[x][y][z]+grid[x][y][z-1])/(dz(grid)*dz(grid));
 
 					space[x][y][z] = -K*lap-r*value+u*pow(value,3);
-					noise[x][y][z][0] = gaussian(0.0,2.0*kT*M/dV);
-					noise[x][y][z][1] = gaussian(0.0,2.0*kT*M/dV);
-					noise[x][y][z][2] = gaussian(0.0,2.0*kT*M/dV);
+					noise[x][y][z][0] = gaussian(0.0,sqrt(2.0*kT*M/dV/dt));
+					noise[x][y][z][1] = gaussian(0.0,sqrt(2.0*kT*M/dV/dt));
+					noise[x][y][z][2] = gaussian(0.0,sqrt(2.0*kT*M/dV/dt));
 				}
 		ghostswap(space);
 		ghostswap(noise);
@@ -114,15 +114,15 @@ void update(MMSP::grid<3,double>& grid, int steps)
 		for (int x=x0(grid); x<x1(grid); x++)
 			for (int y=y0(grid); y<y1(grid); y++)
 				for (int z=z0(grid); z<z1(grid); z++) {
-					double lap1 = (space[x+1][y][z]-2.0*space[x][y][z]+space[x-1][y][z])/(dx(grid)*dx(grid))
-						         +(space[x][y+1][z]-2.0*space[x][y][z]+space[x][y-1][z])/(dy(grid)*dy(grid))
-						         +(space[x][y][z+1]-2.0*space[x][y][z]+space[x][y][z-1])/(dz(grid)*dz(grid));
+					double lap = (space[x+1][y][z]-2.0*space[x][y][z]+space[x-1][y][z])/(dx(grid)*dx(grid))
+					            +(space[x][y+1][z]-2.0*space[x][y][z]+space[x][y-1][z])/(dy(grid)*dy(grid))
+					            +(space[x][y][z+1]-2.0*space[x][y][z]+space[x][y][z-1])/(dz(grid)*dz(grid));
 
-					double lap2 = (noise[x+1][y][z][0]-noise[x-1][y][z][0])/(2.0*dx(grid))
-								 +(noise[x][y+1][z][1]-noise[x][y-1][z][1])/(2.0*dy(grid))
-								 +(noise[x][y][z+1][2]-noise[x][y][z-1][2])/(2.0*dz(grid));
+					double div = (noise[x+1][y][z][0]-noise[x-1][y][z][0])/(2.0*dx(grid))
+					            +(noise[x][y+1][z][1]-noise[x][y-1][z][1])/(2.0*dy(grid))
+					            +(noise[x][y][z+1][2]-noise[x][y][z-1][2])/(2.0*dz(grid));
 
-					update[x][y][z] = grid[x][y][z]+M*dt*(lap1+lap2);
+					update[x][y][z] = grid[x][y][z]+M*dt*lap+dt*div;
 				}
 		swap(grid,update);
 		ghostswap(grid);
