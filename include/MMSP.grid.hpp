@@ -20,6 +20,8 @@ namespace MMSP{
 // grid class
 template <int dim, typename T>
 class grid{ 
+	template <int d, typename U> friend class grid;
+
 public:
 	// constructors
 	grid(int FIELDS, int min[dim], int max[dim], int GHOSTS=1, int SINGLE=false)
@@ -70,10 +72,12 @@ public:
 		setup();
 	}
 
-	grid(const grid& GRID)
+	template <typename U>
+	grid(const grid<dim,U>& GRID, int FIELDS=-1)
 	{
 		// set number of fields
 		fields = GRID.fields;
+		if (FIELDS!=-1) fields = FIELDS;
 
 		// read function arguments
 		for (int i=0; i<dim; i++) {
@@ -1210,6 +1214,8 @@ template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute
 
 template <int dim, typename T> int fields(const grid<dim,T>& GRID) {return fields(GRID);}
 template <int dim, typename T> int ghosts(const grid<dim,T>& GRID) {return ghosts(GRID);}
+template <int dim, typename T> int g0(const grid<dim,T>& GRID, int i) {return g0(GRID,i);}
+template <int dim, typename T> int g1(const grid<dim,T>& GRID, int i) {return g1(GRID,i);}
 template <int dim, typename T> int x0(const grid<dim,T>& GRID, int i) {return x0(GRID,i);}
 template <int dim, typename T> int x1(const grid<dim,T>& GRID, int i) {return x1(GRID,i);}
 template <int dim, typename T> int xmin(const grid<dim,T>& GRID, int i) {return xmin(GRID,i);}

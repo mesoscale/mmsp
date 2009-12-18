@@ -12,7 +12,7 @@ namespace MMSP{
 void update(PFgrid2D& grid, int steps)
 {
 	PFgrid2D update(grid);
-	MMSP::grid<2,double> wspace(1,x0(grid),x1(grid),y0(grid),y1(grid));
+	MMSP::grid<2,double> wspace(grid,1);
 
 	double dt = 0.01;
 	double L = 1.0;
@@ -82,7 +82,7 @@ void update(PFgrid2D& grid, int steps)
 void update(PFgrid3D& grid, int steps)
 {
 	PFgrid3D update(grid);
-	MMSP::grid<3,double>  wspace(1,x0(grid),x1(grid),y0(grid),y1(grid),z0(grid),z1(grid));
+	MMSP::grid<3,double> wspace(grid,1);
 
 	double dt = 0.01;
 	double L = 1.0;
