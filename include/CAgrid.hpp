@@ -15,6 +15,8 @@ public:
 		: grid<1,scalar<int> >(1,0,x,GHOSTS) {}
 	CAgrid1D(int x0, int x1, int GHOSTS=1)
 		: grid<1,scalar<int> >(1,x0,x1,GHOSTS) {}
+	CAgrid1D(const CAgrid1D& GRID, int FIELDS)
+		: grid<1,scalar<int> >(GRID,FIELDS) {}
 	CAgrid1D(const char* filename, int GHOSTS=1)
 		: grid<1,scalar<int> >(filename,GHOSTS) {}
 };
@@ -30,6 +32,8 @@ public:
 		: grid<2,scalar<int> >(1,0,x,0,y,GHOSTS) {}
 	CAgrid2D(int x0, int x1, int y0, int y1, int GHOSTS=1)
 		: grid<2,scalar<int> >(1,x0,x1,y0,y1,GHOSTS) {}
+	CAgrid2D(const CAgrid2D& GRID, int FIELDS)
+		: grid<2,scalar<int> >(GRID,FIELDS) {}
 	CAgrid2D(const char* filename, int GHOSTS=1)
 		: grid<2,scalar<int> >(filename,GHOSTS) {} 
 };
@@ -45,6 +49,8 @@ public:
 		: grid<3,scalar<int> >(1,0,x,0,y,0,z,GHOSTS) {}
 	CAgrid3D(int x0, int x1, int y0, int y1, int z0, int z1, int GHOSTS=1)
 		: grid<3,scalar<int> >(1,x0,x1,y0,y1,z0,z1,GHOSTS) {}
+	CAgrid3D(const CAgrid3D& GRID, int FIELDS)
+		: grid<3,scalar<int> >(GRID,FIELDS) {}
 	CAgrid3D(const char* filename, int GHOSTS=1)
 		: grid<3,scalar<int> >(filename,GHOSTS) {}
 };

@@ -72,12 +72,40 @@ public:
 		setup();
 	}
 
-	template <typename U>
-	grid(const grid<dim,U>& GRID, int FIELDS=-1)
+	grid(const grid& GRID)
 	{
 		// set number of fields
 		fields = GRID.fields;
-		if (FIELDS!=-1) fields = FIELDS;
+
+		// read function arguments
+		for (int i=0; i<dim; i++) {
+			g0[i] = GRID.g0[i];
+			g1[i] = GRID.g1[i];
+		}
+
+		// set number of ghosts
+		ghosts = 0;
+
+		#ifdef MPI_VERSION
+		ghosts = GRID.ghosts;
+		#endif
+
+		// setup grid properties
+		setup();
+
+		// replace defaults
+		for (int i=0; i<dim; i++) {
+			b0[i] = GRID.b0[i];
+			b1[i] = GRID.b1[i];
+			dx[i] = GRID.dx[i];
+		}
+	}
+
+	template <typename U>
+	grid(const grid<dim,U>& GRID, int FIELDS)
+	{
+		// set number of fields
+		fields = FIELDS;
 
 		// read function arguments
 		for (int i=0; i<dim; i++) {
@@ -658,6 +686,8 @@ public:
 	// grid parameter "get" functions
 	friend int fields(const grid& GRID) {return GRID.fields;}
 	friend int ghosts(const grid& GRID) {return GRID.ghosts;}
+	friend int g0(const grid& GRID, int i) {return GRID.g0[i];}
+	friend int g1(const grid& GRID, int i) {return GRID.g1[i];}
 	friend int x0(const grid& GRID, int i) {return GRID.x0[i];}
 	friend int x1(const grid& GRID, int i) {return GRID.x1[i];}
 	friend int xmin(const grid& GRID, int i) {return GRID.x0[i];}

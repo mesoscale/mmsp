@@ -15,6 +15,8 @@ public:
 		: grid<1,vector<double> >(FIELDS,0,x,GHOSTS) {}
 	PFgrid1D(int FIELDS, int x0, int x1, int GHOSTS=1)
 		: grid<1,vector<double> >(FIELDS,x0,x1,GHOSTS) {}
+	PFgrid1D(const PFgrid1D& GRID, int FIELDS)
+		: grid<1,vector<double> >(GRID,FIELDS) {}
 	PFgrid1D(const char* filename, int GHOSTS=1)
 		: grid<1,vector<double> >(filename,GHOSTS) {}
 
@@ -48,6 +50,8 @@ public:
 		: grid<2,vector<double> >(FIELDS,0,x,0,y,GHOSTS) {}
 	PFgrid2D(int FIELDS, int x0, int x1, int y0, int y1, int GHOSTS=1)
 		: grid<2,vector<double> >(FIELDS,x0,x1,y0,y1,GHOSTS) {}
+	PFgrid2D(const PFgrid2D& GRID, int FIELDS)
+		: grid<2,vector<double> >(GRID,FIELDS) {}
 	PFgrid2D(const char* filename, int GHOSTS=1)
 		: grid<2,vector<double> >(filename,GHOSTS) {} 
 
@@ -82,6 +86,8 @@ public:
 		: grid<3,vector<double> >(FIELDS,0,x,0,y,0,z,GHOSTS) {}
 	PFgrid3D(int FIELDS, int x0, int x1, int y0, int y1, int z0, int z1, int GHOSTS=1)
 		: grid<3,vector<double> >(FIELDS,x0,x1,y0,y1,z0,z1,GHOSTS) {}
+	PFgrid3D(const PFgrid3D& GRID, int FIELDS)
+		: grid<3,vector<double> >(GRID,FIELDS) {}
 	PFgrid3D(const char* filename, int GHOSTS=1)
 		: grid<3,vector<double> >(filename,GHOSTS) {}
 

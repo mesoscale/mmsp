@@ -15,6 +15,8 @@ public:
 		: grid<1,scalar<double> >(1,0,x,GHOSTS) {}
 	FDgrid1D(int x0, int x1, int GHOSTS=1)
 		: grid<1,scalar<double> >(1,x0,x1,GHOSTS) {}
+	FDgrid1D(const FDgrid1D& GRID, int FIELDS)
+		: grid<1,scalar<double> >(GRID,FIELDS) {}
 	FDgrid1D(const char* filename, int GHOSTS=1)
 		: grid<1,scalar<double> >(filename,GHOSTS) {}
 };
@@ -30,6 +32,8 @@ public:
 		: grid<2,scalar<double> >(1,0,x,0,y,GHOSTS) {}
 	FDgrid2D(int x0, int x1, int y0, int y1, int GHOSTS=1)
 		: grid<2,scalar<double> >(1,x0,x1,y0,y1,GHOSTS) {}
+	FDgrid2D(const FDgrid2D& GRID, int FIELDS)
+		: grid<2,scalar<double> >(GRID,FIELDS) {}
 	FDgrid2D(const char* filename, int GHOSTS=1)
 		: grid<2,scalar<double> >(filename,GHOSTS) {} 
 };
@@ -45,6 +49,8 @@ public:
 		: grid<3,scalar<double> >(1,0,x,0,y,0,z,GHOSTS) {}
 	FDgrid3D(int x0, int x1, int y0, int y1, int z0, int z1, int GHOSTS=1)
 		: grid<3,scalar<double> >(1,x0,x1,y0,y1,z0,z1,GHOSTS) {}
+	FDgrid3D(const FDgrid3D& GRID, int FIELDS)
+		: grid<3,scalar<double> >(GRID,FIELDS) {}
 	FDgrid3D(const char* filename, int GHOSTS=1)
 		: grid<3,scalar<double> >(filename,GHOSTS) {}
 };

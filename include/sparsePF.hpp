@@ -15,6 +15,8 @@ public:
 		: grid<1,sparse<double> >(0,0,x,GHOSTS) {}
 	sparsePF1D(int x0, int x1, int GHOSTS=1)
 		: grid<1,sparse<double> >(0,x0,x1,GHOSTS) {}
+	sparsePF1D(const sparsePF1D& GRID, int FIELDS)
+		: grid<1,sparse<double> >(GRID,FIELDS) {}
 	sparsePF1D(const char* filename, int GHOSTS=1)
 		: grid<1,sparse<double> >(filename,GHOSTS) {}
 
@@ -49,6 +51,8 @@ public:
 		: grid<2,sparse<double> >(0,0,x,0,y,GHOSTS) {}
 	sparsePF2D(int x0, int x1, int y0, int y1, int GHOSTS=1)
 		: grid<2,sparse<double> >(0,x0,x1,y0,y1,GHOSTS) {}
+	sparsePF2D(const sparsePF2D& GRID, int FIELDS)
+		: grid<2,sparse<double> >(GRID,FIELDS) {}
 	sparsePF2D(const char* filename, int GHOSTS=1)
 		: grid<2,sparse<double> >(filename,GHOSTS) {} 
 
@@ -84,6 +88,8 @@ public:
 		: grid<3,sparse<double> >(0,0,x,0,y,0,z,GHOSTS) {}
 	sparsePF3D(int x0, int x1, int y0, int y1, int z0, int z1, int GHOSTS=1)
 		: grid<3,sparse<double> >(0,x0,x1,y0,y1,z0,z1,GHOSTS) {}
+	sparsePF3D(const sparsePF3D& GRID, int FIELDS)
+		: grid<3,sparse<double> >(GRID,FIELDS) {}
 	sparsePF3D(const char* filename, int GHOSTS=1)
 		: grid<3,sparse<double> >(filename,GHOSTS) {}
 
