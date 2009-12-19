@@ -633,20 +633,23 @@ public:
 
 			grid<dim,T> GRID(fields,gmin,gmax,0,true);
 
+			MPI::Request send_request[5];
+			MPI::Request recv_request[5];
+
 			// check if this slice intersects local grid
 			int status = 0;
 			if (x0[0]<=x and x<x1[0]) status = 1;
-			MPI::COMM_WORLD.Send(&status,1,MPI_INT,0,100);
+			send_request[0] = MPI::COMM_WORLD.Isend(&status,1,MPI_INT,0,100);
 
 			// if intersection occurs, send data to proc 0
 			if (status==1) {
 				int size = this->buffer_size(lmin,lmax);
-				MPI::COMM_WORLD.Issend(&size,1,MPI_INT,0,200);
-				MPI::COMM_WORLD.Issend(lmin,dim,MPI_INT,0,300);
-				MPI::COMM_WORLD.Issend(lmax,dim,MPI_INT,0,400);
+				send_request[1] = MPI::COMM_WORLD.Isend(&size,1,MPI_INT,0,200);
+				send_request[2] = MPI::COMM_WORLD.Isend(lmin,dim,MPI_INT,0,300);
+				send_request[3] = MPI::COMM_WORLD.Isend(lmax,dim,MPI_INT,0,400);
 				char* buffer = new char[size];
 				this->to_buffer(buffer,lmin,lmax);
-				MPI::COMM_WORLD.Issend(buffer,size,MPI_CHAR,0,500);
+				send_request[4] = MPI::COMM_WORLD.Isend(buffer,size,MPI_CHAR,0,500);
 				delete [] buffer;
 			}
 
@@ -655,18 +658,25 @@ public:
 				// check other processors for data
 				for (int i=0; i<np; i++) {
 					int status = 0;
-					MPI::COMM_WORLD.Recv(&status,1,MPI_INT,i,100);					
+					recv_request[0] = MPI::COMM_WORLD.Irecv(&status,1,MPI_INT,i,100);					
+					recv_request[0].Wait();
 					if (status==1) {
 						int size;
 						int min[dim], max[dim];
-						MPI::COMM_WORLD.Recv(&size,1,MPI_INT,i,200);
-						MPI::COMM_WORLD.Recv(min,dim,MPI_INT,i,300);
-						MPI::COMM_WORLD.Recv(max,dim,MPI_INT,i,400);
+						recv_request[1] = MPI::COMM_WORLD.Irecv(&size,1,MPI_INT,i,200);
+						recv_request[2] = MPI::COMM_WORLD.Irecv(min,dim,MPI_INT,i,300);
+						recv_request[3] = MPI::COMM_WORLD.Irecv(max,dim,MPI_INT,i,400);
+						recv_request[1].Wait();
+						recv_request[2].Wait();
+						recv_request[3].Wait();
 						char* buffer = new char[size];
-						MPI::COMM_WORLD.Recv(buffer,size,MPI_CHAR,i,500);
+						recv_request[4] = MPI::COMM_WORLD.Irecv(buffer,size,MPI_CHAR,i,500);
+						recv_request[4].Wait();
 						GRID.from_buffer(buffer,min,max);
+						delete [] buffer;
 					}
 				}
+
 
 				// write slice data to file
 				int size = GRID.buffer_size();
@@ -676,6 +686,12 @@ public:
 				file.write(reinterpret_cast<const char*>(buffer),size);
 				delete [] buffer;
 			}
+
+			recv_request[0].Wait();
+			recv_request[1].Wait();
+			recv_request[2].Wait();
+			recv_request[3].Wait();
+			recv_request[4].Wait();
 
 			MPI::COMM_WORLD.Barrier();
 			#endif
@@ -1027,14 +1043,17 @@ public:
 
 				int send_size = this->buffer_size(send_min,send_max);
 				int recv_size = 0;
-				MPI::COMM_WORLD.Issend(&send_size,1,MPI_INT,send_proc,100);
-				MPI::COMM_WORLD.Recv(&recv_size,1,MPI_INT,recv_proc,100);
+				MPI::Request send_request = MPI::COMM_WORLD.Isend(&send_size,1,MPI_INT,send_proc,100);
+				MPI::Request recv_request = MPI::COMM_WORLD.Irecv(&recv_size,1,MPI_INT,recv_proc,100);
+				send_request.Wait();
+				recv_request.Wait();
 				char* send_buffer = new char[send_size];
 				char* recv_buffer = new char[recv_size];
 				this->to_buffer(send_buffer,send_min,send_max);
-				MPI::COMM_WORLD.Issend(send_buffer,send_size,MPI_CHAR,send_proc,200);
-				MPI::COMM_WORLD.Recv(recv_buffer,recv_size,MPI_CHAR,recv_proc,200);
-				MPI::COMM_WORLD.Barrier();
+				send_request = MPI::COMM_WORLD.Isend(send_buffer,send_size,MPI_CHAR,send_proc,200);
+				recv_request = MPI::COMM_WORLD.Irecv(recv_buffer,recv_size,MPI_CHAR,recv_proc,200);
+				send_request.Wait();
+				recv_request.Wait();
 				this->from_buffer(recv_buffer,recv_min,recv_max);
 				delete [] send_buffer;
 				delete [] recv_buffer;
@@ -1061,14 +1080,17 @@ public:
 
 				int send_size = this->buffer_size(send_min,send_max);
 				int recv_size = 0;
-				MPI::COMM_WORLD.Issend(&send_size,1,MPI_INT,send_proc,300);
-				MPI::COMM_WORLD.Recv(&recv_size,1,MPI_INT,recv_proc,300);
+				MPI::Request send_request = MPI::COMM_WORLD.Isend(&send_size,1,MPI_INT,send_proc,300);
+				MPI::Request recv_request = MPI::COMM_WORLD.Irecv(&recv_size,1,MPI_INT,recv_proc,300);
+				send_request.Wait();
+				recv_request.Wait();
 				char* send_buffer = new char[send_size];
 				char* recv_buffer = new char[recv_size];
 				this->to_buffer(send_buffer,send_min,send_max);
-				MPI::COMM_WORLD.Issend(send_buffer,send_size,MPI_CHAR,send_proc,400);
-				MPI::COMM_WORLD.Recv(recv_buffer,recv_size,MPI_CHAR,recv_proc,400);
-				MPI::COMM_WORLD.Barrier();
+				send_request = MPI::COMM_WORLD.Isend(send_buffer,send_size,MPI_CHAR,send_proc,400);
+				recv_request = MPI::COMM_WORLD.Irecv(recv_buffer,recv_size,MPI_CHAR,recv_proc,400);
+				send_request.Wait();
+				recv_request.Wait();
 				this->from_buffer(recv_buffer,recv_min,recv_max);
 				delete [] send_buffer;
 				delete [] recv_buffer;
