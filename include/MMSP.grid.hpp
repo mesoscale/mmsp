@@ -633,50 +633,55 @@ public:
 
 			grid<dim,T> GRID(fields,gmin,gmax,0,true);
 
-			MPI::Request send_request[5];
-			MPI::Request recv_request[5];
-
 			// check if this slice intersects local grid
-			int status = 0;
-			if (x0[0]<=x and x<x1[0]) status = 1;
-			send_request[0] = MPI::COMM_WORLD.Isend(&status,1,MPI_INT,0,100);
+			if (id!=0) {
+				int status = 0;
+				if (x0[0]<=x and x<x1[0]) status = 1;
+				MPI::COMM_WORLD.Send(&status,1,MPI_INT,0,100);
 
-			// if intersection occurs, send data to proc 0
-			if (status==1) {
-				int size = this->buffer_size(lmin,lmax);
-				send_request[1] = MPI::COMM_WORLD.Isend(&size,1,MPI_INT,0,200);
-				send_request[2] = MPI::COMM_WORLD.Isend(lmin,dim,MPI_INT,0,300);
-				send_request[3] = MPI::COMM_WORLD.Isend(lmax,dim,MPI_INT,0,400);
-				char* buffer = new char[size];
-				this->to_buffer(buffer,lmin,lmax);
-				send_request[4] = MPI::COMM_WORLD.Isend(buffer,size,MPI_CHAR,0,500);
-				delete [] buffer;
+				// if intersection occurs, send data to proc 0
+				if (status==1) {
+					int size = this->buffer_size(lmin,lmax);
+					MPI::COMM_WORLD.Send(&size,1,MPI_INT,0,200);
+					MPI::COMM_WORLD.Send(lmin,dim,MPI_INT,0,300);
+					MPI::COMM_WORLD.Send(lmax,dim,MPI_INT,0,400);
+					char* buffer = new char[size];
+					this->to_buffer(buffer,lmin,lmax);
+					MPI::COMM_WORLD.Send(buffer,size,MPI_CHAR,0,500);
+					delete [] buffer;
+				}
 			}
 
 			// prepare global slice in 0th dimension
 			if (id==0) {
+				int status = 0;
+				if (x0[0]<=x and x<x1[0]) status = 1;
+
+				// if intersection occurs, add to slice
+				if (status==1) {
+					int size = this->buffer_size(lmin,lmax);
+					char* buffer = new char[size];
+					this->to_buffer(buffer,lmin,lmax);
+					GRID.from_buffer(buffer,lmin,lmax);
+					delete [] buffer;
+				}
+
 				// check other processors for data
-				for (int i=0; i<np; i++) {
+				for (int i=1; i<np; i++) {
 					int status = 0;
-					recv_request[0] = MPI::COMM_WORLD.Irecv(&status,1,MPI_INT,i,100);					
-					recv_request[0].Wait();
+					MPI::COMM_WORLD.Recv(&status,1,MPI_INT,i,100);					
 					if (status==1) {
 						int size;
 						int min[dim], max[dim];
-						recv_request[1] = MPI::COMM_WORLD.Irecv(&size,1,MPI_INT,i,200);
-						recv_request[2] = MPI::COMM_WORLD.Irecv(min,dim,MPI_INT,i,300);
-						recv_request[3] = MPI::COMM_WORLD.Irecv(max,dim,MPI_INT,i,400);
-						recv_request[1].Wait();
-						recv_request[2].Wait();
-						recv_request[3].Wait();
+						MPI::COMM_WORLD.Recv(&size,1,MPI_INT,i,200);
+						MPI::COMM_WORLD.Recv(min,dim,MPI_INT,i,300);
+						MPI::COMM_WORLD.Recv(max,dim,MPI_INT,i,400);
 						char* buffer = new char[size];
-						recv_request[4] = MPI::COMM_WORLD.Irecv(buffer,size,MPI_CHAR,i,500);
-						recv_request[4].Wait();
+						MPI::COMM_WORLD.Recv(buffer,size,MPI_CHAR,i,500);
 						GRID.from_buffer(buffer,min,max);
 						delete [] buffer;
 					}
 				}
-
 
 				// write slice data to file
 				int size = GRID.buffer_size();
@@ -687,17 +692,10 @@ public:
 				delete [] buffer;
 			}
 
-			recv_request[0].Wait();
-			recv_request[1].Wait();
-			recv_request[2].Wait();
-			recv_request[3].Wait();
-			recv_request[4].Wait();
-
 			MPI::COMM_WORLD.Barrier();
 			#endif
 		}
 	}
-
 
 	// grid parameter "get" functions
 	friend int fields(const grid& GRID) {return GRID.fields;}
