@@ -86,7 +86,7 @@ void update(MMSP::grid<3,double>& grid, int steps)
 					            +(grid[x][y][z+1]-2.0*grid[x][y][z]+grid[x][y][z-1])/(dz(grid)*dz(grid));
 					double noise = gaussian(0.0,sqrt(2.0*kT*M/dV/dt));
 
-					update[x][y] = grid[x][y][z]-dt*M*(-r*value+u*pow(value,3)-K*lap)+dt*noise;
+					update[x][y][z] = grid[x][y][z]-dt*M*(-r*value+u*pow(value,3)-K*lap)+dt*noise;
 				}
 		swap(grid,update);
 		ghostswap(grid);

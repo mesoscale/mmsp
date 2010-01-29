@@ -41,7 +41,7 @@ void update(MMSP::grid<2,double>& grid, int steps)
 {
 	MMSP::grid<2,double> update(grid);
 	MMSP::grid<2,double> space(grid);
-	MMSP::grid<2,vector<double> > noise(grid);
+	MMSP::grid<2,vector<double> > noise(grid,2);
 
 	double dt = 0.01;
 	double epsilon = 0.05;
@@ -80,7 +80,7 @@ void update(MMSP::grid<3,double>& grid, int steps)
 {
 	MMSP::grid<3,double> update(grid);
 	MMSP::grid<3,double> space(grid);
-	MMSP::grid<3,vector<double> > noise(grid);
+	MMSP::grid<3,vector<double> > noise(grid,3);
 
 	double dt = 0.01;
 	double epsilon = 0.05;

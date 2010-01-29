@@ -7,6 +7,7 @@
 #include<fstream>
 #include<cstring>
 #include<cstdlib>
+#include<ciso646>
 
 namespace MMSP{
 

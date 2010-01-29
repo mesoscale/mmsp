@@ -52,7 +52,7 @@ void update(MMSP::grid<3,double>& grid, int steps)
 					            +(grid[x][y+1][z]-2.0*grid[x][y][z]+grid[x][y-1][z])/(dy(grid)*dy(grid))
 					            +(grid[x][y][z+1]-2.0*grid[x][y][z]+grid[x][y][z-1])/(dz(grid)*dz(grid));
 
-					update[x][y] = grid[x][y][z]-dt*M*(-r*value+u*pow(value,3)-K*lap);
+					update[x][y][z] = grid[x][y][z]-dt*M*(-r*value+u*pow(value,3)-K*lap);
 				}
 		swap(grid,update);
 		ghostswap(grid);

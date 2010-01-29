@@ -26,7 +26,7 @@ void update(grid<2,vector<double> >& grid, int steps)
 
 			vector<double> s2;
 			resize(s2,3);
-			double psi = 2.0*M_PI*double(rand())/double(RAND_MAX);
+			double psi = 2.0*acos(-1.0)*double(rand())/double(RAND_MAX);
 			double theta = acos(1.0-2.0*double(rand())/double(RAND_MAX));
 			s2[0] = cos(psi)*sin(theta);
 			s2[1] = sin(psi)*sin(theta);
@@ -68,7 +68,7 @@ void update(grid<3,vector<double> >& grid, int steps)
 
 			vector<double> s2;
 			resize(s2,3);
-			double psi = 2.0*M_PI*double(rand())/double(RAND_MAX);
+			double psi = 2.0*acos(-1.0)*double(rand())/double(RAND_MAX);
 			double theta = acos(1.0-2.0*double(rand())/double(RAND_MAX));
 			s2[0] = cos(psi)*sin(theta);
 			s2[1] = sin(psi)*sin(theta);
