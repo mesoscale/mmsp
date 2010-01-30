@@ -1,30 +1,42 @@
-// mmsp2vtk.cpp
-// Convert MMSP grid data format to VTK image data format
+// mmsp2vti.cpp
+// Convert MMSP grid data to VTK image data format
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #include"MMSP.hpp"
+#include<sstream>
 
 int main(int argc, char* argv[])
 {
 	// command line error check
-	if (argc<3) {
-		std::cout<<"Usage: "<<argv[0]<<" inputfile outputfile\n";
+	if (argc<2) {
+		std::cout<<"Usage: "<<argv[0]<<" [--help] file\n\n";
 		exit(-1);
+	}
+
+	// help diagnostic
+	if (std::string(argv[1])=="--help") {
+		std::cout<<argv[0]<<": convert MMSP grid data to VTK image data format.\n";
+		std::cout<<"Usage: "<<argv[0]<<" file\n";
+		std::cout<<"Questions/comments to gruberja@gmail.com (Jason Gruber).\n\n";
+		exit(0);
 	}
 
 	// file open error check
 	std::ifstream input(argv[1]);
 	if (!input) {
-		std::cerr<<"File input error: could not open ";
-		std::cerr<<argv[1]<<"."<<std::endl;
+		std::cerr<<"File input error: could not open "<<argv[1]<<".\n\n";
 		exit(-1);
 	}
 
+	// generate output file name
+	std::stringstream filename;
+	filename<<std::string(argv[1]).substr(0,std::string(argv[1]).find_last_of("."))<<".vti";
+
 	// file open error check
-	std::ofstream output(argv[2]);
+	std::ofstream output(filename.str().c_str());
 	if (!output) {
 		std::cerr<<"File output error: could not open ";
-		std::cerr<<argv[2]<<"."<<std::endl;
+		std::cerr<<filename.str()<<"."<<std::endl;
 		exit(-1);
 	}
 
@@ -108,28 +120,40 @@ int main(int argc, char* argv[])
 	// output header markup
 	output<<"<?xml version=\"1.0\"?>\n";
 	output<<"<VTKFile type=\"ImageData\" version=\"0.1\" byte_order=\""<<byte_order<<"\">\n";
-	output<<"  <ImageData WholeExtent=\""<<x0[0]<<" "<<x1[0]<<" "<<x0[1]<<" "<<x1[1]<<" "<<x0[2]<<" "<<x1[2]<<"\"";
-	output<<"   Origin=\"0 0 0\" Spacing=\""<<dx[0]<<" "<<dx[1]<<" "<<dx[2]<<"\">\n";
-	output<<"    <Piece Extent=\""<<x0[0]<<" "<<x1[0]<<" "<<x0[1]<<" "<<x1[1]<<" "<<x0[2]<<" "<<x1[2]<<"\">\n";
+	if (dim==1) {
+		output<<"  <ImageData WholeExtent=\""<<x0[0]<<" "<<x1[0]<<" 0 0 0 0\"";
+		output<<"   Origin=\"0 0 0\" Spacing=\""<<dx[0]<<" 1 1\">\n";
+		output<<"    <Piece Extent=\""<<x0[0]<<" "<<x1[0]<<" 0 0 0 0\">\n";
+	}
+	if (dim==2) {
+		output<<"  <ImageData WholeExtent=\""<<x0[1]<<" "<<x1[1]<<" "<<x0[0]<<" "<<x1[0]<<" 0 0\"";
+		output<<"   Origin=\"0 0 0\" Spacing=\""<<dx[1]<<" "<<dx[0]<<" 1\">\n";
+		output<<"    <Piece Extent=\""<<x0[1]<<" "<<x1[1]<<" "<<x0[0]<<" "<<x1[0]<<" 0 0\">\n";
+	}
+	if (dim==3) {
+		output<<"  <ImageData WholeExtent=\""<<x0[2]<<" "<<x1[2]<<" "<<x0[1]<<" "<<x1[1]<<" "<<x0[0]<<" "<<x1[0]<<"\"";
+		output<<"   Origin=\"0 0 0\" Spacing=\""<<dx[2]<<" "<<dx[1]<<" "<<dx[0]<<"\">\n";
+		output<<"    <Piece Extent=\""<<x0[2]<<" "<<x1[2]<<" "<<x0[1]<<" "<<x1[1]<<" "<<x0[0]<<" "<<x1[0]<<"\">\n";
+	}
 
 	// output cell data markup
 	if (scalar_type) {
-		output<<"      <CellData Scalars=\"scalar_data\">\n";
+		output<<"      <CellData>\n";
 		output<<"        <DataArray Name=\"scalar_data\"";
 	}
 
 	else if (vector_type) {
-		output<<"      <CellData Vectors=\"vector_data\">\n";
+		output<<"      <CellData>\n";
 		output<<"        <DataArray Name=\"vector_data\" NumberOfComponents=\""<<fields<<"\"";
 	}
 
 	else if (sparse_type) {
-		output<<"      <CellData Scalars=\"scalar_data\">\n";
+		output<<"      <CellData>\n";
 		output<<"        <DataArray Name=\"scalar_data\"";
 	}
 
 	else /* built-in data types */ {
-		output<<"      <CellData Scalars=\"scalar_data\">\n";
+		output<<"      <CellData>\n";
 		output<<"        <DataArray Name=\"scalar_data\"";
 	}
 
@@ -335,7 +359,7 @@ int main(int argc, char* argv[])
 					bool sum = 0;
 					int nonzero = MMSP::length(GRID[i]);
 					for (int j=0; j<nonzero; j++)
-						sum += static_cast<bool>(pow(GRID[i].value(j),2));
+						sum += static_cast<bool>(GRID[i].value(j)*GRID[i].value(j));
 					output<<sum<<" ";
 				}
 			}
@@ -346,7 +370,7 @@ int main(int argc, char* argv[])
 					char sum = 0;
 					int nonzero = MMSP::length(GRID[i]);
 					for (int j=0; j<nonzero; j++)
-						sum += static_cast<char>(pow(GRID[i].value(j),2));
+						sum += static_cast<char>(GRID[i].value(j)*GRID[i].value(j));
 					output<<sum<<" ";
 				}
 			}
@@ -357,7 +381,7 @@ int main(int argc, char* argv[])
 					unsigned char sum = 0;
 					int nonzero = MMSP::length(GRID[i]);
 					for (int j=0; j<nonzero; j++)
-						sum += static_cast<unsigned char>(pow(GRID[i].value(j),2));
+						sum += static_cast<unsigned char>(GRID[i].value(j)*GRID[i].value(j));
 					output<<sum<<" ";
 				}
 			}
@@ -368,7 +392,7 @@ int main(int argc, char* argv[])
 					int sum = 0;
 					int nonzero = MMSP::length(GRID[i]);
 					for (int j=0; j<nonzero; j++)
-						sum += static_cast<int>(pow(GRID[i].value(j),2));
+						sum += static_cast<int>(GRID[i].value(j)*GRID[i].value(j));
 					output<<sum<<" ";
 				}
 			}
@@ -379,7 +403,7 @@ int main(int argc, char* argv[])
 					unsigned int sum = 0;
 					int nonzero = MMSP::length(GRID[i]);
 					for (int j=0; j<nonzero; j++)
-						sum += static_cast<unsigned int>(pow(GRID[i].value(j),2));
+						sum += static_cast<unsigned int>(GRID[i].value(j)*GRID[i].value(j));
 					output<<sum<<" ";
 				}
 			}
@@ -390,7 +414,7 @@ int main(int argc, char* argv[])
 					long sum = 0;
 					int nonzero = MMSP::length(GRID[i]);
 					for (int j=0; j<nonzero; j++)
-						sum += static_cast<long>(pow(GRID[i].value(j),2));
+						sum += static_cast<long>(GRID[i].value(j)*GRID[i].value(j));
 					output<<sum<<" ";
 				}
 			}
@@ -401,7 +425,7 @@ int main(int argc, char* argv[])
 					unsigned long sum = 0;
 					int nonzero = MMSP::length(GRID[i]);
 					for (int j=0; j<nonzero; j++)
-						sum += static_cast<unsigned long>(pow(GRID[i].value(j),2));
+						sum += static_cast<unsigned long>(GRID[i].value(j)*GRID[i].value(j));
 					output<<sum<<" ";
 				}
 			}
@@ -412,7 +436,7 @@ int main(int argc, char* argv[])
 					short sum = 0;
 					int nonzero = MMSP::length(GRID[i]);
 					for (int j=0; j<nonzero; j++)
-						sum += static_cast<short>(pow(GRID[i].value(j),2));
+						sum += static_cast<short>(GRID[i].value(j)*GRID[i].value(j));
 					output<<sum<<" ";
 				}
 			}
@@ -423,7 +447,7 @@ int main(int argc, char* argv[])
 					unsigned short sum = 0;
 					int nonzero = MMSP::length(GRID[i]);
 					for (int j=0; j<nonzero; j++)
-						sum += static_cast<unsigned short>(pow(GRID[i].value(j),2));
+						sum += static_cast<unsigned short>(GRID[i].value(j)*GRID[i].value(j));
 					output<<sum<<" ";
 				}
 			}
@@ -434,7 +458,7 @@ int main(int argc, char* argv[])
 					float sum = 0;
 					int nonzero = MMSP::length(GRID[i]);
 					for (int j=0; j<nonzero; j++)
-						sum += static_cast<float>(pow(GRID[i].value(j),2));
+						sum += static_cast<float>(GRID[i].value(j)*GRID[i].value(j));
 					output<<sum<<" ";
 				}
 			}
@@ -445,7 +469,7 @@ int main(int argc, char* argv[])
 					double sum = 0;
 					int nonzero = MMSP::length(GRID[i]);
 					for (int j=0; j<nonzero; j++)
-						sum += static_cast<double>(pow(GRID[i].value(j),2));
+						sum += static_cast<double>(GRID[i].value(j)*GRID[i].value(j));
 					output<<sum<<" ";
 				}
 			}
@@ -456,7 +480,7 @@ int main(int argc, char* argv[])
 					long double sum = 0;
 					int nonzero = MMSP::length(GRID[i]);
 					for (int j=0; j<nonzero; j++)
-						sum += static_cast<long double>(pow(GRID[i].value(j),2));
+						sum += static_cast<long double>(GRID[i].value(j)*GRID[i].value(j));
 					output<<sum<<" ";
 				}
 			}

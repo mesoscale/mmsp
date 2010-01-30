@@ -15,10 +15,13 @@ core = ../include/MMSP.hpp \
        ../include/MMSP.sparse.hpp 
 
 # conversion programs
-utility : mmsp2vtk
+utility: mmsp2vti mmsp2pvd
 
-mmsp2vtk: mmsp2vtk.cpp $(core)
+mmsp2vti: mmsp2vti.cpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-clean :
-	rm -f mmsp2vtk
+mmsp2pvd: mmsp2pvd.cpp $(core)
+	$(compiler) $(flags) $< -o $@
+
+clean:
+	rm -f mmsp2vti mmsp2pvd

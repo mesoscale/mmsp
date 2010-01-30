@@ -10,45 +10,37 @@ namespace MMSP{
 
 template <typename T> class scalar{
 public:
-	// constructors / destructor
+	// constructors
 	scalar() {}
-	scalar(T value) {data=value;}
+	scalar(const T& value) {data=value;}
+	scalar(const scalar& s) {data=s.data;}
+	template <typename U> scalar(const U& value) {data=static_cast<T>(value);}
+	template <typename U> scalar(const scalar<U>& s) {data=static_cast<T>(s);}
 
 	// data access operators
 	operator T&() {return data;}
 	operator const T&() const {return data;}
 
-	// assignment operator
-	scalar& operator=(const scalar& s) {copy(s); return *this;}
-	template <typename U>
-	scalar& operator=(const U& value) {data=value; return *this;}
+	// assignment operators
+	scalar& operator=(const T& value) {data=value; return *this;}
+	scalar& operator=(const scalar& s) {data=s.data; return *this;}
+	template <typename U> scalar& operator=(const U& value) {data=static_cast<T>(value); return *this;}
+	template <typename U> scalar& operator=(const scalar<U>& s) {data=static_cast<T>(s); return *this;}
 
 	// buffer I/O functions
-	int buffer_size() const
-		{return sizeof(T);}
-	int to_buffer(char* buffer) const
-		{memcpy(buffer,&data,sizeof(T)); return sizeof(T);}
-	int from_buffer(const char* buffer)
-		{memcpy(&data,buffer,sizeof(T)); return sizeof(T);}
+	int buffer_size() const {return sizeof(T);}
+	int to_buffer(char* buffer) const {memcpy(buffer,&data,sizeof(T)); return sizeof(T);}
+	int from_buffer(const char* buffer) {memcpy(&data,buffer,sizeof(T)); return sizeof(T);}
 
 	// file I/O functions
-	void write(std::ofstream& file) const
-		{file.write(reinterpret_cast<const char*>(&data),sizeof(T));}
-	void read(std::ifstream& file)
-		{file.read(reinterpret_cast<char*>(&data),sizeof(T));}
+	void write(std::ofstream& file) const {file.write(reinterpret_cast<const char*>(&data),sizeof(T));}
+	void read(std::ifstream& file) {file.read(reinterpret_cast<char*>(&data),sizeof(T));}
 
 	// utility functions
-	int length() const
-		{return 1;}
-	void resize(int n)
-		{return;}
-	void copy(const scalar& s)
-		{memcpy(data,s.data,sizeof(T));}
-	void swap(scalar& s) {
-		T t = data;
-		data = s.data;
-		s.data = t;
-	}
+	int length() const {return 1;}
+	void resize(int n) {}
+	void copy(const scalar& s) {memcpy(data,s.data,sizeof(T));}
+	void swap(scalar& s) {T temp=data; data=s.data; s.data=temp;}
 	
 private:
 	// object data
@@ -76,26 +68,36 @@ template <typename T> std::string name(const scalar<T>& s) {return std::string("
 template <int ind, typename T>
 class target<0,ind,scalar<T> >{
 public:
+	// constructor
 	target(scalar<T>* DATA, const int* S0, const int* SX, const int* X0, const int* X1, const int* B0, const int* B1)
 		{data=DATA; s0=S0; sx=SX; x0=X0; x1=X1; b0=B0; b1=B1;}
-	template <typename U> T& operator=(const U& value) {*data=value; return *data;}
-	template <typename U> const T& operator=(const U& value) const {*data=value; return *data;}
 
+	// data access operators
 	operator T&() {return *data;}
 	operator const T&() const {return *data;}
 
+	// assignment operators
+	scalar<T>& operator=(const T& value) const {return data->operator=(value);}
+	scalar<T>& operator=(const scalar<T>& s) const {return data->operator=(s);}
+	template <typename U> scalar<T>& operator=(const U& value) const {return data->operator=(value);}
+	template <typename U> scalar<T>& operator=(const scalar<U>& s) const {return data->operator=(s);}
+
+	// buffer I/O functions
 	int buffer_size() const {return data->buffer_size();}
 	int to_buffer(char* buffer) const {return data->to_buffer(buffer);}
 	int from_buffer(const char* buffer) const {return data->from_buffer(buffer);}
 
+	// file I/O functions
 	void write(std::ofstream& file) const {data->write(file);}
 	void read(std::ifstream& file) const {data->read(file);}
 
+	// utility functions
 	int length() const {return data->length();}
 	int resize(int n) const {return data->resize(n);}
-	void copy(const target& t) const {return data->copy(t->data);}
-	void swap(const target& t) const {return data->swap(t->data);}
+	void copy(const target& t) const {data->copy(t->data);}
+	void swap(const target& t) const {data->swap(t->data);}
 
+	// object data
 	scalar<T>* data;
 	const int* s0;
 	const int* sx;
