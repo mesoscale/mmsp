@@ -20,8 +20,6 @@ namespace MMSP{
 // grid class
 template <int dim, typename T>
 class grid{ 
-	template <int d, typename U> friend class grid;
-
 public:
 	// constructors
 	grid(int FIELDS, int min[dim], int max[dim], int GHOSTS=1, int SINGLE=false)
@@ -101,8 +99,7 @@ public:
 		}
 	}
 
-	template <typename U>
-	grid(const grid<dim,U>& GRID, int FIELDS)
+	grid(const grid& GRID, int FIELDS)
 	{
 		// set number of fields
 		fields = FIELDS;
@@ -327,6 +324,32 @@ public:
 
 	// destructor
 	~grid() {delete [] data;}
+
+
+	// assignment operators
+	grid& operator=(const grid& GRID)
+	{
+		for (int i=0; i<cells; i++)
+			data[i] = GRID.data[i];
+	}
+
+	grid& operator=(const T& value)
+	{
+		for (int i=0; i<cells; i++)
+			data[i] = value;
+	}
+
+	grid& operator+=(const grid& GRID2)
+	{
+		for (int i=0; i<cells; i++)
+			data[i] += GRID2.data[i];
+	}
+
+	grid& operator-=(const grid& GRID2)
+	{
+		for (int i=0; i<cells; i++)
+			data[i] -= GRID2.data[i];
+	}
 
 
 	// subscript operators
@@ -634,40 +657,26 @@ public:
 			grid<dim,T> GRID(fields,gmin,gmax,0,true);
 
 			// check if this slice intersects local grid
-			if (id!=0) {
-				int status = 0;
-				if (x0[0]<=x and x<x1[0]) status = 1;
-				MPI::COMM_WORLD.Send(&status,1,MPI_INT,0,100);
+			int status = 0;
+			if (x0[0]<=x and x<x1[0]) status = 1;
+			MPI::COMM_WORLD.Send(&status,1,MPI_INT,0,100);
 
-				// if intersection occurs, send data to proc 0
-				if (status==1) {
-					int size = this->buffer_size(lmin,lmax);
-					MPI::COMM_WORLD.Send(&size,1,MPI_INT,0,200);
-					MPI::COMM_WORLD.Send(lmin,dim,MPI_INT,0,300);
-					MPI::COMM_WORLD.Send(lmax,dim,MPI_INT,0,400);
-					char* buffer = new char[size];
-					this->to_buffer(buffer,lmin,lmax);
-					MPI::COMM_WORLD.Send(buffer,size,MPI_CHAR,0,500);
-					delete [] buffer;
-				}
+			// if intersection occurs, send data to proc 0
+			if (status==1) {
+				int size = this->buffer_size(lmin,lmax);
+				MPI::COMM_WORLD.Issend(&size,1,MPI_INT,0,200);
+				MPI::COMM_WORLD.Issend(lmin,dim,MPI_INT,0,300);
+				MPI::COMM_WORLD.Issend(lmax,dim,MPI_INT,0,400);
+				char* buffer = new char[size];
+				this->to_buffer(buffer,lmin,lmax);
+				MPI::COMM_WORLD.Issend(buffer,size,MPI_CHAR,0,500);
+				delete [] buffer;
 			}
 
 			// prepare global slice in 0th dimension
 			if (id==0) {
-				int status = 0;
-				if (x0[0]<=x and x<x1[0]) status = 1;
-
-				// if intersection occurs, add to slice
-				if (status==1) {
-					int size = this->buffer_size(lmin,lmax);
-					char* buffer = new char[size];
-					this->to_buffer(buffer,lmin,lmax);
-					GRID.from_buffer(buffer,lmin,lmax);
-					delete [] buffer;
-				}
-
 				// check other processors for data
-				for (int i=1; i<np; i++) {
+				for (int i=0; i<np; i++) {
 					int status = 0;
 					MPI::COMM_WORLD.Recv(&status,1,MPI_INT,i,100);					
 					if (status==1) {
@@ -679,7 +688,6 @@ public:
 						char* buffer = new char[size];
 						MPI::COMM_WORLD.Recv(buffer,size,MPI_CHAR,i,500);
 						GRID.from_buffer(buffer,min,max);
-						delete [] buffer;
 					}
 				}
 
@@ -697,11 +705,10 @@ public:
 		}
 	}
 
+
 	// grid parameter "get" functions
 	friend int fields(const grid& GRID) {return GRID.fields;}
 	friend int ghosts(const grid& GRID) {return GRID.ghosts;}
-	friend int g0(const grid& GRID, int i) {return GRID.g0[i];}
-	friend int g1(const grid& GRID, int i) {return GRID.g1[i];}
 	friend int x0(const grid& GRID, int i) {return GRID.x0[i];}
 	friend int x1(const grid& GRID, int i) {return GRID.x1[i];}
 	friend int xmin(const grid& GRID, int i) {return GRID.x0[i];}
@@ -1041,17 +1048,14 @@ public:
 
 				int send_size = this->buffer_size(send_min,send_max);
 				int recv_size = 0;
-				MPI::Request send_request = MPI::COMM_WORLD.Isend(&send_size,1,MPI_INT,send_proc,100);
-				MPI::Request recv_request = MPI::COMM_WORLD.Irecv(&recv_size,1,MPI_INT,recv_proc,100);
-				send_request.Wait();
-				recv_request.Wait();
+				MPI::COMM_WORLD.Issend(&send_size,1,MPI_INT,send_proc,100);
+				MPI::COMM_WORLD.Recv(&recv_size,1,MPI_INT,recv_proc,100);
 				char* send_buffer = new char[send_size];
 				char* recv_buffer = new char[recv_size];
 				this->to_buffer(send_buffer,send_min,send_max);
-				send_request = MPI::COMM_WORLD.Isend(send_buffer,send_size,MPI_CHAR,send_proc,200);
-				recv_request = MPI::COMM_WORLD.Irecv(recv_buffer,recv_size,MPI_CHAR,recv_proc,200);
-				send_request.Wait();
-				recv_request.Wait();
+				MPI::COMM_WORLD.Issend(send_buffer,send_size,MPI_CHAR,send_proc,200);
+				MPI::COMM_WORLD.Recv(recv_buffer,recv_size,MPI_CHAR,recv_proc,200);
+				MPI::COMM_WORLD.Barrier();
 				this->from_buffer(recv_buffer,recv_min,recv_max);
 				delete [] send_buffer;
 				delete [] recv_buffer;
@@ -1078,17 +1082,14 @@ public:
 
 				int send_size = this->buffer_size(send_min,send_max);
 				int recv_size = 0;
-				MPI::Request send_request = MPI::COMM_WORLD.Isend(&send_size,1,MPI_INT,send_proc,300);
-				MPI::Request recv_request = MPI::COMM_WORLD.Irecv(&recv_size,1,MPI_INT,recv_proc,300);
-				send_request.Wait();
-				recv_request.Wait();
+				MPI::COMM_WORLD.Issend(&send_size,1,MPI_INT,send_proc,300);
+				MPI::COMM_WORLD.Recv(&recv_size,1,MPI_INT,recv_proc,300);
 				char* send_buffer = new char[send_size];
 				char* recv_buffer = new char[recv_size];
 				this->to_buffer(send_buffer,send_min,send_max);
-				send_request = MPI::COMM_WORLD.Isend(send_buffer,send_size,MPI_CHAR,send_proc,400);
-				recv_request = MPI::COMM_WORLD.Irecv(recv_buffer,recv_size,MPI_CHAR,recv_proc,400);
-				send_request.Wait();
-				recv_request.Wait();
+				MPI::COMM_WORLD.Issend(send_buffer,send_size,MPI_CHAR,send_proc,400);
+				MPI::COMM_WORLD.Recv(recv_buffer,recv_size,MPI_CHAR,recv_proc,400);
+				MPI::COMM_WORLD.Barrier();
 				this->from_buffer(recv_buffer,recv_min,recv_max);
 				delete [] send_buffer;
 				delete [] recv_buffer;
@@ -1264,8 +1265,6 @@ template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute
 
 template <int dim, typename T> int fields(const grid<dim,T>& GRID) {return fields(GRID);}
 template <int dim, typename T> int ghosts(const grid<dim,T>& GRID) {return ghosts(GRID);}
-template <int dim, typename T> int g0(const grid<dim,T>& GRID, int i) {return g0(GRID,i);}
-template <int dim, typename T> int g1(const grid<dim,T>& GRID, int i) {return g1(GRID,i);}
 template <int dim, typename T> int x0(const grid<dim,T>& GRID, int i) {return x0(GRID,i);}
 template <int dim, typename T> int x1(const grid<dim,T>& GRID, int i) {return x1(GRID,i);}
 template <int dim, typename T> int xmin(const grid<dim,T>& GRID, int i) {return xmin(GRID,i);}

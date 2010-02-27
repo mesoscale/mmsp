@@ -4,7 +4,7 @@
 
 # compilers/flags
 compiler = g++
-flags = -O3 -ansi -I ../include/
+flags = -O3 -I ../include/
 
 # dependencies
 core = ../include/MMSP.hpp \
@@ -15,7 +15,10 @@ core = ../include/MMSP.hpp \
        ../include/MMSP.sparse.hpp 
 
 # conversion programs
-utility: mmsp2vti mmsp2pvd
+utility : mmsp2vti mmsp2pvd \
+          MC2PF MC2sPF \
+          PF2MC PF2sPF \
+          sPF2MC sPF2PF
 
 mmsp2vti: mmsp2vti.cpp $(core)
 	$(compiler) $(flags) $< -o $@
@@ -23,5 +26,23 @@ mmsp2vti: mmsp2vti.cpp $(core)
 mmsp2pvd: mmsp2pvd.cpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-clean:
-	rm -f mmsp2vti mmsp2pvd
+MC2PF: MC2PF.cpp ../include/MCgrid.hpp ../include/PFgrid.hpp $(core)
+	$(compiler) $(flags) $< -o $@
+
+MC2sPF: MC2sPF.cpp ../include/MCgrid.hpp ../include/sparsePF.hpp $(core)
+	$(compiler) $(flags) $< -o $@
+
+PF2MC: PF2MC.cpp ../include/PFgrid.hpp ../include/MCgrid.hpp $(core)
+	$(compiler) $(flags) $< -o $@
+
+PF2sPF: PF2sPF.cpp ../include/PFgrid.hpp ../include/sparsePF.hpp $(core)
+	$(compiler) $(flags) $< -o $@
+
+sPF2MC: sPF2MC.cpp ../include/sparsePF.hpp ../include/MCgrid.hpp $(core)
+	$(compiler) $(flags) $< -o $@
+
+sPF2PF: sPF2PF.cpp ../include/sparsePF.hpp ../include/PFgrid.hpp $(core)
+	$(compiler) $(flags) $< -o $@
+
+clean :
+	rm -f mmsp2vti mmsp2pvd MC2PF MC2sPF PF2MC PF2sPF sPF2MC sPF2PF

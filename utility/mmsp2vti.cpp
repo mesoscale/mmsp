@@ -9,14 +9,14 @@ int main(int argc, char* argv[])
 {
 	// command line error check
 	if (argc<2) {
-		std::cout<<"Usage: "<<argv[0]<<" [--help] file\n\n";
+		std::cout<<"Usage: "<<argv[0]<<" [--help] infile [outfile]\n\n";
 		exit(-1);
 	}
 
 	// help diagnostic
 	if (std::string(argv[1])=="--help") {
 		std::cout<<argv[0]<<": convert MMSP grid data to VTK image data format.\n";
-		std::cout<<"Usage: "<<argv[0]<<" file\n";
+		std::cout<<"Usage: "<<argv[0]<<" [--help] infile [outfile]\n\n";
 		std::cout<<"Questions/comments to gruberja@gmail.com (Jason Gruber).\n\n";
 		exit(0);
 	}
@@ -30,7 +30,10 @@ int main(int argc, char* argv[])
 
 	// generate output file name
 	std::stringstream filename;
-	filename<<std::string(argv[1]).substr(0,std::string(argv[1]).find_last_of("."))<<".vti";
+	if (argc<3) 
+		filename<<std::string(argv[1]).substr(0,std::string(argv[1]).find_last_of("."))<<".vti";
+	else
+		filename<<argv[2];
 
 	// file open error check
 	std::ofstream output(filename.str().c_str());

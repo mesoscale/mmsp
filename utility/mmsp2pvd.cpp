@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
 {
 	// command line error check
 	if (argc<2) {
-		std::cout<<"Usage: "<<argv[0]<<" [--help] file1 [file2 [file3 ... ]]\n\n";
+		std::cout<<"Usage: "<<argv[0]<<" [--help] [--output=outfile] infile1 [infile2 [infile3 ... ]]\n\n";
 		exit(-1);
 	}
 
@@ -18,14 +18,20 @@ int main(int argc, char* argv[])
 	if (std::string(argv[1])=="--help") {
 		std::cout<<argv[0]<<": convert MMSP grid data to ParaView PVD file format.\n";
 		std::cout<<"Note: results in PVD file and a sequence of VTK image data files.\n";
-		std::cout<<"Usage: "<<argv[0]<<" [--help] file1 [file2 [file3 ... ]]\n\n";
+		std::cout<<"Usage: "<<argv[0]<<" [--help] [--output=outfile] infile1 [infile2 [infile3 ... ]]\n\n";
 		std::cout<<"Questions/comments to gruberja@gmail.com (Jason Gruber).\n\n";
 		exit(0);
 	}
 
 	// generate PVD file name
+	int start = 1;
 	std::stringstream filename;
-	filename<<std::string(argv[1]).substr(0,std::string(argv[1]).find_last_of("."))<<".pvd";
+	if (std::string(argv[1]).substr(0,9)=="--output=") {
+		filename<<std::string(argv[1]).substr(9);
+		start = 2;
+	}
+	else
+		filename<<std::string(argv[1]).substr(0,std::string(argv[1]).find_last_of("."))<<".pvd";
 
 	// file open error check
 	std::ofstream pvdfile(filename.str().c_str());
@@ -47,7 +53,7 @@ int main(int argc, char* argv[])
 
 
 	// process each file on the command line
-	for (int file=1; file<argc; file++) {
+	for (int file=start; file<argc; file++) {
 
 		// file open error check
 		std::ifstream input(argv[file]);
