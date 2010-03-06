@@ -66,6 +66,7 @@ void update(grid<2,int>& grid, int steps)
 					int spin = grid[x+i][y+j];
 					dE += (spin!=spin2)-(spin!=spin1);
 				}
+			dE *= J;
 
 			double r = double(rand())/double(RAND_MAX);
 			if (dE<=0.0) grid[x][y] = spin2;
@@ -102,6 +103,7 @@ void update(grid<3,int>& grid, int steps)
 						int spin = grid[x+i][y+j][z+k];
 						dE += (spin!=spin2)-(spin!=spin1);
 					}
+			dE *= J;
 
 			double r = double(rand())/double(RAND_MAX);
 			if (dE<=0.0) grid[x][y][z] = spin2;

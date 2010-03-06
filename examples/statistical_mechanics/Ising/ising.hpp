@@ -20,7 +20,7 @@ void generate(int dim, const char* filename)
 
 		for (int x=x0; x<x1; x++)
 			for (int y=y0; y<y1; y++)
-				grid[x][y] = rand()%2;
+				grid[x][y] = 2*(rand()%2)-1;
 
 		MMSP::output(grid,filename);
 	}
@@ -37,7 +37,7 @@ void generate(int dim, const char* filename)
 		for (int x=x0; x<x1; x++)
 			for (int y=y0; y<y1; y++)
 				for (int z=z0; z<z1; z++)
-					grid[x][y][z] = rand()%2;
+					grid[x][y][z] = 2*(rand()%2)-1;
 
 		MMSP::output(grid,filename);
 	}
@@ -45,7 +45,7 @@ void generate(int dim, const char* filename)
 
 void update(grid<2,int>& grid, int steps)
 {
-	double J = 1.0;
+	double J = 2.0;
 	double H = 1.0;
 
 	const double kT = 0.50;
@@ -79,7 +79,7 @@ void update(grid<2,int>& grid, int steps)
 
 void update(grid<3,int>& grid, int steps)
 {
-	double J = 1.0;
+	double J = 2.0;
 	double H = 1.0;
 
 	const double kT = 0.75;

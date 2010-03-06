@@ -17,7 +17,55 @@
 
 namespace MMSP{
 
-// grid class
+// declaration of grid class
+template <int dim, typename T> class grid;
+
+// grid utility functions
+template <int dim, typename T> int fields(const grid<dim,T>& GRID) {return fields(GRID);}
+template <int dim, typename T> int ghosts(const grid<dim,T>& GRID) {return ghosts(GRID);}
+template <int dim, typename T> int g0(const grid<dim,T>& GRID, int i) {return g0(GRID,i);}
+template <int dim, typename T> int g1(const grid<dim,T>& GRID, int i) {return g1(GRID,i);}
+template <int dim, typename T> int b0(const grid<dim,T>& GRID, int i) {return b0(GRID,i);}
+template <int dim, typename T> int b1(const grid<dim,T>& GRID, int i) {return b1(GRID,i);}
+template <int dim, typename T> int& b0(grid<dim,T>& GRID, int i) {return b0(GRID,i);}
+template <int dim, typename T> int& b1(grid<dim,T>& GRID, int i) {return b1(GRID,i);}
+template <int dim, typename T> int x0(const grid<dim,T>& GRID, int i) {return x0(GRID,i);}
+template <int dim, typename T> int x1(const grid<dim,T>& GRID, int i) {return x1(GRID,i);}
+template <int dim, typename T> int xmin(const grid<dim,T>& GRID, int i) {return xmin(GRID,i);}
+template <int dim, typename T> int xmax(const grid<dim,T>& GRID, int i) {return xmax(GRID,i);}
+template <int dim, typename T> int xlength(const grid<dim,T>& GRID, int i) {return xlength(GRID,i);}
+template <int dim, typename T> double dx(const grid<dim,T>& GRID, int i) {return dx(GRID,i);}
+template <int dim, typename T> double& dx(grid<dim,T>& GRID, int i) {return dx(GRID,i);}
+
+// grid utility functions (x direction)
+template <int dim, typename T> int x0(const grid<dim,T>& GRID) {return x0(GRID);}
+template <int dim, typename T> int x1(const grid<dim,T>& GRID) {return x1(GRID);}
+template <int dim, typename T> int xmin(const grid<dim,T>& GRID) {return xmin(GRID);}
+template <int dim, typename T> int xmax(const grid<dim,T>& GRID) {return xmax(GRID);}
+template <int dim, typename T> int xlength(const grid<dim,T>& GRID) {return xlength(GRID);}
+template <int dim, typename T> double dx(const grid<dim,T>& GRID) {return dx(GRID);}
+template <int dim, typename T> double& dx(grid<dim,T>& GRID) {return dx(GRID);}
+
+// grid utility functions (y direction)
+template <int dim, typename T> int y0(const grid<dim,T>& GRID) {return y0(GRID);}
+template <int dim, typename T> int y1(const grid<dim,T>& GRID) {return y1(GRID);}
+template <int dim, typename T> int ymin(const grid<dim,T>& GRID) {return ymin(GRID);}
+template <int dim, typename T> int ymax(const grid<dim,T>& GRID) {return ymax(GRID);}
+template <int dim, typename T> int ylength(const grid<dim,T>& GRID) {return ylength(GRID);}
+template <int dim, typename T> double dy(const grid<dim,T>& GRID) {return dy(GRID);}
+template <int dim, typename T> double& dy(grid<dim,T>& GRID) {return dy(GRID);}
+
+// grid utility functions (z direction)
+template <int dim, typename T> int z0(const grid<dim,T>& GRID) {return z0(GRID);}
+template <int dim, typename T> int z1(const grid<dim,T>& GRID) {return z1(GRID);}
+template <int dim, typename T> int zmin(const grid<dim,T>& GRID) {return zmin(GRID);}
+template <int dim, typename T> int zmax(const grid<dim,T>& GRID) {return zmax(GRID);}
+template <int dim, typename T> int zlength(const grid<dim,T>& GRID) {return zlength(GRID);}
+template <int dim, typename T> double dz(const grid<dim,T>& GRID) {return dz(GRID);}
+template <int dim, typename T> double& dz(grid<dim,T>& GRID) {return dz(GRID);}
+
+
+// instantiation of grid class
 template <int dim, typename T>
 class grid{ 
 public:
@@ -73,19 +121,19 @@ public:
 	grid(const grid& GRID)
 	{
 		// set number of fields
-		fields = GRID.fields;
+		fields = MMSP::fields(GRID);
 
 		// read function arguments
 		for (int i=0; i<dim; i++) {
-			g0[i] = GRID.g0[i];
-			g1[i] = GRID.g1[i];
+			g0[i] = MMSP::g0(GRID,i);
+			g1[i] = MMSP::g1(GRID,i);
 		}
 
 		// set number of ghosts
 		ghosts = 0;
 
 		#ifdef MPI_VERSION
-		ghosts = GRID.ghosts;
+		ghosts = MMSP::ghosts(GRID);
 		#endif
 
 		// setup grid properties
@@ -93,28 +141,29 @@ public:
 
 		// replace defaults
 		for (int i=0; i<dim; i++) {
-			b0[i] = GRID.b0[i];
-			b1[i] = GRID.b1[i];
-			dx[i] = GRID.dx[i];
+			b0[i] = MMSP::b0(GRID,i);
+			b1[i] = MMSP::b1(GRID,i);
+			dx[i] = MMSP::dx(GRID,i);
 		}
 	}
 
-	grid(const grid& GRID, int FIELDS)
+	template <typename U>
+	grid(const grid<dim,U>& GRID, int FIELDS)
 	{
 		// set number of fields
 		fields = FIELDS;
 
 		// read function arguments
 		for (int i=0; i<dim; i++) {
-			g0[i] = GRID.g0[i];
-			g1[i] = GRID.g1[i];
+			g0[i] = MMSP::g0(GRID,i);
+			g1[i] = MMSP::g1(GRID,i);
 		}
 
 		// set number of ghosts
 		ghosts = 0;
 
 		#ifdef MPI_VERSION
-		ghosts = GRID.ghosts;
+		ghosts = MMSP::ghosts(GRID);
 		#endif
 
 		// setup grid properties
@@ -122,9 +171,9 @@ public:
 
 		// replace defaults
 		for (int i=0; i<dim; i++) {
-			b0[i] = GRID.b0[i];
-			b1[i] = GRID.b1[i];
-			dx[i] = GRID.dx[i];
+			b0[i] = MMSP::b0(GRID,i);
+			b1[i] = MMSP::b1(GRID,i);
+			dx[i] = MMSP::dx(GRID,i);
 		}
 	}
 
@@ -706,39 +755,49 @@ public:
 	}
 
 
-	// grid parameter "get" functions
+	// grid utility functions
 	friend int fields(const grid& GRID) {return GRID.fields;}
 	friend int ghosts(const grid& GRID) {return GRID.ghosts;}
+	friend int g0(const grid& GRID, int i) {return GRID.g0[i];}
+	friend int g1(const grid& GRID, int i) {return GRID.g1[i];}
+	friend int b0(const grid& GRID, int i) {return GRID.b0[i];}
+	friend int b1(const grid& GRID, int i) {return GRID.b1[i];}
+	friend int& b0(grid& GRID, int i) {return GRID.b0[i];}
+	friend int& b1(grid& GRID, int i) {return GRID.b1[i];}
 	friend int x0(const grid& GRID, int i) {return GRID.x0[i];}
 	friend int x1(const grid& GRID, int i) {return GRID.x1[i];}
 	friend int xmin(const grid& GRID, int i) {return GRID.x0[i];}
 	friend int xmax(const grid& GRID, int i) {return GRID.x1[i];}
 	friend int xlength(const grid& GRID, int i) {return GRID.x1[i]-GRID.x0[i];}
-	friend float dx(const grid& GRID, int i) {return GRID.dx[i];}
+	friend double dx(const grid& GRID, int i) {return GRID.dx[i];}
+	friend double& dx(grid& GRID, int i) {return GRID.dx[i];}
 
-	// grid parameters (x direction)
+	// grid utility functions (x direction)
 	friend int x0(const grid& GRID) {return GRID.x0[0];}
 	friend int x1(const grid& GRID) {return GRID.x1[0];}
 	friend int xmin(const grid& GRID) {return GRID.x0[0];}
 	friend int xmax(const grid& GRID) {return GRID.x1[0];}
 	friend int xlength(const grid& GRID) {return GRID.x1[0]-GRID.x0[0];}
-	friend float dx(const grid& GRID) {return GRID.dx[0];}
+	friend double dx(const grid& GRID) {return GRID.dx[0];}
+	friend double& dx(grid& GRID) {return GRID.dx[0];}
 
-	// grid parameters (y direction)
+	// grid utility functions (y direction)
 	friend int y0(const grid& GRID) {return GRID.x0[1];}
 	friend int y1(const grid& GRID) {return GRID.x1[1];}
 	friend int ymin(const grid& GRID) {return GRID.x0[1];}
 	friend int ymax(const grid& GRID) {return GRID.x1[1];}
 	friend int ylength(const grid& GRID) {return GRID.x1[1]-GRID.x0[1];}
-	friend float dy(const grid& GRID) {return GRID.dx[1];}
+	friend double dy(const grid& GRID) {return GRID.dx[1];}
+	friend double& dy(grid& GRID) {return GRID.dx[1];}
 
-	// grid parameters (z direction)
+	// grid utility functions (z direction)
 	friend int z0(const grid& GRID) {return GRID.x0[2];}
 	friend int z1(const grid& GRID) {return GRID.x1[2];}
 	friend int zmin(const grid& GRID) {return GRID.x0[2];}
 	friend int zmax(const grid& GRID) {return GRID.x1[2];}
 	friend int zlength(const grid& GRID) {return GRID.x1[2]-GRID.x0[2];}
-	friend float dz(const grid& GRID) {return GRID.dx[2];}
+	friend double dz(const grid& GRID) {return GRID.dx[2];}
+	friend double& dz(grid& GRID) {return GRID.dx[2];}
 
 
 	// grid parameter "set" functions
@@ -773,7 +832,7 @@ public:
 		}
 	}
 
-	void set(const char* attribute, float value1[dim])
+	void set(const char* attribute, double value1[dim])
 	{
 		// parallel processes should synchronize data
 		#ifdef MPI_VERSION
@@ -819,16 +878,16 @@ public:
 		set(attribute,value1,value2);
 	}
 
-	void set(const char* attribute, float value, ... )
+	void set(const char* attribute, double value, ... )
 	{
-		float value1[dim];
+		double value1[dim];
 
 		value1[0] = value;
 
 		va_list list;
 		va_start(list,value);
 		for (int i=1; i<dim; i++) {
-			value1[i] = va_arg(list,float);
+			value1[i] = va_arg(list,double);
 		}
 		va_end(list);
 
@@ -870,7 +929,7 @@ public:
 			int SX = sx[i]; sx[i] = GRID.sx[i]; GRID.sx[i] = SX;
 			int B0 = b0[i]; b0[i] = GRID.b0[i]; GRID.b0[i] = B0;
 			int B1 = b1[i]; b1[i] = GRID.b1[i]; GRID.b1[i] = B1;
-			float DX = dx[i]; dx[i] = GRID.dx[i]; GRID.dx[i] = DX;
+			double DX = dx[i]; dx[i] = GRID.dx[i]; GRID.dx[i] = DX;
 			int P0 = p0[i]; p0[i] = GRID.p0[i]; GRID.p0[i] = P0;
 			int P1 = p1[i]; p1[i] = GRID.p1[i]; GRID.p1[i] = P1;
 			int SP = sp[i]; sp[i] = GRID.sp[i]; GRID.sp[i] = SP;
@@ -1120,7 +1179,7 @@ protected:
 	int b0[dim];    // boundary condition at x0
 	int b1[dim];    // boundary condition at x1
 
-	float dx[dim];  // global cell spacing
+	double dx[dim];  // global cell spacing
 
 	int p0[dim];
 	int p1[dim];
@@ -1225,7 +1284,7 @@ template <int dim, typename T> void ghostswap(grid<dim,T>& GRID) {GRID.ghostswap
 template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute, int value1[dim], int value2[dim])
 	{GRID.set(attribute,value1,value2);}
 
-template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute, float value1[dim])
+template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute, double value1[dim])
 	{GRID.set(attribute,value1);}
 
 template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute, int value, ... )
@@ -1247,7 +1306,7 @@ template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute
 		GRID.set(attribute,value1,value2);
 	}
 
-template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute, float value, ... )
+template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute, double value, ... )
 	{
 		int value1[dim];
 
@@ -1256,42 +1315,12 @@ template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute
 		va_list list;
 		va_start(list,value);
 		for (int i=1; i<dim; i++) {
-			value1[i] = va_arg(list,float);
+			value1[i] = va_arg(list,double);
 		}
 		va_end(list);
 
 		GRID.set(attribute,value1);
 	}
-
-template <int dim, typename T> int fields(const grid<dim,T>& GRID) {return fields(GRID);}
-template <int dim, typename T> int ghosts(const grid<dim,T>& GRID) {return ghosts(GRID);}
-template <int dim, typename T> int x0(const grid<dim,T>& GRID, int i) {return x0(GRID,i);}
-template <int dim, typename T> int x1(const grid<dim,T>& GRID, int i) {return x1(GRID,i);}
-template <int dim, typename T> int xmin(const grid<dim,T>& GRID, int i) {return xmin(GRID,i);}
-template <int dim, typename T> int xmax(const grid<dim,T>& GRID, int i) {return xmax(GRID,i);}
-template <int dim, typename T> int xlength(const grid<dim,T>& GRID, int i) {return xlength(GRID,i);}
-template <int dim, typename T> float dx(const grid<dim,T>& GRID, int i) {return dx(GRID,i);}
-
-template <int dim, typename T> int x0(const grid<dim,T>& GRID) {return x0(GRID);}
-template <int dim, typename T> int x1(const grid<dim,T>& GRID) {return x1(GRID);}
-template <int dim, typename T> int xmin(const grid<dim,T>& GRID) {return xmin(GRID);}
-template <int dim, typename T> int xmax(const grid<dim,T>& GRID) {return xmax(GRID);}
-template <int dim, typename T> int xlength(const grid<dim,T>& GRID) {return xlength(GRID);}
-template <int dim, typename T> float dx(const grid<dim,T>& GRID) {return dx(GRID);}
-
-template <int dim, typename T> int y0(const grid<dim,T>& GRID) {return y0(GRID);}
-template <int dim, typename T> int y1(const grid<dim,T>& GRID) {return y1(GRID);}
-template <int dim, typename T> int ymin(const grid<dim,T>& GRID) {return ymin(GRID);}
-template <int dim, typename T> int ymax(const grid<dim,T>& GRID) {return ymax(GRID);}
-template <int dim, typename T> int ylength(const grid<dim,T>& GRID) {return ylength(GRID);}
-template <int dim, typename T> float dy(const grid<dim,T>& GRID) {return dy(GRID);}
-
-template <int dim, typename T> int z0(const grid<dim,T>& GRID) {return z0(GRID);}
-template <int dim, typename T> int z1(const grid<dim,T>& GRID) {return z1(GRID);}
-template <int dim, typename T> int zmin(const grid<dim,T>& GRID) {return zmin(GRID);}
-template <int dim, typename T> int zmax(const grid<dim,T>& GRID) {return zmax(GRID);}
-template <int dim, typename T> int zlength(const grid<dim,T>& GRID) {return zlength(GRID);}
-template <int dim, typename T> float dz(const grid<dim,T>& GRID) {return dz(GRID);}
 
 } // namespace MMSP
 
