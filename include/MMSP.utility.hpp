@@ -51,7 +51,7 @@ void check_boundary(int& x, int x0, int x1, int b0, int b1)
 	else if (x>=x1) {
 		if (b1==neumann or b1==dirichlet) x = (x1-1);
 		#ifndef MPI_VERSION
-		else if (b1==periodic) x = x0+(x-(x1-1));
+		else if (b1==periodic) x = x0+(x-x1);
 		#endif
 		else if (b1==mirror) x = 2*(x1-1)-x;
 	}

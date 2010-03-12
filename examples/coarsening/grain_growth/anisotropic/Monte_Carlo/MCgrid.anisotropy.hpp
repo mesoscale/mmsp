@@ -61,16 +61,16 @@ void update(MCgrid2D& grid, int steps)
 			int spin2 = nbors[rand()%length(nbors)];
 
 			if (spin1!=spin2) {
-				float dE = -E(spin1,spin2);
+				float dE = -energy(spin1,spin2);
 				for (int i=-1; i<=1; i++)
 					for (int j=-1; j<=1; j++) {
 						int spin = grid[x+i][y+j];
-						dE += E(spin,spin2)-E(spin,spin1);
+						dE += energy(spin,spin2)-energy(spin,spin1);
 					}
 				float r = float(rand())/float(RAND_MAX);
-				float ME = M(spin1,spin2)*E(spin1,spin2);
+				float ME = mobility(spin1,spin2)*energy(spin1,spin2);
 				if (dE<=0.0 and r<ME) grid[x][y] = spin2;
-				if (dE>0.0 and r<ME*exp(-dE/(kT*E(spin1,spin2)))) grid[x][y] = spin2;
+				if (dE>0.0 and r<ME*exp(-dE/(kT*energy(spin1,spin2)))) grid[x][y] = spin2;
 			}
 
 			if (h%(ny/200)==0) ghostswap(grid);
@@ -97,17 +97,17 @@ void update(MCgrid3D& grid, int steps)
 			int spin2 = nbors[rand()%length(nbors)];
 
 			if (spin1!=spin2) {
-				float dE = -E(spin1,spin2);
+				float dE = -energy(spin1,spin2);
 				for (int i=-1; i<=1; i++)
 					for (int j=-1; j<=1; j++)
 						for (int k=-1; k<=1; k++) {
 							int spin = grid[x+i][y+j][z+k];
-							dE += E(spin,spin2)-E(spin,spin1);
+							dE += energy(spin,spin2)-energy(spin,spin1);
 						}
 				float r = float(rand())/float(RAND_MAX);
-				float ME = M(spin1,spin2)*E(spin1,spin2);
+				float ME = mobility(spin1,spin2)*energy(spin1,spin2);
 				if (dE<=0.0 and r<ME) grid[x][y][z] = spin2;
-				if (dE>0.0 and r<ME*exp(-dE/(kT*E(spin1,spin2)))) grid[x][y][z] = spin2;
+				if (dE>0.0 and r<ME*exp(-dE/(kT*energy(spin1,spin2)))) grid[x][y][z] = spin2;
 			}
 
 			if (h%(ny*nz/200)==0) ghostswap(grid);
