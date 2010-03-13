@@ -20,8 +20,20 @@ void generate(int dim, const char* filename)
 		int y1 = MMSP::y1(grid);
 
 		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++)
-				grid[x][y] = rand()%100;
+			for (int y=y0; y<y1; y++) {
+				if (x<32) {
+					if (y<64) grid[x][y] = 2;
+					else grid[x][y] = 3;
+				}
+				else if (x>96) {
+					if (y<64) grid[x][y] = 2;
+					else grid[x][y] = 3;
+				}
+				else {
+					if (y<32 or y>96) grid[x][y] = 1;
+					else grid[x][y] = 0;
+				}
+			}
 
 		MMSP::output(grid,filename);
 	}
@@ -37,8 +49,20 @@ void generate(int dim, const char* filename)
 
 		for (int x=x0; x<x1; x++)
 			for (int y=y0; y<y1; y++)
-				for (int z=z0; z<z1; z++)
-					grid[x][y][z] = rand()%100;
+				for (int z=z0; z<z1; z++) {
+					if (x<32) {
+						if (y<64) grid[x][y][z] = 2;
+						else grid[x][y][z] = 3;
+					}
+					else if (x>96) {
+						if (y<64) grid[x][y][z] = 2;
+						else grid[x][y][z] = 3;
+					}
+					else {
+						if (y<32 or y>96) grid[x][y][z] = 1;
+						else grid[x][y][z] = 0;
+					}
+				}
 
 		MMSP::output(grid,filename);
 	}

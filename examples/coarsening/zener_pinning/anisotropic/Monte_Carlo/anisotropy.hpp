@@ -13,7 +13,7 @@ std::map<int,std::map<int,float> > mobility_table;
 template <typename T> T min(const T& a, const T& b) {return (a<b?a:b);}
 template <typename T> T max(const T& a, const T& b) {return (a>b?a:b);}
 
-float E(int i, int j)
+float energy(int i, int j)
 {
 	// trivial case: no boundary
 	if (i==j) return 0.0;
@@ -30,7 +30,7 @@ float E(int i, int j)
 	return energy;
 }
 
-float M(int i, int j)
+float mobility(int i, int j)
 {
 	// trivial case: no boundary
 	if (i==j) return 0.0;

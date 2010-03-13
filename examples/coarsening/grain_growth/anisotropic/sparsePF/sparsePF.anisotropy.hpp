@@ -21,9 +21,18 @@ void generate(int dim, const char* filename)
 
 		for (int x=x0; x<x1; x++)
 			for (int y=y0; y<y1; y++) {
-				double d = sqrt(pow(64.0-x,2)+pow(64.0-y,2));
-				if (d<32.0) MMSP::set(grid[x][y],1)= 1.0;
-				else MMSP::set(grid[x][y],0) = 1.0;
+				if (x<32) {
+					if (y<64) MMSP::set(grid[x][y],2) = 1.0;
+					else MMSP::set(grid[x][y],3) = 1.0;
+				}
+				else if (x>96) {
+					if (y<64) MMSP::set(grid[x][y],2) = 1.0;
+					else MMSP::set(grid[x][y],3) = 1.0;
+				}
+				else {
+					if (y<32 or y>96) MMSP::set(grid[x][y],1) = 1.0;
+					else MMSP::set(grid[x][y],0) = 1.0;
+				}
 			}
 
 		MMSP::output(grid,filename);
@@ -41,9 +50,18 @@ void generate(int dim, const char* filename)
 		for (int x=x0; x<x1; x++)
 			for (int y=y0; y<y1; y++)
 				for (int z=z0; z<z1; z++) {
-					double d = sqrt(pow(32.0-x,2)+pow(32.0-y,2)+pow(32.0-z,2));
-					if (d<16.0) MMSP::set(grid[x][y][z],1)= 1.0;
-					else MMSP::set(grid[x][y][z],0) = 1.0;
+					if (x<16) {
+						if (y<32) MMSP::set(grid[x][y][z],2) = 1.0;
+						else MMSP::set(grid[x][y][z],3) = 1.0;
+					}
+					else if (x>48) {
+						if (y<32) MMSP::set(grid[x][y][z],2) = 1.0;
+						else MMSP::set(grid[x][y][z],3) = 1.0;
+					}
+					else {
+						if (y<16 or y>48) MMSP::set(grid[x][y][z],1) = 1.0;
+						else MMSP::set(grid[x][y][z],0) = 1.0;
+					}
 				}
 
 		MMSP::output(grid,filename);
@@ -52,10 +70,9 @@ void generate(int dim, const char* filename)
 
 void update(sparsePF2D& grid, int steps)
 {
-	sparsePF2D update(grid);
-	const double epsilon = 1.0e-8;
-
 	for (int step=0; step<steps; step++) {
+		sparsePF2D update(grid);
+
 		for (int x=x0(grid); x<x1(grid); x++)
 			for (int y=y0(grid); y<y1(grid); y++) {
 				vector<int> nbors = neighbors(grid,x,y);
@@ -78,7 +95,7 @@ void update(sparsePF2D& grid, int steps)
 							int index1 = nbors[i];
 							int index2 = nbors[j];
 							double gamma = energy(index1,index2);
-							double width = 8.0;
+							const double width = 8.0;
 							double eps = 4.0/acos(-1.0)*sqrt(0.5*gamma*width);
 							double w = 4.0*gamma/width;
 							set(dFdp,index1) += 0.5*eps*eps*lap[index2]+w*grid[x][y][index2];
@@ -102,7 +119,8 @@ void update(sparsePF2D& grid, int steps)
 						}
 
 					for (int i=0; i<length(nbors); i++) {
-						double dt = 0.02;
+						const double dt = 0.02;
+						const double epsilon = 1.0e-8;
 						int index = nbors[i];
 						double value = grid[x][y][index]+dt*(2.0/S)*dpdt[index];
 						if (value>1.0) value = 1.0;
@@ -117,10 +135,9 @@ void update(sparsePF2D& grid, int steps)
 
 void update(sparsePF3D& grid, int steps)
 {
-	sparsePF3D update(grid);
-	const double epsilon = 1.0e-8;
-
 	for (int step=0; step<steps; step++) {
+		sparsePF3D update(grid);
+
 		for (int x=x0(grid); x<x1(grid); x++)
 			for (int y=y0(grid); y<y1(grid); y++)
 				for (int z=z0(grid); z<z1(grid); z++) {
@@ -145,7 +162,7 @@ void update(sparsePF3D& grid, int steps)
 								int index1 = nbors[i];
 								int index2 = nbors[j];
 								double gamma = energy(index1,index2);
-								double width = 8.0;
+								const double width = 8.0;
 								double eps = 4.0/acos(-1.0)*sqrt(0.5*gamma*width);
 								double w = 4.0*gamma/width;
 								set(dFdp,index1) += 0.5*eps*eps*lap[index2]+w*grid[x][y][z][index2];
@@ -169,7 +186,8 @@ void update(sparsePF3D& grid, int steps)
 							}
 
 						for (int i=0; i<length(nbors); i++) {
-							double dt = 0.02;
+							const double dt = 0.02;
+							const double epsilon = 1.0e-8;
 							int index = nbors[i];
 							double value = grid[x][y][z][index]+dt*(2.0/S)*dpdt[index];
 							if (value>1.0) value = 1.0;
