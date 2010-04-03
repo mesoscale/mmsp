@@ -13,4 +13,4 @@ manual: MMSP.manual.tex $(chapters)
 	pdflatex MMSP.manual
 
 clean:
-	rm -f MMSP.pdf *.aux *.log *.toc
+	rm -f *.aux *.log *.toc

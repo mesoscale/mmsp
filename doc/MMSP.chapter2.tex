@@ -1,234 +1,103 @@
-% MMSP.chapter1.tex
+% MMSP.chapter2.tex
 
 \chapter{Getting started with {\tt MMSP}}
-The following sections present a few short tutorials on writing, compiling, and running simple {\tt MMSP} programs.  For those totally confused by the syntax of the examples presented here we suggest consulting an introductory {\tt c++} text.
+The following sections provide the necessary information for new users to obtain and set up {\tt MMSP}.  Typically, this involves downloading a source code archive, unpacking it, and running a few tests.  Developers or those interested in maintaining an up-to-date version of the code should consider checking out a copy from the {\tt subversion} repository.
 
-\section{A quick tutorial}
-\subsection{The {\tt Hello MMSP!} program}
-Because every good programming language or interface tutorial starts with a ``Hello World!'' example program, we'll do the same.  For most {\tt MMSP} applications, we include a header file named {\tt MMSP.hpp}.  Then we need a {\tt main()} program and a few lines to print out our message.  Here it is:
+\section{Downloading {\tt MMSP}}
+The {\tt MMSP} source code is hosted online at MatForge (http://matforge.org).  From the main MatForge site, users should navigate to the {\tt MMSP} home page and choose the appropriate links under the section ``Download,''  as these links are set up to point to the latest {\tt MMSP} release.  Archives containing the {\tt MMSP} source code are provided in the usual Linux ``tarball'' convention (with filename extension~{\tt .tar.gz}), and as a ``zip'' file (with extension~{\tt .zip}).  Users should download an archive that can be unpacked by existing utilities on their platform; if you are unsure which archive to download, read the following section titled ``Installing {\tt MMSP}'' before making your choice.
+
+Alternatively, a user may choose to check out a copy from the {\tt subversion} repository.  This, of course, requires the {\tt subsversion} version control software (http://www.subversion.com) to be installed on the target machine, as well as a working internet connection.  The command to issue is
 \begin{shadebox}
 \begin{verbatim}
-    #include"MMSP.hpp"
-
-    int main(int argc, char* argv[])
-    {
-        MMSP::Init(argc,argv);
-
-        std::cout<<"Hello MMSP!"<<std::endl;
-
-        MMSP::Finalize();
-    }
+    svn+ssh://www.matforge.org/usr/local/svn-cmu-repos/MMSP
 \end{verbatim}
 \end{shadebox}
-The only code here that should look out of the ordinary are the statements
+If this is successful, then there is no need to perform the actions described below in Installation, and the user should move on to Setup.  Having a local copy of {\tt MMSP} makes it simple to keep your code up-to-date.  From the root folder, simply type
 \begin{shadebox}
 \begin{verbatim}
-    MMSP::Init(argc,argv);
+    svn update
 \end{verbatim}
 \end{shadebox}
-and
+to update a working copy with the latest version of the {\tt MMSP} source code.  See the {\tt subversion} documentation for more details.
+
+\section{Installing {\tt MMSP}}
+After an appropriate source code archive is obtained as described above, the next step is to install {\tt MMSP}.  This should be as simple as unpacking the archive.  Users with administrator priveledges may choose to install the {\tt MMSP} header files in a location that will be searched by their compiler's preprocessor, but we do not describe how to do this here.  The following paragraphs provide platform-specific instructions for a local installation.
+
+\paragraph{Linux/Unix}
+Local installation for Linux users should simply involve unpacking the archive.  As most Linux systems have means to unpack both tarballs and zip files, there is likely no reason to prefer either.  After downloading the archive file, move it to the directory where you want {\tt MMSP} to reside, making sure that you have read access to the file as well as write access to the directory.  Then issue a command to unpack the archive, e.g.
 \begin{shadebox}
 \begin{verbatim}
-    MMSP::Finalize();
+    tar zxf MMSP.3.0.6.tar.gz
 \end{verbatim}
 \end{shadebox}
-What do these lines do?  For single processor programs, they do absolutely nothing -- they could actually be removed without any consequences.  However, for programs that use the message passing interface (MPI), they act as wrappers for the similarly named {\tt MPI::Init} and {\tt MPI::Finalize} commands.  It's useful to include them here because they'll allow us to write programs that may be compiled for both single or multiple processor environments.
-
-Programmers familiar with {\tt c++} will notice that there's obviously some {\tt MMSP} namespace being used here.  For those less familiar, namespaces are a somewhat recent addition to {\tt c++} that are used as a means of avoiding naming conflicts.  We can avoid using namespace resolution so frequently if we use the relevant {\tt using} statement, e.g. 
+or
 \begin{shadebox}
 \begin{verbatim}
-    #include"MMSP.hpp"
-    using namespace MMSP;
-
-    int main(int argc, char* argv[])
-    {
-        Init(argc,argv);
-
-        // etc. 
-    }
+    unzip MMSP.3.0.6.zip
 \end{verbatim}
 \end{shadebox}
-Namespaces serve to prevent programming errors and to ensure code reusability, so naturally we should use {\tt using} statements with care.
-
-The observant reader may also notice that we've used some of the stream input/output functions of {\tt c++} without including the requisite {\tt <iostream>} header.  In fact, this header and many other standard {\tt c++} headers are included implicitly thorough the file {\tt MMSP.hpp}.  If you need a particular standard header for your application and aren't sure if it has been included by {\tt MMSP.hpp}, you can always just {\tt \#include} it in your source code without any ill effects.
-
-So that's it as far as the code goes.  This is a source file that may be compiled for both single and parallel simulations of ... nothing.  In a moment we will move on to code that actually does something, but for now we should say a few words about compiling the code and running the executable.
-
-\subsection{Compiling and running {\tt Hello MMSP!}}
-Compiling code is a task that is, unfortunately, fairly platform dependent.  While {\tt MMSP} programs should compile easily on any platform, the required steps to do so may not look like the method shown here.  That said, let's look at how we would compile the previous example for a typical Linux or Unix setup.  Suppose the above code has been saved to a file named {\tt hello.cpp}, and that {\tt MMSP} has been extracted to the same directory.  A typical Linux machine will have at the least the GNU family of compilers installed, in which case we would type the command 
+This will unpack the contents of the archive into a folder named {\tt MMSP}.  Next, type
 \begin{shadebox}
 \begin{verbatim}
-    g++ -I MMSP/include hello.cpp -o hello
+    ls MMSP
 \end{verbatim}
 \end{shadebox}
-which produces an executable file named {\tt hello}.  The compiler option {\tt -I ...} suggests a directory to search for non-standard headers; if your {\tt MMSP} headers live somewhere else, you'll need to make the appropriate change.  To run the program, we type
+which should indicate that folders such as {\tt MMSP/doc}, {\tt MMSP/examples}, etc.~have been created.  If either command fails or the folder {\tt MMSP} is not created, check the {\tt tar} or {\tt unzip} documentation.
+
+\paragraph{Mac OS}
+Mac OS users will follow much of the same procedure as Linux users, so it is advisible to read the previous section on Linux installation.  For those uninitiated, or who have never had any previous reason to use it, the {\tt Terminal} application can be found under {\tt Applications/Utilities}.  Again, all that said above for Linux installation should apply.
+
+\paragraph{MS Windows}
+For those who insist on using MS Windows, it is still possible to use {\tt MMSP}.  The preferred way to do this is to use the {\tt cygwin} environment (http://www.cygwin.com).  To use {\tt cygwin}, it is necessary that appropriate packages, such as {\tt gcc} (the GNU compiler) and {\tt make} (the GNU make utility), have been installed.  These are optional packages that must be chosen manually during installation.  If {\tt cygwin} has been installed properly, {\tt MMSP} may be installed as described above for Linux installations.  It is also possible to compile {\tt MMSP} source code within a code development environment such as Visual Studio, however, {\tt MMSP} code is typically so simple that any code management beyond command line or makefile compilation is only a hinderance.
+
+\section{Setting up {\tt MMSP}}
+Once {\tt MMSP} has been installed, there are a few useful tests and utility programs that should be generated.  First, enter the {\tt MMSP/test} directory and type
 \begin{shadebox}
 \begin{verbatim}
-    ./hello
+    make test
 \end{verbatim}
 \end{shadebox}
-which should produce our message.  Many other compilers on Linux and Unix machines use the same options as listed here, so this line may be very close to what you would use, even if you're not using {\tt gcc}.
-
-Now let's move on to parallel compilation.  We assume that if you're not skipping over this part, you have the MPI libraries installed on your machine (as well as your cluster).  With a typical MPI installation, a number of programs are included which effectively wrap your usual {\tt c++} compiler with a script named something like {\tt mpic++}, {\tt mpicxx}, {\tt mpicc}, etc.  With this in mind, we issue a command which may look like
+If this compiles with no problems, then you're in luck; issue the command
 \begin{shadebox}
 \begin{verbatim}
-    mpicxx -I MMSP/include -include mpi.h hello.cpp -o hello
+    ./test
 \end{verbatim}
 \end{shadebox}
-which again produces an executable named {\tt hello}.  This time, however, we need to run {\tt hello} using an MPI command such as {\tt mpirun} or {\tt mpiexec} (see the documentation for your MPI distribution),
+which will generate a message indicating successful operation.  If the test program fails to compile, it is most likely because either {\tt make} or {\tt g++} (the GNU {\tt c++} compiler) is not installed on the system or is not configured properly.  Of course, any other ISO-compliant {\tt c++} compiler may be used instead.  If there is a problem at this stage, users should check their configuration.
+
+Those who plan to use {\tt MMSP} with the MPI (Message Passing Interface) libraries should also type
 \begin{shadebox}
 \begin{verbatim}
-    mpirun -np 4 hello
+    make parallel
 \end{verbatim}
 \end{shadebox}
-which in this case produces our message four times.  The author sincerely hopes that your experience is this straightforward, but don't count on it!
-
-\section{An example using the {\tt grid} class}
-In this section, we look at an example that uses the {\tt MMSP} {\tt grid} template class, and actually resembles part of a program you might actually use:
+which produces a parallel version of the test program.  If this is successful, then run the program using an appropriate command for your MPI distribution, e.g.\
 \begin{shadebox}
 \begin{verbatim}
-    #include"MMSP.hpp"
-    using namespace MMSP;
-
-    int main(int argc, char* argv[])
-    {
-        Init(argc,argv);
-
-        grid<2,int> GRID(1,0,100,0,100);
-
-        for (int x=xmin(GRID); x<xmax(GRID); x++)
-            for (int y=ymin(GRID); y<ymax(GRID); y++)
-                GRID[x][y] = x+y;
-
-        output(GRID,"testgrid");
-
-        Finalize();
-    }
+    mpirun -np 4 parallel
 \end{verbatim}
 \end{shadebox}
-This program performs the amazing feat of generating a new 2-dimensional {\tt grid} object, assigning to each node the sum of {\tt x} and {\tt y}, and then writing the final state of the {\tt grid} to a file, the name of which is simply {\tt testgrid}.  Of course this isn't really anything special, but the imaginative reader may begin to see how this program might be used as a template to generate other, more useful {\tt grid} objects.
+Note that for successful compilation, the MPI distribution is expected to provide a compilation script named {\tt mpic++} and a the header file named {\tt mpi.h}.  If this program fails to compile, it may be that the user's MPI distribution provides {\tt mpicxx}, {\tt mpiCC}, or the like instead of {\tt mpic++}, or that it provides {\tt mpicxx.h} or the like instead of {\tt mpi.h}.  In this case, the user should edit the {\tt Makefile} accordingly.  Likewise, the appropriate command to run the compiled program may differ depending on the MPI distribution.  This may take the form of, e.g.\ {\tt mpiexec}, instead of {\tt mpirun}.  Unfortunately, MPI distributions do not adhere to a single standard with respect to compiling and running parallel programs, and so it is largely left to the user to determine what must be done for their particular system.
 
-Several new features have been introduced in this example.  First, the line
+Finally, enter the directory {\tt MMSP/utility} and type
 \begin{shadebox}
 \begin{verbatim}
-    grid<2,int> GRID(1,0,100,0,100);
+    make utility
 \end{verbatim}
 \end{shadebox}
-constructs the {\tt grid} object.  Objects of the {\tt grid} class take two template arguments, the first being the dimension ({\tt 2}) and the second being the data type ({\tt int}).  In {\tt MMSP}, the dimension can be any integer greater than zero, while the data type can be any of {\tt c++}'s built-in types or any of the {\tt MMSP} data types to be discussed later.  The name of the {\tt grid} comes next ({\tt GRID}), followed by constructor arguments in parentheses.  These arguments indicate the total number of fields to create at each node (relevant only for vector-like data types) and the lower/upper limits in the {\tt x} and {\tt y} directions, respectively.  Note that these limits are the {\em global} limits, i.e.\ the local grid size will be smaller in a parallel program.  Also note that the limits may be either positive or negative, as long as the upper limit is always larger than the lower limit.  To give a sense of how the above generalizes to other dimensions and data types, consider the following,
+This will produce a number of conversion programs.  In particular, it will produce several programs such as {\tt mmsp2vti} which can be used to convert {\tt MMSP} grid data files into formats that can be read by visualization software such as ParaView.  Because the programs provided in this directory are used so often, {\tt MMSP} users may wish to add the {\tt MMSP/utility} directory to their command path.  This can be achieved by adding the following lines to their {\tt \$HOME/.bashrc} file,
 \begin{shadebox}
 \begin{verbatim}
-    grid<3,double> GRID(1,0,128,0,256,0,256);
+    PATH=$PATH:MMSP/utility
+    export PATH
 \end{verbatim}
 \end{shadebox}
-which would produce a 3-dimensional {\tt grid} object with size $128\times256\times256$ and the built-in data type {\tt double}.
-
-The next lines iterate through the nodes of the {\tt grid},
+for users of the {\tt bash} shell, or
 \begin{shadebox}
 \begin{verbatim}
-    for (int x=xmin(GRID); x<xmax(GRID); x++)
-        for (int y=ymin(GRID); y<ymax(GRID); y++)
-            GRID[x][y] = x+y;
+    setenv PATH $PATH:MMSP/utility
 \end{verbatim}
 \end{shadebox}
-The functions {\tt xmin}, {\tt xmax} and {\tt ymin}, {\tt ymax} have been invoked to retrieve the {\em local} limits in each direction.  As suggested above, the local grid size in a parallel program is always smaller than the global grid size because parallelization in {\tt MMSP} is achieved through spatial subdivision.  Use of these functions ensures that we iterate only through the nodes stored by the local process.  While it isn't strictly necessary to use these functions in code meant to be run on a single processor, using them now will make parallelization completely trivial.
-
-Also of note here is the fact that subscripting works the same way for {\tt MMSP} grid objects as it does for subscripted arrays.  However, we will later see that the {\tt MMSP} subscript operators are ``smarter'' in the sense that they're cognizant of boundary conditions and adjust appropriately for calls made to nodes that are 	``out of bounds.''
-
-Finally, the line 
-\begin{shadebox}
-\begin{verbatim}
-    output(GRID,"testgrid");
-\end{verbatim}
-\end{shadebox}
-seems fairly self-explanatory, and it is.  We note, however, that in the case of a parallel program, the {\tt output} function performs the additional task of pieceing back together the global {\tt grid} object from all local {\tt grid} objects before writing to the file.
-
-As a point of reference, let's now look at how we might do something similar to the example above with the usual {\tt c} or {\tt c++} subscripted arrays:
-\begin{shadebox}
-\begin{verbatim}
-    int main(int argc, char* argv[])
-    {
-        int GRID[100][100];
-
-        for (int x=0; x<100; x++)
-            for (int y=0; y<100; y++)
-                GRID[x][y] = x+y;
-
-        // etc.
-    }
-\end{verbatim}
-\end{shadebox}
-This may look considerably simpler, but consider the following: how do we run this in parallel?  The immediate answer is that we introduce MPI funtion calls, but then we also need to decide how to subdivide the grid, how to deal with boundary conditions, how to put the pieces back together when we're done, etc.  And what if we want to change the number of processors or number of nodes in each direction and maintain an optimal subdivision scheme?  All of these things are done by {\tt MMSP} automatically.
-
-\vfill
-\pagebreak
-\section{The prototypical {\tt MMSP} program}
-{\tt MMSP} was created with the intent that it would be used for mesoscale microstructure simulation.  So let's look at how we would typically write code to do just that.
-\begin{shadebox}
-\begin{verbatim}
-    // prototype.cpp
-    #include"update.hpp"
-    using namespace MMSP;
-
-    int main(int argc, char* argv[])
-    {
-        Init(argc,argv);
-
-        grid<2,double> GRID(argv[1]);
-
-        update(grid,atoi(argv[3]);
-
-        output(GRID,argv[2]);
-
-        Finalize();
-    }
-\end{verbatim}
-\end{shadebox}
-In this example, in addition to the usual {\tt MMSP} boilerplate code, we have a {\tt grid} constructor that reads from a file with a name specified by {\tt argv[1]}, a call to some function called {\tt update} (more on this in a moment), and a call to {\tt output} the {\tt grid} object to a file with a name specified by {\tt argv[2]}. After compiling this program, we would run it with the command line
-\begin{shadebox}
-\begin{verbatim}
-    ./program initial.PF final.PF 100
-\end{verbatim}
-\end{shadebox}
-or, if we compiled with the MPI libraries, we would run in with something similar to
-\begin{shadebox}
-\begin{verbatim}
-    mpirun -np 4 program initial.PF final.PF 100
-\end{verbatim}
-\end{shadebox}
-Here, $100$ is the intended number of time steps that the {\tt update} function will perform.
-
-Now that we have our prototype {\tt main()} function, let's look at the {\tt update} function.  For this example, we would have a new header file named {\tt update.hpp},
-\begin{shadebox}
-\begin{verbatim}
-    // update.hpp
-    #include "MMSP.hpp"
-    using namespace MMSP;
-
-    void update(grid<2,double>& GRID, int steps)
-    {
-        grid<2,double> update(GRID);
-
-        for (int step=0; step<steps; step++) {
-            for (int x=xmin(GRID); x<xmax(GRID); x++)
-                for (int y=ymin(GRID); y<ymax(GRID); y++) {
-
-                    // replace with "real" computations...
-                    update[x][y] = GRID[x][y];
-                }
-
-            swap(GRID,update);
-            ghostswap(GRID);
-        }
-    }
-\end{verbatim}
-\end{shadebox}
-Here we define the {\tt update} function, with its first argument a {\tt grid} object and its second argument the number of time steps to perform.  The only thing we should bring special attention to here is the use of the ampersand ({\tt \&}) to force call-by-reference, which overrides {\tt c++}'s usual convention of call-by-value (see a typical introductory text for more).
-
-On the first line within the {\tt update} function, we create a new {\tt grid} object, itself called {\tt update}.  The new {\tt grid} is created using a constructor with {\tt GRID} as its argument.  What this does is it generates a {\tt grid} with the same spatial extent, number of fields, parallel topology, etc.  In other words, the {\tt grid} called {\tt update} is a suitable workspace to store the values of {\tt GRID} for the next time step as we compute them.
-
-Next, we have a loop over all time steps.  Within this loop we iterate through the nodes of {\tt GRID} just as in the example of the previous section.  Again, note that the limiting values of {\tt x} and {\tt y} are obtained by appropriate function calls.  At each node, we would normally perform some meaningful computation to determine the value of {\tt GRID} at the next time step, then store the value in {\tt update}.  Here we simply copy the value of {\tt GRID} at this node to {\tt update}.
-
-After computations are performed at each node, we have two more operations.  First, we {\tt swap} the data of {\tt GRID} and {\tt update}.  {\tt GRID} now contains the new values, while {\tt update}, the workspace, contains the old.  Next, a function called {\tt ghostswap} is called with {\tt GRID} as its argument.  For single processor programs, the {\tt ghostswap} function does nothing.  For parallel programs, it performs a coordinated series of ``ghost'' cell data swaps, such that the ghosts associated with the local portion of {\tt GRID} are filled with the appropriate data from all neighboring processors.  And again, while it's not critical to include this line when our intent is to write a single processor program, it will serve us well to include it here because it will allow us to easily parallelize the code later.
-
+for users of the {\tt tcsh} shell.
 
 

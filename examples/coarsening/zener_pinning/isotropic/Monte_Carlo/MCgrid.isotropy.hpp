@@ -22,7 +22,7 @@ void generate(int dim, const char* filename)
 			for (int y=y0; y<y1; y++)
 				grid[x][y] = 1+rand()%100;
 
-		for (int i=0; i<50; i++) {
+		for (int i=0; i<100; i++) {
 			int x = x0+rand()%(x1-x0);
 			int y = y0+rand()%(y1-y0);
 			grid[x][y] = 0;
@@ -45,7 +45,7 @@ void generate(int dim, const char* filename)
 				for (int z=z0; z<z1; z++)
 					grid[x][y][z] = 1+rand()%100;
 
-		for (int i=0; i<50; i++) {
+		for (int i=0; i<100; i++) {
 			int x = x0+rand()%(x1-x0);
 			int y = y0+rand()%(y1-y0);
 			int z = z0+rand()%(z1-z0);
@@ -73,7 +73,7 @@ void update(MCgrid2D& grid, int steps)
 				vector<int> nbors = neighbors(grid,x,y);
 				int spin2 = nbors[rand()%length(nbors)];
 
-				if (spin1!=spin2) {
+				if (spin1!=spin2 and spin2!=0) {
 					float dE = -1.0;
 					for (int i=-1; i<=1; i++)
 						for (int j=-1; j<=1; j++) {
@@ -110,7 +110,7 @@ void update(MCgrid3D& grid, int steps)
 				vector<int> nbors = neighbors(grid,x,y,z);
 				int spin2 = nbors[rand()%length(nbors)];
 
-				if (spin1!=spin2) {
+				if (spin1!=spin2 and spin2!=0) {
 					float dE = -1.0;
 					for (int i=-1; i<=1; i++)
 						for (int j=-1; j<=1; j++)

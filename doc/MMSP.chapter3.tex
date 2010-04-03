@@ -1,192 +1,234 @@
-% MMSP.chapter2.tex
+% MMSP.chapter3.tex
 
-\chapter{{\tt MMSP} data classes}
+\chapter{{\tt MMSP} tutorials}
+The following sections present a few short tutorials on writing, compiling, and running simple {\tt MMSP} programs.  For those totally confused by the syntax of the examples presented here we suggest consulting an introductory {\tt c++} text.
 
-\section{Introduction}
-Aside from the dimension, the other defining characteristic of a {\tt grid} object is the type of data stored at each node or cell.  In {\tt MMSP}, valid {\tt grid} data may be either built-in variable types or one of several {\tt MMSP} data classes.  This chapter presents a more detailed look at using both kinds of data types.
-
-\section{Common features}
-{\tt MMSP} data classes share a number of common features.  Most importantly, the way we interact with them through functions and symbolic operators has been designed to be as intuitive and self-consistent as possible.  In this section, we list the functions common to all {\tt MMSP} data classes and built-in types, and in following sections we describe additional functions specific to each particular class.
-
-The member functions common to every {\tt MMSP} data class include
-\begin{itemize}
-\item {\tt length()} \\
-This function is used to determine the ``length'' of a given data object.  For example, the length of a {\tt scalar} is always one, the length of a {\tt vector} object is the number of values stored in it, and so on.
-
-\item {\tt resize({\it integral\_value})} \\
-This function is used to ``resize'' data types that contain more than one value, such as a {\tt vector} object.  When an object inherently has length one (e.g. {\tt scalar} objects), this function does nothing at all.
-
-\item {\tt copy({\it data\_object})} \\
-The {\tt copy} function copies all data from the object in the parameter list to the calling object, i.e.\ the one that called the function.
-
-\item {\tt swap({\it data\_object})} \\
-The {\tt swap} function swaps all data of the object in the parameter list with the calling object.
-
-\item {\tt buffer\_size()} \\
-This function returns the number of bytes that would be used if the calling object were stored in a character buffer.
-
-\item {\tt to\_buffer({\it character\_buffer})} \\
-This function packs the data of the calling object into the character buffer object given in the parameter list.  It also returns the number of bytes that were used.
-
-\item {\tt from\_buffer({\it character\_buffer})} \\
-This function reads data from the character buffer object given in the parameter list and writes it to the calling function.  It also returns the number of bytes that were read.
-
-\item {\tt read({\it ifstream\_object})} \\
-The {\tt read} function reads data from the given {\tt c++ ifstream} object to the calling data object.
-
-\item {\tt write({\it ofstream\_object})} \\
-The {\tt write} function writes the data of the calling object to the the {\tt c++ ofstream} object given in the parameter list.
-
-\item {\tt operator=({\it data\_object})} \\
-The assignment operator is overloaded for all {\tt MMSP} data classes to have the usual ``copy'' behavior.
-\end{itemize}
-Each of these functions may be called in either of two ways: as a class member function or as a globally defined function.  In the first case, calls to a member function {\tt f(...)} look like this:
-\begin{center}
-{\it data\_object}{\tt .f(}{\it parameter\_list}{\tt );}
-\end{center}
-In the second case, the global function {\tt f} is called with a similar syntax, but now the data object becomes the first function parameter:
-\begin{center}
-{\tt f(}{\it data\_object}{\tt, }{\it parameter\_list}{\tt );}
-\end{center}
-Globally defined functions have the same behavior as their associated grid member function.  The user is free to choose either based on convenience or aesthetics.  Symbolic operators are the only member functions that do not have associated functions.
-
-It is, of course, also possible to use built-in data types such as {\tt int}, {\tt float}, and {\tt double} anywhere an {\tt MMSP} data object might be used.  The functions listed above have been redefined to work for all built-in types, but note that because it's impossible to write member functions for built-ins, only the global function calls may be used.
-
-\section{Using {\tt MMSP} data types}
-All {\tt MMSP} data types are defined as template classes.  Just as a declaration of a {\tt grid} objects requires dimension and data type template parameters, each {\tt MMSP} data class object requires a single template parameter.
-
-Most of the time, the user won't work with {\tt MMSP} data types directly, but through nodal data on {\tt grid}s.  It's important to know some of the basic workings of the {\tt MMSP} data classes for this reason.
-
-\subsection{The {\tt scalar} class}
-The {\tt scalar} class is essentially a wrapper for built-in data types.  It was defined primarily for consistency, i.e.\ as a complement to the {\\ vector} class discussed below.  {\tt MMSP} does not define any functions for {\tt scalar} objects other than the common functions discussed in the previous section.  However, because a {\tt scalar} object is an instantiation of a class, it is possible to use both the member function and global function calling syntax.
+\section{A quick tutorial}
+\subsection{The {\tt Hello MMSP!} program}
+Because every good programming language or interface tutorial starts with a ``Hello World!'' example program, we'll do the same.  For most {\tt MMSP} applications, we include a header file named {\tt MMSP.hpp}.  Then we need a {\tt main()} program and a few lines to print out our message.  Here it is:
 \begin{shadebox}
 \begin{verbatim}
-    // MMSP scalar example
+    #include"MMSP.hpp"
 
-    // declaration of a "scalar" object
-    scalar<double> s;
+    int main(int argc, char* argv[])
+    {
+        MMSP::Init(argc,argv);
 
-    // use a "scalar" as you would use the corresponding built-in
-    s = 1.2345;
-    double square = s*s;
-    std::cout<<"s = "<<s<<std::endl;
+        std::cout<<"Hello MMSP!"<<std::endl;
 
-    // the following two lines are equivalent
-    // and both write "1" to standard output
-    std::cout<<"length = "<<length(s)<<std::endl;
-    std::cout<<"length = "<<s.length()<<std::endl;
+        MMSP::Finalize();
+    }
+\end{verbatim}
+\end{shadebox}
+The only code here that should look out of the ordinary are the statements
+\begin{shadebox}
+\begin{verbatim}
+    MMSP::Init(argc,argv);
+\end{verbatim}
+\end{shadebox}
+and
+\begin{shadebox}
+\begin{verbatim}
+    MMSP::Finalize();
+\end{verbatim}
+\end{shadebox}
+What do these lines do?  For single processor programs, they do absolutely nothing -- they could actually be removed without any consequences.  However, for programs that use the message passing interface (MPI), they act as wrappers for the similarly named {\tt MPI::Init} and {\tt MPI::Finalize} commands.  It's useful to include them here because they'll allow us to write programs that may be compiled for both single or multiple processor environments.
 
-    // how a "scalar" is used in a "grid"
-    grid<2,scalar<int> > GRID(1,0,10,0,10);
+Programmers familiar with {\tt c++} will notice that there's obviously some {\tt MMSP} namespace being used here.  For those less familiar, namespaces are a somewhat recent addition to {\tt c++} that are used as a means of avoiding naming conflicts.  We can avoid using namespace resolution so frequently if we use the relevant {\tt using} statement, e.g. 
+\begin{shadebox}
+\begin{verbatim}
+    #include"MMSP.hpp"
+    using namespace MMSP;
+
+    int main(int argc, char* argv[])
+    {
+        Init(argc,argv);
+
+        // etc. 
+    }
+\end{verbatim}
+\end{shadebox}
+Namespaces serve to prevent programming errors and to ensure code reusability, so naturally we should use {\tt using} statements with care.
+
+The observant reader may also notice that we've used some of the stream input/output functions of {\tt c++} without including the requisite {\tt <iostream>} header.  In fact, this header and many other standard {\tt c++} headers are included implicitly thorough the file {\tt MMSP.hpp}.  If you need a particular standard header for your application and aren't sure if it has been included by {\tt MMSP.hpp}, you can always just {\tt \#include} it in your source code without any ill effects.
+
+So that's it as far as the code goes.  This is a source file that may be compiled for both single and parallel simulations of ... nothing.  In a moment we will move on to code that actually does something, but for now we should say a few words about compiling the code and running the executable.
+
+\subsection{Compiling and running {\tt Hello MMSP!}}
+Compiling code is a task that is, unfortunately, fairly platform dependent.  While {\tt MMSP} programs should compile easily on any platform, the required steps to do so may not look like the method shown here.  That said, let's look at how we would compile the previous example for a typical Linux or Unix setup.  Suppose the above code has been saved to a file named {\tt hello.cpp}, and that {\tt MMSP} has been extracted to the same directory.  A typical Linux machine will have at the least the GNU family of compilers installed, in which case we would type the command 
+\begin{shadebox}
+\begin{verbatim}
+    g++ -I MMSP/include hello.cpp -o hello
+\end{verbatim}
+\end{shadebox}
+which produces an executable file named {\tt hello}.  The compiler option {\tt -I ...} suggests a directory to search for non-standard headers; if your {\tt MMSP} headers live somewhere else, you'll need to make the appropriate change.  To run the program, we type
+\begin{shadebox}
+\begin{verbatim}
+    ./hello
+\end{verbatim}
+\end{shadebox}
+which should produce our message.  Many other compilers on Linux and Unix machines use the same options as listed here, so this line may be very close to what you would use, even if you're not using {\tt gcc}.
+
+Now let's move on to parallel compilation.  We assume that if you're not skipping over this part, you have the MPI libraries installed on your machine (as well as your cluster).  With a typical MPI installation, a number of programs are included which effectively wrap your usual {\tt c++} compiler with a script named something like {\tt mpic++}, {\tt mpicxx}, {\tt mpicc}, etc.  With this in mind, we issue a command which may look like
+\begin{shadebox}
+\begin{verbatim}
+    mpicxx -I MMSP/include -include mpi.h hello.cpp -o hello
+\end{verbatim}
+\end{shadebox}
+which again produces an executable named {\tt hello}.  This time, however, we need to run {\tt hello} using an MPI command such as {\tt mpirun} or {\tt mpiexec} (see the documentation for your MPI distribution),
+\begin{shadebox}
+\begin{verbatim}
+    mpirun -np 4 hello
+\end{verbatim}
+\end{shadebox}
+which in this case produces our message four times.  The author sincerely hopes that your experience is this straightforward, but don't count on it!
+
+\section{An example using the {\tt grid} class}
+In this section, we look at an example that uses the {\tt MMSP} {\tt grid} template class, and actually resembles part of a program you might actually use:
+\begin{shadebox}
+\begin{verbatim}
+    #include"MMSP.hpp"
+    using namespace MMSP;
+
+    int main(int argc, char* argv[])
+    {
+        Init(argc,argv);
+
+        grid<2,int> GRID(1,0,100,0,100);
+
+        for (int x=xmin(GRID); x<xmax(GRID); x++)
+            for (int y=ymin(GRID); y<ymax(GRID); y++)
+                GRID[x][y] = x+y;
+
+        output(GRID,"testgrid");
+
+        Finalize();
+    }
+\end{verbatim}
+\end{shadebox}
+This program performs the amazing feat of generating a new 2-dimensional {\tt grid} object, assigning to each node the sum of {\tt x} and {\tt y}, and then writing the final state of the {\tt grid} to a file, the name of which is simply {\tt testgrid}.  Of course this isn't really anything special, but the imaginative reader may begin to see how this program might be used as a template to generate other, more useful {\tt grid} objects.
+
+Several new features have been introduced in this example.  First, the line
+\begin{shadebox}
+\begin{verbatim}
+    grid<2,int> GRID(1,0,100,0,100);
+\end{verbatim}
+\end{shadebox}
+constructs the {\tt grid} object.  Objects of the {\tt grid} class take two template arguments, the first being the dimension ({\tt 2}) and the second being the data type ({\tt int}).  In {\tt MMSP}, the dimension can be any integer greater than zero, while the data type can be any of {\tt c++}'s built-in types or any of the {\tt MMSP} data types to be discussed later.  The name of the {\tt grid} comes next ({\tt GRID}), followed by constructor arguments in parentheses.  These arguments indicate the total number of fields to create at each node (relevant only for vector-like data types) and the lower/upper limits in the {\tt x} and {\tt y} directions, respectively.  Note that these limits are the {\em global} limits, i.e.\ the local grid size will be smaller in a parallel program.  Also note that the limits may be either positive or negative, as long as the upper limit is always larger than the lower limit.  To give a sense of how the above generalizes to other dimensions and data types, consider the following,
+\begin{shadebox}
+\begin{verbatim}
+    grid<3,double> GRID(1,0,128,0,256,0,256);
+\end{verbatim}
+\end{shadebox}
+which would produce a 3-dimensional {\tt grid} object with size $128\times256\times256$ and the built-in data type {\tt double}.
+
+The next lines iterate through the nodes of the {\tt grid},
+\begin{shadebox}
+\begin{verbatim}
     for (int x=xmin(GRID); x<xmax(GRID); x++)
-        for (int y=ymin(GRID); y<ymay(GRID); y++)
+        for (int y=ymin(GRID); y<ymax(GRID); y++)
             GRID[x][y] = x+y;
-
-    // this writes the value "1" to standard output
-    std::cout<<"fields = "<<fields(GRID)<<std::endl;
 \end{verbatim}
 \end{shadebox}
-\subsection{The {\tt vector} class}
-The {\tt vector} class is meant to be used primarily as a fixed-length container for nodal data.  Just like a usual {\tt c} or {\tt c++} array, {\tt vector} data is accessed by use of the subscript operator.
+The functions {\tt xmin}, {\tt xmax} and {\tt ymin}, {\tt ymax} have been invoked to retrieve the {\em local} limits in each direction.  As suggested above, the local grid size in a parallel program is always smaller than the global grid size because parallelization in {\tt MMSP} is achieved through spatial subdivision.  Use of these functions ensures that we iterate only through the nodes stored by the local process.  While it isn't strictly necessary to use these functions in code meant to be run on a single processor, using them now will make parallelization completely trivial.
 
-When a {\tt vector} is used as the data associated with a {\tt grid} node, its length is initialized to the number of fields assigned to the {\tt grid}.  Otherwise, a {\tt vector}'s length must be initialized with the {\tt resize} funtion.
+Also of note here is the fact that subscripting works the same way for {\tt MMSP} grid objects as it does for subscripted arrays.  However, we will later see that the {\tt MMSP} subscript operators are ``smarter'' in the sense that they're cognizant of boundary conditions and adjust appropriately for calls made to nodes that are 	``out of bounds.''
 
-If a {\tt vector} of nonzero length is {\tt resize}d to a greater length, the original data it contains is preserved.  Thus a {\tt vector} may be used, e.g.\ to a generate list even when its final length is not known {\em a priori}.  Trying to {\tt resize} a {\tt vector} being used as {\tt grid} data is {\em not} reccomended.
+Finally, the line 
 \begin{shadebox}
 \begin{verbatim}
-    // MMSP vector example
-
-    // declaration of a "vector"
-    vector<double> v;
-
-    // a "vector" must be resized before use
-    resize(v,10);
-
-    // the following two lines are equivalent
-    // and both write "10" to standard output
-    std::cout<<"length = "<<length(v)<<std::endl;
-    std::cout<<"length = "<<v.length()<<std::endl;
-
-    // set and get values with the subscript operator
-    v[0] = 1.2345;
-    for (int i=1; i<length(v); i++)
-        v[i] = 2.0*v[i-1];
-
-    // how a "vector" is used in a "grid"
-    grid<2,vector<int> > GRID(4,0,10,0,10);
-    for (int x=xmin(GRID); x<xmax(GRID); x++)
-        for (int y=ymin(GRID); y<ymay(GRID); y++)
-            for (int i=0; i<fields(GRID); i++)
-                 GRID[x][y][i] = x+y+i;
-    
-    // this writes the value "4" to standard output
-    std::cout<<"fields = "<<fields(GRID)<<std::endl;
+    output(GRID,"testgrid");
 \end{verbatim}
 \end{shadebox}
-\hfill
+seems fairly self-explanatory, and it is.  We note, however, that in the case of a parallel program, the {\tt output} function performs the additional task of pieceing back together the global {\tt grid} object from all local {\tt grid} objects before writing to the file.
+
+As a point of reference, let's now look at how we might do something similar to the example above with the usual {\tt c} or {\tt c++} subscripted arrays:
+\begin{shadebox}
+\begin{verbatim}
+    int main(int argc, char* argv[])
+    {
+        int GRID[100][100];
+
+        for (int x=0; x<100; x++)
+            for (int y=0; y<100; y++)
+                GRID[x][y] = x+y;
+
+        // etc.
+    }
+\end{verbatim}
+\end{shadebox}
+This may look considerably simpler, but consider the following: how do we run this in parallel?  The immediate answer is that we introduce MPI funtion calls, but then we also need to decide how to subdivide the grid, how to deal with boundary conditions, how to put the pieces back together when we're done, etc.  And what if we want to change the number of processors or number of nodes in each direction and maintain an optimal subdivision scheme?  All of these things are done by {\tt MMSP} automatically.
+
+\vfill
 \pagebreak
-
-\subsection{The {\tt sparse} class}
-The {\tt MMSP} {\tt sparse} data class contains {\tt vector}-like data, but rather than maintaining a fixed length of data, {\tt sparse} objects grow as values are {\tt set} by the user.  {\tt sparse} data is most useful in situations where a large number of fields are defined, but only a small number of them have values that differ from some ``nominal'' value.
+\section{The prototypical {\tt MMSP} program}
+{\tt MMSP} was created with the intent that it would be used for mesoscale microstructure simulation.  So let's look at how we would typically write code to do just that.
 \begin{shadebox}
 \begin{verbatim}
-    // MMSP sparse example
+    // prototype.cpp
+    #include"update.hpp"
+    using namespace MMSP;
 
-    // declaration of a "sparse"
-    sparse<double> s;
+    int main(int argc, char* argv[])
+    {
+        Init(argc,argv);
 
-    // the following two lines are equivalent
-    // and both write "0" to standard output
-    std::cout<<"length = "<<length(s)<<std::endl;
-    std::cout<<"length = "<<s.length()<<std::endl;
+        grid<2,double> GRID(argv[1]);
 
-    // all of the following lines
-    // write "0" to standard output
-    for (int i=0; i<10; i++)
-        std::cout<<"s["<<i<<"] = "<<s[i]<<std::endl;
+        update(grid,atoi(argv[3]);
 
-    // use of the "set" function
-    set(s,0) = 1.2345;
-    set(s,1) = s[0];
-    set(s,2) = s[1];
+        output(GRID,argv[2]);
 
-    // now the length is "3" ...
-    std::cout<<"length = "<<length(s)<<std::endl;
-
-    // ... and we can output only those values that are stored
-    // Note that both calls to "cout" produce the same output
-    for (int i=0; i<length(s); i++) {
-        int ind = index(s,i);
-        double val = value(s,i);
-        std::cout<<"s["<<ind<<"] = "<<val<<std::endl;
-        std::cout<<"s["<<ind<<"] = "<<s[ind]<<std::endl;
-	}
-
-    // how a "sparse" is used in a "grid"
-    grid<2,vector<int> > GRID(0,0,10,0,10);
-    for (int x=xmin(GRID); x<xmax(GRID); x++)
-        for (int y=ymin(GRID); y<ymay(GRID); y++)
-            for (int i=0; i<10; i++)
-                 set(GRID[x][y],i) = x+y+i;
+        Finalize();
+    }
 \end{verbatim}
 \end{shadebox}
-The {\tt sparse} data class achieves its function by storing index/value pairs as they are {\tt set} by the user.  Obviously, this requires more memory than storing a single value, so that there's some point where, for a small enough number of fields, using {\tt sparse} data becomes impractical.
+In this example, in addition to the usual {\tt MMSP} boilerplate code, we have a {\tt grid} constructor that reads from a file with a name specified by {\tt argv[1]}, a call to some function called {\tt update} (more on this in a moment), and a call to {\tt output} the {\tt grid} object to a file with a name specified by {\tt argv[2]}. After compiling this program, we would run it with the command line
+\begin{shadebox}
+\begin{verbatim}
+    ./program initial.PF final.PF 100
+\end{verbatim}
+\end{shadebox}
+or, if we compiled with the MPI libraries, we would run in with something similar to
+\begin{shadebox}
+\begin{verbatim}
+    mpirun -np 4 program initial.PF final.PF 100
+\end{verbatim}
+\end{shadebox}
+Here, $100$ is the intended number of time steps that the {\tt update} function will perform.
 
-The subscript operator applied to {\tt sparse} data returns the value associated with the index given as the operator's argument.  If the value for the given index has not been {\tt set} by the user, the subscript operator returns zero.
+Now that we have our prototype {\tt main()} function, let's look at the {\tt update} function.  For this example, we would have a new header file named {\tt update.hpp},
+\begin{shadebox}
+\begin{verbatim}
+    // update.hpp
+    #include "MMSP.hpp"
+    using namespace MMSP;
 
-The {\tt length} function applied to a {\tt sparse} object returns the number of values that have been {\tt set}.  The user may iterate through only those values that have been {\tt set} by using the {\tt value} and {\tt index} functions.  A synopsis of the functions unique to the {\tt sparse} data type follow.
-\begin{itemize}
-\item {\tt set({\it integral\_value index})} \\
-This function set the value of a particular index/value pair of a {\tt sparse} object.
+    void update(grid<2,double>& GRID, int steps)
+    {
+        grid<2,double> update(GRID);
 
-\item {\tt value({\it integral\_value i})} \\
-This function returns the value of the $i^{th}$ index/value pair of a {\tt sparse} object.
+        for (int step=0; step<steps; step++) {
+            for (int x=xmin(GRID); x<xmax(GRID); x++)
+                for (int y=ymin(GRID); y<ymax(GRID); y++) {
 
-\item {\tt index({\it integral\_value i})} \\
-This function returns the index of the $i^{th}$ index/value pair of a {\tt sparse} object.
-\end{itemize}
+                    // replace with "real" computations...
+                    update[x][y] = GRID[x][y];
+                }
 
-\section{Using built-in data types}
+            swap(GRID,update);
+            ghostswap(GRID);
+        }
+    }
+\end{verbatim}
+\end{shadebox}
+Here we define the {\tt update} function, with its first argument a {\tt grid} object and its second argument the number of time steps to perform.  The only thing we should bring special attention to here is the use of the ampersand ({\tt \&}) to force call-by-reference, which overrides {\tt c++}'s usual convention of call-by-value (see a typical introductory text for more).
 
-\section{Writing new data classes}
+On the first line within the {\tt update} function, we create a new {\tt grid} object, itself called {\tt update}.  The new {\tt grid} is created using a constructor with {\tt GRID} as its argument.  What this does is it generates a {\tt grid} with the same spatial extent, number of fields, parallel topology, etc.  In other words, the {\tt grid} called {\tt update} is a suitable workspace to store the values of {\tt GRID} for the next time step as we compute them.
+
+Next, we have a loop over all time steps.  Within this loop we iterate through the nodes of {\tt GRID} just as in the example of the previous section.  Again, note that the limiting values of {\tt x} and {\tt y} are obtained by appropriate function calls.  At each node, we would normally perform some meaningful computation to determine the value of {\tt GRID} at the next time step, then store the value in {\tt update}.  Here we simply copy the value of {\tt GRID} at this node to {\tt update}.
+
+After computations are performed at each node, we have two more operations.  First, we {\tt swap} the data of {\tt GRID} and {\tt update}.  {\tt GRID} now contains the new values, while {\tt update}, the workspace, contains the old.  Next, a function called {\tt ghostswap} is called with {\tt GRID} as its argument.  For single processor programs, the {\tt ghostswap} function does nothing.  For parallel programs, it performs a coordinated series of ``ghost'' cell data swaps, such that the ghosts associated with the local portion of {\tt GRID} are filled with the appropriate data from all neighboring processors.  And again, while it's not critical to include this line when our intent is to write a single processor program, it will serve us well to include it here because it will allow us to easily parallelize the code later.
+
+
 

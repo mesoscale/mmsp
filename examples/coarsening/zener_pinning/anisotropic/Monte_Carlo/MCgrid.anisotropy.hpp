@@ -85,7 +85,7 @@ void update(MCgrid2D& grid, int steps)
 				vector<int> nbors = neighbors(grid,x,y);
 				int spin2 = nbors[rand()%length(nbors)];
 
-				if (spin1!=spin2) {
+				if (spin1!=spin2 and spin2!=0) {
 					float dE = -energy(spin1,spin2);
 					for (int i=-1; i<=1; i++)
 						for (int j=-1; j<=1; j++) {
@@ -123,7 +123,7 @@ void update(MCgrid3D& grid, int steps)
 				vector<int> nbors = neighbors(grid,x,y,z);
 				int spin2 = nbors[rand()%length(nbors)];
 
-				if (spin1!=spin2) {
+				if (spin1!=spin2 and spin2!=0) {
 					float dE = -energy(spin1,spin2);
 					for (int i=-1; i<=1; i++)
 						for (int j=-1; j<=1; j++)

@@ -18,6 +18,12 @@ void generate(int dim, const char* filename)
 		int y0 = MMSP::y0(grid);
 		int y1 = MMSP::y1(grid);
 
+		#ifdef MPI_VERSION
+		int id = MPI::COMM_WORLD.Get_rank();
+		int np = MPI::COMM_WORLD.Get_size();
+		srand(id*(128*128/np));
+		#endif
+
 		for (int x=x0; x<x1; x++)
 			for (int y=y0; y<y1; y++) {
 				double r = double(rand())/double(RAND_MAX);
@@ -35,6 +41,12 @@ void generate(int dim, const char* filename)
 		int y1 = MMSP::y1(grid);
 		int z0 = MMSP::z0(grid);
 		int z1 = MMSP::z1(grid);
+
+		#ifdef MPI_VERSION
+		int id = MPI::COMM_WORLD.Get_rank();
+		int np = MPI::COMM_WORLD.Get_size();
+		srand(id*(64*64*64/np));
+		#endif
 
 		for (int x=x0; x<x1; x++)
 			for (int y=y0; y<y1; y++)
