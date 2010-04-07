@@ -21,6 +21,7 @@ namespace MMSP{
 template <int dim, typename T> class grid;
 
 // grid utility functions
+template <int dim, typename T> int nodes(const grid<dim,T>& GRID) {return nodes(GRID);}
 template <int dim, typename T> int fields(const grid<dim,T>& GRID) {return fields(GRID);}
 template <int dim, typename T> int ghosts(const grid<dim,T>& GRID) {return ghosts(GRID);}
 template <int dim, typename T> int g0(const grid<dim,T>& GRID, int i) {return g0(GRID,i);}
@@ -29,6 +30,8 @@ template <int dim, typename T> int b0(const grid<dim,T>& GRID, int i) {return b0
 template <int dim, typename T> int b1(const grid<dim,T>& GRID, int i) {return b1(GRID,i);}
 template <int dim, typename T> int& b0(grid<dim,T>& GRID, int i) {return b0(GRID,i);}
 template <int dim, typename T> int& b1(grid<dim,T>& GRID, int i) {return b1(GRID,i);}
+
+// grid utility functions (all directions)
 template <int dim, typename T> int x0(const grid<dim,T>& GRID, int i) {return x0(GRID,i);}
 template <int dim, typename T> int x1(const grid<dim,T>& GRID, int i) {return x1(GRID,i);}
 template <int dim, typename T> int xmin(const grid<dim,T>& GRID, int i) {return xmin(GRID,i);}
@@ -353,12 +356,16 @@ public:
 		}
 		for (int i=0; i<dim; i++) {
 			sx[i] = 1;
-			for (int j=i+1; j<dim; j++)
+			xx[i] = 1;
+			for (int j=i+1; j<dim; j++) {
 				sx[i] *= (s1[j]-s0[j]);
+				xx[i] *= (x1[j]-x0[j]);
+			}
 		}
 
-		// compute number of cells
+		// compute number of cells, nodes
 		cells = sx[0]*(s1[0]-s0[0]);
+		nodes = xx[0]*(x1[0]-x0[0]);
 
 		// resize data structures 
 		data = new T[cells];
@@ -376,45 +383,39 @@ public:
 
 
 	// assignment operators
-	grid& operator=(const grid& GRID)
+	template <typename U> grid& operator=(const U& value)
 	{
 		for (int i=0; i<cells; i++)
-			data[i] = GRID.data[i];
+			data[i] = static_cast<T>(value);
 	}
 
-	grid& operator=(const T& value)
+	template <typename U> grid& operator=(const grid<dim,U>& GRID)
 	{
 		for (int i=0; i<cells; i++)
-			data[i] = value;
+			data[i] = static_cast<T>(GRID.data[i]);
 	}
 
-	grid& operator+=(const grid& GRID2)
+	template <typename U> grid& operator+=(const grid<dim,U>& GRID)
 	{
 		for (int i=0; i<cells; i++)
-			data[i] += GRID2.data[i];
+			data[i] += static_cast<T>(GRID.data[i]);
 	}
 
-	grid& operator-=(const grid& GRID2)
+	template <typename U> grid& operator-=(const grid<dim,U>& GRID)
 	{
 		for (int i=0; i<cells; i++)
-			data[i] -= GRID2.data[i];
+			data[i] -= static_cast<T>(GRID.data[i]);
 	}
 
 
 	// subscript operators
-	target<dim-1,0,T> operator [](int x)
-	{
-		check_boundary(x,x0[0],x1[0],b0[0],b1[0]);
-		return target<dim-1,0,T>(data+(x-s0[0])*sx[0],s0,sx,x0,x1,b0,b1);
-	}
-
 	target<dim-1,0,T> operator [](int x) const
 	{
 		check_boundary(x,x0[0],x1[0],b0[0],b1[0]);
 		return target<dim-1,0,T>(data+(x-s0[0])*sx[0],s0,sx,x0,x1,b0,b1);
 	}
 
-	T& operator()(int x[dim]) const
+	T& operator()(MMSP::vector<int> x[dim]) const
 	{
 		T* p = data;
 		for (int i=0; i<dim; i++) {
@@ -426,18 +427,111 @@ public:
 
 	T& operator()(int x, ...) const
 	{
-		int p[dim];
-
 		va_list list;
 		va_start(list,x);
-		p[0] = x;
 
-		for (int i=1; i<dim; i++)
-			p[i] = va_arg(list,int);
+		T* p = data;
+		check_boundary(x,x0[0],x1[0],b0[0],b1[0]);
+		p += (x-s0[0])*sx[0];
+
+		for (int i=1; i<dim; i++) {
+			x = va_arg(list,int);
+			check_boundary(x,x0[i],x1[i],b0[i],b1[i]);
+			p += (x-s0[i])*sx[i];
+		}
 
 		va_end(list);
+		return *p;
+	}
 
-		return operator()(p);
+
+	// position utility function
+	MMSP::vector<int> position(int index) const
+	{
+		MMSP::vector<int> x(dim);
+		for (int i=0; i<dim; i++) {
+			x[i] = x0[i]+index/xx[i];
+			index -= x[i]*xx[i];
+		}
+		return x;
+	}
+
+
+	// parallelization 
+	void ghostswap()
+	{
+		#ifdef MPI_VERSION
+		for (int i=0; i<dim; i++) {
+			if (1) {
+				// send to processor above and receive from processor below
+				int send_proc = n1[i];
+				int recv_proc = n0[i];
+
+				int send_min[dim], send_max[dim];
+				int recv_min[dim], recv_max[dim];
+				for (int j=0; j<dim; j++) {
+					send_min[j] = x0[j]-ghosts;
+					send_max[j] = x1[j]+ghosts;
+					recv_min[j] = x0[j]-ghosts;
+					recv_max[j] = x1[j]+ghosts;
+				}
+
+				send_min[i] = x1[i]-ghosts;
+				send_max[i] = x1[i];
+				recv_min[i] = x0[i]-ghosts;
+				recv_max[i] = x0[i];
+
+				int send_size = this->buffer_size(send_min,send_max);
+				int recv_size = 0;
+				MPI::COMM_WORLD.Issend(&send_size,1,MPI_INT,send_proc,100);
+				MPI::COMM_WORLD.Recv(&recv_size,1,MPI_INT,recv_proc,100);
+				char* send_buffer = new char[send_size];
+				char* recv_buffer = new char[recv_size];
+				this->to_buffer(send_buffer,send_min,send_max);
+				MPI::COMM_WORLD.Issend(send_buffer,send_size,MPI_CHAR,send_proc,200);
+				MPI::COMM_WORLD.Recv(recv_buffer,recv_size,MPI_CHAR,recv_proc,200);
+				MPI::COMM_WORLD.Barrier();
+				this->from_buffer(recv_buffer,recv_min,recv_max);
+				delete [] send_buffer;
+				delete [] recv_buffer;
+			}
+
+			if (1) {
+				// send to processor below and receive from processor above
+				int send_proc = n0[i];
+				int recv_proc = n1[i];
+
+				int send_min[dim], send_max[dim];
+				int recv_min[dim], recv_max[dim];
+				for (int j=0; j<dim; j++) {
+					send_min[j] = x0[j]-ghosts;
+					send_max[j] = x1[j]+ghosts;
+					recv_min[j] = x0[j]-ghosts;
+					recv_max[j] = x1[j]+ghosts;
+				}
+
+				send_min[i] = x0[i];
+				send_max[i] = x0[i]+ghosts;
+				recv_min[i] = x1[i];
+				recv_max[i] = x1[i]+ghosts;
+
+				int send_size = this->buffer_size(send_min,send_max);
+				int recv_size = 0;
+				MPI::COMM_WORLD.Issend(&send_size,1,MPI_INT,send_proc,300);
+				MPI::COMM_WORLD.Recv(&recv_size,1,MPI_INT,recv_proc,300);
+				char* send_buffer = new char[send_size];
+				char* recv_buffer = new char[recv_size];
+				this->to_buffer(send_buffer,send_min,send_max);
+				MPI::COMM_WORLD.Issend(send_buffer,send_size,MPI_CHAR,send_proc,400);
+				MPI::COMM_WORLD.Recv(recv_buffer,recv_size,MPI_CHAR,recv_proc,400);
+				MPI::COMM_WORLD.Barrier();
+				this->from_buffer(recv_buffer,recv_min,recv_max);
+				delete [] send_buffer;
+				delete [] recv_buffer;
+			}
+		}
+		MPI::COMM_WORLD.Barrier();
+		#endif
 	}
 
 
@@ -756,6 +850,7 @@ public:
 
 
 	// grid utility functions
+	friend int nodes(const grid& GRID) {return GRID.nodes;}
 	friend int fields(const grid& GRID) {return GRID.fields;}
 	friend int ghosts(const grid& GRID) {return GRID.ghosts;}
 	friend int g0(const grid& GRID, int i) {return GRID.g0[i];}
@@ -764,6 +859,8 @@ public:
 	friend int b1(const grid& GRID, int i) {return GRID.b1[i];}
 	friend int& b0(grid& GRID, int i) {return GRID.b0[i];}
 	friend int& b1(grid& GRID, int i) {return GRID.b1[i];}
+
+	// grid utility functions (all directions)
 	friend int x0(const grid& GRID, int i) {return GRID.x0[i];}
 	friend int x1(const grid& GRID, int i) {return GRID.x1[i];}
 	friend int xmin(const grid& GRID, int i) {return GRID.x0[i];}
@@ -800,101 +897,6 @@ public:
 	friend double& dz(grid& GRID) {return GRID.dx[2];}
 
 
-	// grid parameter "set" functions
-	void set(const char* attribute, int value1[dim], int value2[dim])
-	{
-		// parallel processes should synchronize data
-		#ifdef MPI_VERSION
-		int id = MPI::COMM_WORLD.Get_rank();
-		int np = MPI::COMM_WORLD.Get_size();
-
-		if (id==0) {
-			for (int i=0; i<np; i++) {
-				MPI::COMM_WORLD.Send(value1,dim,MPI_INT,i,100);
-				MPI::COMM_WORLD.Send(value2,dim,MPI_INT,i,200);
-			}
-		}
-
-		else {
-			MPI::COMM_WORLD.Recv(value1,dim,MPI_INT,0,100);
-			MPI::COMM_WORLD.Recv(value2,dim,MPI_INT,0,200);
-		}
-
-		MPI::COMM_WORLD.Barrier();
-		#endif
-
-		// set attribute
-		if (attribute=="boundary") {
-			for (int i=0; i<dim; i++) {
-				b0[i] = value1[i];
-				b1[i] = value1[i];
-			}
-		}
-	}
-
-	void set(const char* attribute, double value1[dim])
-	{
-		// parallel processes should synchronize data
-		#ifdef MPI_VERSION
-		int id = MPI::COMM_WORLD.Get_rank();
-		int np = MPI::COMM_WORLD.Get_size();
-
-		if (id==0) {
-			for (int i=0; i<np; i++) {
-				MPI::COMM_WORLD.Send(value1,dim,MPI_FLOAT,i,100);
-			}
-		}
-
-		else {
-			MPI::COMM_WORLD.Recv(value1,dim,MPI_FLOAT,0,100);
-		}
-
-		MPI::COMM_WORLD.Barrier();
-		#endif
-
-		// set attribute
-		if (attribute=="spacing") {
-			for (int i=0; i<dim; i++)
-				dx[i] = value1[i];
-		}
-	}
-
-	void set(const char* attribute, int value, ... )
-	{
-		int value1[dim];
-		int value2[dim];
-
-		value1[0] = value;
-		value2[0] = value;
-
-		va_list list;
-		va_start(list,value);
-		for (int i=1; i<dim; i++) {
-			value1[i] = va_arg(list,int);
-			value2[i] = value1[i];
-		}
-		va_end(list);
-
-		set(attribute,value1,value2);
-	}
-
-	void set(const char* attribute, double value, ... )
-	{
-		double value1[dim];
-
-		value1[0] = value;
-
-		va_list list;
-		va_start(list,value);
-		for (int i=1; i<dim; i++) {
-			value1[i] = va_arg(list,double);
-		}
-		va_end(list);
-
-		set(attribute,value1);
-	}
-
-
 	// utility functions
 	void swap(grid& GRID)
 	{
@@ -902,6 +904,11 @@ public:
 		T* DATA = data;
 		data = GRID.data;
 		GRID.data = DATA;
+
+		// swap number of nodes 
+		int NODES = nodes;
+		nodes = GRID.nodes;
+		GRID.nodes = NODES;
 
 		// swap number of cells
 		int CELLS = cells;
@@ -924,6 +931,7 @@ public:
 			int G1 = g1[i]; g1[i] = GRID.g1[i]; GRID.g1[i] = G1;
 			int X0 = x0[i]; x0[i] = GRID.x0[i]; GRID.x0[i] = X0;
 			int X1 = x1[i]; x1[i] = GRID.x1[i]; GRID.x1[i] = X1;
+			int XX = xx[i]; xx[i] = GRID.xx[i]; GRID.xx[i] = XX;
 			int S0 = s0[i]; s0[i] = GRID.s0[i]; GRID.s0[i] = S0;
 			int S1 = s1[i]; s1[i] = GRID.s1[i]; GRID.s1[i] = S1;
 			int SX = sx[i]; sx[i] = GRID.sx[i]; GRID.sx[i] = SX;
@@ -943,6 +951,9 @@ public:
 		// initialize data
 		if (data!=NULL) delete [] data;
 
+		// copy number of nodes 
+		nodes = GRID.nodes;
+
 		// copy number of cells 
 		cells = GRID.cells;
 
@@ -958,6 +969,7 @@ public:
 			g1[i] = GRID.g1[i];
 			x0[i] = GRID.x0[i];
 			x1[i] = GRID.x1[i];
+			xx[i] = GRID.xx[i];
 			s0[i] = GRID.s0[i];
 			s1[i] = GRID.s1[i];
 			sx[i] = GRID.sx[i];
@@ -986,200 +998,30 @@ public:
 		}
 	}
 
-	void subgrid(grid& GRID, int min[dim], int max[dim]) const
-	{
-		// copy a subset of grid data to GRID
-		int size = this->buffer_size(min,max);
-		char* buffer = new char[size];
-		this->to_buffer(buffer,min,max);
-		GRID.from_buffer(buffer,min,max);
-		delete [] buffer;
-	}
-
-	void subgrid(grid& GRID, int min0, int max0, ...) const
-	{
-		int min[dim];
-		int max[dim];
-		min[0] = min0;
-		max[0] = max0;
-
-		va_list list;
-		va_start(list,min0);
-		for (int i=1; i<dim; i++) {
-			min[i] = va_arg(list,int);
-			max[i] = va_arg(list,int);
-		}
-		va_end(list);
-
-		subgrid(GRID,min,max);
-	}
-
-	void fill(grid& GRID, int min[dim], int max[dim]) const
-	{
-		// copy GRID to a subset of grid data
-		int size = GRID.buffer_size(min,max);
-		char* buffer = new char[size];
-		GRID.to_buffer(buffer,min,max);
-		this->from_buffer(buffer,min,max);
-		delete [] buffer;
-	}
-
-	void fill(grid& GRID, int min0, int max0, ...) const
-	{
-		int min[dim];
-		int max[dim];
-		min[0] = min0;
-		max[0] = max0;
-
-		va_list list;
-		va_start(list,min0);
-		for (int i=1; i<dim; i++) {
-			min[i] = va_arg(list,int);
-			max[i] = va_arg(list,int);
-		}
-		va_end(list);
-
-		fill(GRID,min,max);
-	}
-
-	const T& neighbor(int c[dim], int s[dim]) const
-	{
-		// initialize index
-		int p = 0;
-
-		for (int i=0; i<dim; i++) {
-			// read arguments
-			int x = c[i]+s[i];
-
-			// adjust for boundary conditions
-			check_boundary(x,x0[i],x1[i],b0[i],b1[i]);
-
-			// increment position 
-			p += (x-s0[i])*sx[i];
-		}
-
-		// return cell data
-		return data[p];
-	}
-
-	const T& neighbor(int c0, int s0, ...) const
-	{
-		int c[dim];
-		int s[dim];
-		c[0] = c0;
-		s[0] = s0;
-
-		va_list list;
-		va_start(list,s0);
-		for (int i=1; i<dim; i++) {
-			c[i] = va_arg(list,int);
-			s[i] = va_arg(list,int);
-		}
-		va_end(list);
-
-		return neighbor(c,s);
-	}
-
-
-	// parallelization 
-	void ghostswap()
-	{
-		#ifdef MPI_VERSION
-		for (int i=0; i<dim; i++) {
-			if (1) {
-				// send to processor above and receive from processor below
-				int send_proc = n1[i];
-				int recv_proc = n0[i];
-
-				int send_min[dim], send_max[dim];
-				int recv_min[dim], recv_max[dim];
-				for (int j=0; j<dim; j++) {
-					send_min[j] = x0[j]-ghosts;
-					send_max[j] = x1[j]+ghosts;
-					recv_min[j] = x0[j]-ghosts;
-					recv_max[j] = x1[j]+ghosts;
-				}
-
-				send_min[i] = x1[i]-ghosts;
-				send_max[i] = x1[i];
-				recv_min[i] = x0[i]-ghosts;
-				recv_max[i] = x0[i];
-
-				int send_size = this->buffer_size(send_min,send_max);
-				int recv_size = 0;
-				MPI::COMM_WORLD.Issend(&send_size,1,MPI_INT,send_proc,100);
-				MPI::COMM_WORLD.Recv(&recv_size,1,MPI_INT,recv_proc,100);
-				char* send_buffer = new char[send_size];
-				char* recv_buffer = new char[recv_size];
-				this->to_buffer(send_buffer,send_min,send_max);
-				MPI::COMM_WORLD.Issend(send_buffer,send_size,MPI_CHAR,send_proc,200);
-				MPI::COMM_WORLD.Recv(recv_buffer,recv_size,MPI_CHAR,recv_proc,200);
-				MPI::COMM_WORLD.Barrier();
-				this->from_buffer(recv_buffer,recv_min,recv_max);
-				delete [] send_buffer;
-				delete [] recv_buffer;
-			}
-
-			if (1) {
-				// send to processor below and receive from processor above
-				int send_proc = n0[i];
-				int recv_proc = n1[i];
-
-				int send_min[dim], send_max[dim];
-				int recv_min[dim], recv_max[dim];
-				for (int j=0; j<dim; j++) {
-					send_min[j] = x0[j]-ghosts;
-					send_max[j] = x1[j]+ghosts;
-					recv_min[j] = x0[j]-ghosts;
-					recv_max[j] = x1[j]+ghosts;
-				}
-
-				send_min[i] = x0[i];
-				send_max[i] = x0[i]+ghosts;
-				recv_min[i] = x1[i];
-				recv_max[i] = x1[i]+ghosts;
-
-				int send_size = this->buffer_size(send_min,send_max);
-				int recv_size = 0;
-				MPI::COMM_WORLD.Issend(&send_size,1,MPI_INT,send_proc,300);
-				MPI::COMM_WORLD.Recv(&recv_size,1,MPI_INT,recv_proc,300);
-				char* send_buffer = new char[send_size];
-				char* recv_buffer = new char[recv_size];
-				this->to_buffer(send_buffer,send_min,send_max);
-				MPI::COMM_WORLD.Issend(send_buffer,send_size,MPI_CHAR,send_proc,400);
-				MPI::COMM_WORLD.Recv(recv_buffer,recv_size,MPI_CHAR,recv_proc,400);
-				MPI::COMM_WORLD.Barrier();
-				this->from_buffer(recv_buffer,recv_min,recv_max);
-				delete [] send_buffer;
-				delete [] recv_buffer;
-			}
-		}
-		MPI::COMM_WORLD.Barrier();
-		#endif
-	}
-
 
 protected:
 	T* data;        // local grid data
 
-	int cells;      // number of cells (including ghosts)
+	int nodes;		// number of nodes (excluding ghosts)
+	int cells;      // number of nodes (including ghosts)
 	int fields;     // number of fields
 	int ghosts;     // ghost cell depth
 
-	int g0[dim];    // global lower coordinate limit
-	int g1[dim];    // global upper coordinate limit
+	int g0[dim];    // global lower coordinate limit (excluding ghosts)
+	int g1[dim];    // global upper coordinate limit (excluding ghosts)
 
-	int x0[dim];    // local lower coordinate limit
-	int x1[dim];    // local upper coordinate limit
+	int x0[dim];    // local lower coordinate limit (excluding ghosts)
+	int x1[dim];    // local upper coordinate limit (excluding ghosts)
+	int xx[dim];    // local cells in slice (excluding ghosts)
 
-	int s0[dim];
-	int s1[dim];
-	int sx[dim];    // local cells in slice 
+	int s0[dim];    // local lower coordinate limit (including ghosts)
+	int s1[dim];    // local upper coordinate limit (including ghosts)
+	int sx[dim];    // local cells in slice (including ghosts)
 
 	int b0[dim];    // boundary condition at x0
 	int b1[dim];    // boundary condition at x1
 
-	double dx[dim];  // global cell spacing
+	double dx[dim]; // global cell spacing
 
 	int p0[dim];
 	int p1[dim];
@@ -1188,6 +1030,13 @@ protected:
 	int n0[dim];    // neighbor processor at x0
 	int n1[dim];    // neighbor processor at x1
 };
+
+// position utility function
+template <int dim, typename T> MMSP::vector<int> position(const grid<dim,T>& GRID, int index)
+	{return GRID.position(index);}
+
+// parallelization
+template <int dim, typename T> void ghostswap(grid<dim,T>& GRID) {GRID.ghostswap();}
 
 // buffer I/O functions
 template <int dim, typename T> int buffer_size(const grid<dim,T>& GRID)
@@ -1208,119 +1057,11 @@ template <int dim, typename T> void output(const grid<dim,T>& GRID, const char* 
 	{GRID.output(filename);}
 
 // utility functions
-template <int dim, typename T> int length(const grid<dim,T>& GRID) {return 0;}
+template <int dim, typename T> int length(const grid<dim,T>& GRID) {return nodes(GRID);}
 template <int dim, typename T> void resize(int n, grid<dim,T>& GRID) {}
-template <int dim, typename T> void swap(grid<dim,T>& GRID1, grid<dim,T>& GRID2)
-	{GRID1.swap(GRID2);}
-template <int dim, typename T> void copy(grid<dim,T>& GRID1, grid<dim,T>& GRID2)
-	{GRID2.copy(GRID1);}
+template <int dim, typename T> void swap(grid<dim,T>& GRID1, grid<dim,T>& GRID2) {GRID1.swap(GRID2);}
+template <int dim, typename T> void copy(grid<dim,T>& GRID1, grid<dim,T>& GRID2) {GRID2.copy(GRID1);}
 template <int dim, typename T> std::string name(const grid<dim,T>& GRID) {return std::string("grid:")+name(T());}
-
-template <int dim, typename T> const T& neighbor(grid<dim,T>& GRID, int c[dim], int s[dim])
-	{return GRID.neighbor(c,s);}
-
-template <int dim, typename T> const T& neighbor(grid<dim,T>& GRID, int c0, int s0, ...)
-	{
-		int c[dim];
-		int s[dim];
-		c[0] = c0;
-		s[0] = s0;
-
-		va_list list;
-		va_start(list,s0);
-		for (int i=1; i<dim; i++) {
-			c[i] = va_arg(list,int);
-			s[i] = va_arg(list,int);
-		}
-		va_end(list);
-
-		return GRID.neighbor(c,s);
-	}
-
-template <int dim, typename T> void subgrid(const grid<dim,T>& GRID1, grid<dim,T>& GRID2, int min[dim], int max[dim])
-	{GRID1.subgrid(GRID2,min,max);}
-
-template <int dim, typename T> void subgrid(const grid<dim,T>& GRID1, grid<dim,T>& GRID2, int min0, int max0, ...)
-	{
-		int min[dim];
-		int max[dim];
-		min[0] = min0;
-		max[0] = max0;
-
-		va_list list;
-		va_start(list,min0);
-		for (int i=1; i<dim; i++) {
-			min[i] = va_arg(list,int);
-			max[i] = va_arg(list,int);
-		}
-		va_end(list);
-
-		GRID1.subgrid(GRID2,min,max);
-	}
-
-template <int dim, typename T> void fill(const grid<dim,T>& GRID1, grid<dim,T>& GRID2, int min[dim], int max[dim])
-	{GRID1.fill(GRID2,min,max);}
-
-template <int dim, typename T> void fill(const grid<dim,T>& GRID1, grid<dim,T>& GRID2, int min0, int max0, ...)
-	{
-		int min[dim];
-		int max[dim];
-		min[0] = min0;
-		max[0] = max0;
-
-		va_list list;
-		va_start(list,min0);
-		for (int i=1; i<dim; i++) {
-			min[i] = va_arg(list,int);
-			max[i] = va_arg(list,int);
-		}
-		va_end(list);
-
-		GRID1.fill(GRID2,min,max);
-	}
-
-template <int dim, typename T> void ghostswap(grid<dim,T>& GRID) {GRID.ghostswap();}
-
-template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute, int value1[dim], int value2[dim])
-	{GRID.set(attribute,value1,value2);}
-
-template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute, double value1[dim])
-	{GRID.set(attribute,value1);}
-
-template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute, int value, ... )
-	{
-		int value1[dim];
-		int value2[dim];
-
-		value1[0] = value;
-		value2[0] = value;
-
-		va_list list;
-		va_start(list,value);
-		for (int i=1; i<dim; i++) {
-			value1[i] = va_arg(list,int);
-			value2[i] = value1[i];
-		}
-		va_end(list);
-
-		GRID.set(attribute,value1,value2);
-	}
-
-template <int dim, typename T> void set(grid<dim,T>& GRID, const char* attribute, double value, ... )
-	{
-		int value1[dim];
-
-		value1[0] = value;
-
-		va_list list;
-		va_start(list,value);
-		for (int i=1; i<dim; i++) {
-			value1[i] = va_arg(list,double);
-		}
-		va_end(list);
-
-		GRID.set(attribute,value1);
-	}
 
 } // namespace MMSP
 

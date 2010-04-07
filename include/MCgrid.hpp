@@ -23,9 +23,10 @@ public:
 	// utility functions
 	MMSP::vector<int> neighbors(int x) 
 	{
+		const MCgrid1D& grid = *this;
 		MMSP::vector<int> neighbors;
 		for (int i=-1; i<=1; i++) {
-			int index = neighbor(x,i);
+			int index = grid[x+i];
 			for (int h=0; h<length(neighbors); h++)
 				if (index==neighbors[h]) goto skip;
 			resize(neighbors,length(neighbors)+1);
@@ -58,10 +59,11 @@ public:
 	// utility functions
 	MMSP::vector<int> neighbors(int x, int y) 
 	{
+		const MCgrid2D& grid = *this;
 		MMSP::vector<int> neighbors;
 		for (int i=-1; i<=1; i++)
 			for (int j=-1; j<=1; j++) {
-				int index = neighbor(x,i,y,j);
+				int index = grid[x+i][y+j];
 				for (int h=0; h<length(neighbors); h++)
 					if (index==neighbors[h]) goto skip;
 				resize(neighbors,length(neighbors)+1);
@@ -94,11 +96,12 @@ public:
 	// utility functions
 	MMSP::vector<int> neighbors(int x, int y, int z) 
 	{
+		const MCgrid3D& grid = *this;
 		MMSP::vector<int> neighbors;
 		for (int i=-1; i<=1; i++)
 			for (int j=-1; j<=1; j++)
 				for (int k=-1; k<=1; k++) {
-					int index = neighbor(x,i,y,j,z,k);
+					int index = grid[x+i][y+j][z+k];
 					for (int h=0; h<length(neighbors); h++)
 						if (index==neighbors[h]) goto skip;
 					resize(neighbors,length(neighbors)+1);
