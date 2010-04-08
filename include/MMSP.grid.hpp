@@ -415,7 +415,7 @@ public:
 		return target<dim-1,0,T>(data+(x-s0[0])*sx[0],s0,sx,x0,x1,b0,b1);
 	}
 
-	T& operator()(MMSP::vector<int> x[dim]) const
+	T& operator()(MMSP::vector<int> x) const
 	{
 		T* p = data;
 		for (int i=0; i<dim; i++) {
@@ -442,6 +442,55 @@ public:
 
 		va_end(list);
 		return *p;
+	}
+
+
+	// math functions
+	T lap(MMSP::vector<int> x) const
+	{
+		const grid& GRID = *this;
+		T laplacian = static_cast<T>(0.0);
+		for (int i=0; i<dim; i++) {
+			MMSP::vector<int> s(dim,0); s[i] = 1;
+			laplacian += (1.0/(dx[i]*dx[i]))*(GRID(x+s)-2.0*GRID(x)+GRID(x-s));
+		}
+		return laplacian;
+	}
+
+	T laplacian(MMSP::vector<int> x) const {return lap(x);}
+
+	MMSP::vector<T> grad(MMSP::vector<int> x) const
+	{
+		const grid& GRID = *this;
+		MMSP::vector<T> gradient;
+		for (int i=0; i<dim; i++) {
+			MMSP::vector<int> s(dim,0); s[i] = 1;
+			gradient = (1.0/(2.0*dx[i]))*(GRID(x+s)-GRID(x-s));
+		}
+		return gradient;
+	}
+
+	MMSP::vector<T> gradient(MMSP::vector<int> x) const {return grad(x);}
+
+	T div(MMSP::vector<int> x) const
+	{
+		const grid& GRID = *this;
+		T divergence = static_cast<T>(0);
+		for (int i=0; i<dim; i++) {
+			MMSP::vector<int> s(dim,0); s[i] = 1;
+			divergence += (1.0/(2.0*dx[i]))*(GRID(x+s)-GRID(x-s));
+		}
+		return divergence;
+	}
+
+	T divergence(MMSP::vector<int> x) const {return div(x);}
+
+	T volume(MMSP::vector<int> x) const
+	{
+		T volume = static_cast<T>(1.0);
+		for (int i=0; i<dim; i++)
+			volume *= dx[i];
+		return volume;
 	}
 
 
@@ -1031,6 +1080,28 @@ protected:
 	int n1[dim];    // neighbor processor at x1
 };
 
+// math functions
+template <int dim, typename T> T lap(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
+	{return GRID.lap(x);}
+
+template <int dim, typename T> T laplacian(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
+	{return GRID.laplacian(x);}
+
+template <int dim, typename T> MMSP::vector<T> grad(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
+	{return GRID.grad(x);}
+
+template <int dim, typename T> MMSP::vector<T> gradient(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
+	{return GRID.gradient(x);}
+
+template <int dim, typename T> T div(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
+	{return GRID.div(x);}
+
+template <int dim, typename T> T divergence(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
+	{return GRID.divergence(x);}
+
+template <int dim, typename T> T volume(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
+	{return GRID.volume(x);}
+
 // position utility function
 template <int dim, typename T> MMSP::vector<int> position(const grid<dim,T>& GRID, int index)
 	{return GRID.position(index);}
@@ -1064,5 +1135,4 @@ template <int dim, typename T> void copy(grid<dim,T>& GRID1, grid<dim,T>& GRID2)
 template <int dim, typename T> std::string name(const grid<dim,T>& GRID) {return std::string("grid:")+name(T());}
 
 } // namespace MMSP
-
 #endif

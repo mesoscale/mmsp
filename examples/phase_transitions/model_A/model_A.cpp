@@ -1,10 +1,10 @@
-// model-A.cpp 
+// model_A.cpp 
 // Example program for "model A" using MMSP
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#include"model-A.hpp"
+#include"model_A.hpp"
 
-std::string PROGRAM = "model-A";
+std::string PROGRAM = "model_A";
 std::string MESSAGE = "\"model A\" using MMSP";
 
 typedef MMSP::grid<2,double> GRID2D;
