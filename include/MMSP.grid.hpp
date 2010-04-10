@@ -449,8 +449,10 @@ public:
 	T lap(MMSP::vector<int> x) const
 	{
 		const grid& GRID = *this;
-		T laplacian = static_cast<T>(0.0);
-		for (int i=0; i<dim; i++) {
+		MMSP::vector<int> s(dim,0); s[0] = 1;
+		T laplacian = (1.0/(dx[0]*dx[0]))*(GRID(x+s)-2.0*GRID(x)+GRID(x-s));
+
+		for (int i=1; i<dim; i++) {
 			MMSP::vector<int> s(dim,0); s[i] = 1;
 			laplacian += (1.0/(dx[i]*dx[i]))*(GRID(x+s)-2.0*GRID(x)+GRID(x-s));
 		}
@@ -462,10 +464,10 @@ public:
 	MMSP::vector<T> grad(MMSP::vector<int> x) const
 	{
 		const grid& GRID = *this;
-		MMSP::vector<T> gradient;
+		MMSP::vector<T> gradient(dim);
 		for (int i=0; i<dim; i++) {
 			MMSP::vector<int> s(dim,0); s[i] = 1;
-			gradient = (1.0/(2.0*dx[i]))*(GRID(x+s)-GRID(x-s));
+			gradient[i] = (1.0/(2.0*dx[i]))*(GRID(x+s)-GRID(x-s));
 		}
 		return gradient;
 	}
@@ -475,8 +477,10 @@ public:
 	T div(MMSP::vector<int> x) const
 	{
 		const grid& GRID = *this;
-		T divergence = static_cast<T>(0);
-		for (int i=0; i<dim; i++) {
+		MMSP::vector<int> s(dim,0); s[0] = 1;
+		T divergence = (1.0/(2.0*dx[0]))*(GRID(x+s)-GRID(x-s));
+
+		for (int i=1; i<dim; i++) {
 			MMSP::vector<int> s(dim,0); s[i] = 1;
 			divergence += (1.0/(2.0*dx[i]))*(GRID(x+s)-GRID(x-s));
 		}
@@ -485,9 +489,9 @@ public:
 
 	T divergence(MMSP::vector<int> x) const {return div(x);}
 
-	T volume(MMSP::vector<int> x) const
+	double volume(MMSP::vector<int> x) const
 	{
-		T volume = static_cast<T>(1.0);
+		double volume = 1.0;
 		for (int i=0; i<dim; i++)
 			volume *= dx[i];
 		return volume;
@@ -1099,7 +1103,7 @@ template <int dim, typename T> T div(const grid<dim,T>& GRID, const MMSP::vector
 template <int dim, typename T> T divergence(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
 	{return GRID.divergence(x);}
 
-template <int dim, typename T> T volume(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
+template <int dim, typename T> double volume(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
 	{return GRID.volume(x);}
 
 // position utility function

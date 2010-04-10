@@ -13,31 +13,22 @@ void generate(int dim, const char* filename)
 {
 	if (dim==2) {
 		MMSP::grid<2,int> grid(1,0,128,0,128);
-		int x0 = MMSP::x0(grid);
-		int x1 = MMSP::x1(grid);
-		int y0 = MMSP::y0(grid);
-		int y1 = MMSP::y1(grid);
 
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++)
-				grid[x][y] = rand()%20;
+		for (int i=0; i<nodes(grid); i++) {
+			vector<int> x = position(grid,i);
+			grid(x) = rand()%20;
+		}
 
 		MMSP::output(grid,filename);
 	}
 
 	if (dim==3) {
 		MMSP::grid<3,int> grid(1,0,64,0,64,0,64);
-		int x0 = MMSP::x0(grid);
-		int x1 = MMSP::x1(grid);
-		int y0 = MMSP::y0(grid);
-		int y1 = MMSP::y1(grid);
-		int z0 = MMSP::z0(grid);
-		int z1 = MMSP::z1(grid);
 
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++)
-				for (int z=z0; z<z1; z++)
-					grid[x][y][z] = rand()%20;
+		for (int i=0; i<nodes(grid); i++) {
+			vector<int> x = position(grid,i);
+			grid(x) = rand()%20;
+		}
 
 		MMSP::output(grid,filename);
 	}

@@ -65,28 +65,25 @@ template <int dim, typename T> void update(MMSP::grid<dim,T>& grid, int steps)
 {
 	MMSP::grid<dim,T> update(grid);
 	MMSP::grid<dim,T> temp(grid);
-	MMSP::grid<dim,MMSP::vector<T> > noise(grid,2);
 
 	double r = 1.0;
 	double u = 1.0;
 	double K = 1.0;
 	double M = 1.0;
 	double dt = 0.01;
-	double kT = 0.02;
+	double kT = 0.01;
 
 	for (int step=0; step<steps; step++) {
 		for (int i=0; i<nodes(grid); i++) {
 			vector<int> x = position(grid,i);
-			temp(x) = -r*grid(x)+u*pow(grid(x),3)-K*laplacian(grid,x);
-			for (int j=0; j<fields(noise); j++)
-				noise(x)[j] = gaussian(0.0,sqrt(2.0*kT*M/(dt*volume(grid,x))));
+			T noise = gaussian(0.0,sqrt(2.0*kT/(dt*volume(grid,x))));
+			temp(x) = -r*grid(x)+u*pow(grid(x),3)-K*laplacian(grid,x)+noise;
 		}
 		ghostswap(temp);
-		ghostswap(noise);
 
 		for (int i=0; i<nodes(grid); i++) {
 			vector<int> x = position(grid,i);
-			update(x) = grid(x)+dt*M*laplacian(temp,x)+dt*div(noise,x);
+			update(x) = grid(x)+dt*M*laplacian(temp,x);
 		}
 		swap(grid,update);
 		ghostswap(grid);
