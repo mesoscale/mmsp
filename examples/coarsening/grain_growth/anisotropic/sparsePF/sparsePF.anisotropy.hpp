@@ -102,9 +102,9 @@ void update(sparsePF2D& grid, int steps)
 							set(dFdp,index2) += 0.5*eps*eps*lap[index1]+w*grid[x][y][index1];
 							for (int k=j+1; k<length(nbors); k++) {
 								int index3 = nbors[k];
-								set(dFdp,index1) += 3.0*grid[x][y][index2]*grid[x][y][index3];
-								set(dFdp,index2) += 3.0*grid[x][y][index3]*grid[x][y][index1];
-								set(dFdp,index3) += 3.0*grid[x][y][index1]*grid[x][y][index2];
+								set(dFdp,index1) += 6.0*grid[x][y][index2]*grid[x][y][index3];
+								set(dFdp,index2) += 6.0*grid[x][y][index3]*grid[x][y][index1];
+								set(dFdp,index3) += 6.0*grid[x][y][index1]*grid[x][y][index2];
 							}
 						}
 

@@ -101,8 +101,8 @@ void update(sparsePF3D& grid, int steps)
 						for (int k=0; k<length(grid[x][y][z]); k++)
 							sum += pow(value(grid[x][y][z],k),2);
 
-						for (int k=0; k<length(grid[x][y][z]); k++) {
-							int i = index(grid[x][y][z],k);
+						for (int k=0; k<length(nbors); k++) {
+							int i = nbors[k];
 							double value = grid[x][y][z][i];
 							double lap =
 							  (grid[x+1][y][z][i]-2.0*grid[x][y][z][i]+grid[x-1][y][z][i])/(dx(grid)*dx(grid))
@@ -112,7 +112,7 @@ void update(sparsePF3D& grid, int steps)
 							const double dt = 0.01;
 							const double epsilon = 1.0e-8;
 							double temp = value-dt*(-value-pow(value,3)+2.0*(value*sum-lap));
-							if (temp>epsilon) set(grid[x][y][z],i) = temp;
+							if (temp>epsilon) set(update[x][y][z],i) = temp;
 						}
 					}
 				}
