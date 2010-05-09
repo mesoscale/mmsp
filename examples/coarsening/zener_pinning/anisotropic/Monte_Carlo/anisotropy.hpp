@@ -7,14 +7,18 @@
 #include<map>
 
 // global energy and mobility storage
-std::map<int,std::map<int,float> > energy_table;
-std::map<int,std::map<int,float> > mobility_table;
+namespace anisotropy{
+	std::map<int,std::map<int,float> > energy_table;
+	std::map<int,std::map<int,float> > mobility_table;
+}
 
 template <typename T> T min(const T& a, const T& b) {return (a<b?a:b);}
 template <typename T> T max(const T& a, const T& b) {return (a>b?a:b);}
 
 float energy(int i, int j)
 {
+	using namespace anisotropy; 
+
 	// trivial case: no boundary
 	if (i==j) return 0.0;
 
@@ -32,6 +36,8 @@ float energy(int i, int j)
 
 float mobility(int i, int j)
 {
+	using namespace anisotropy; 
+
 	// trivial case: no boundary
 	if (i==j) return 0.0;
 

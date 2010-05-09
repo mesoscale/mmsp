@@ -1,5 +1,5 @@
 // spinodal.hpp
-// Spinodal decomposition algorithms for 2D and 3D phase field methods
+// Algorithm for 2D and 3D spinodal decomposition phase field model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef SPINODAL_UPDATE
@@ -41,10 +41,7 @@ void generate(int dim, const char* filename)
 	if (dim==2) {
 		MMSP::grid<2,double> grid(1,0,128,0,128);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
-			grid(x) = 0.0;
-		}
+		for (int i=0; i<nodes(grid); i++) grid(i) = 0.0;
 
 		MMSP::output(grid,filename);
 	}
@@ -52,35 +49,32 @@ void generate(int dim, const char* filename)
 	if (dim==3) {
 		MMSP::grid<3,double> grid(1,0,64,0,64,0,64);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
-			grid(x) = 0.0;
-		}
+		for (int i=0; i<nodes(grid); i++) grid(i) = 0.0;
 
 		MMSP::output(grid,filename);
 	}
 }
 
-template <int dim, typename T> void update(MMSP::grid<dim,T>& grid, int steps)
+template <int dim> void update(MMSP::grid<dim,double>& grid, int steps)
 {
-	MMSP::grid<dim,T> update(grid);
-	MMSP::grid<dim,T> temp(grid);
+	MMSP::grid<dim,double> update(grid);
+	MMSP::grid<dim,double> temp(grid);
 
 	double dt = 0.01;
+	double dV = 1.0;
 	double epsilon = 0.05;
 
 	for (int step=0; step<steps; step++) {
 		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
-			T noise = gaussian(0.0,sqrt(epsilon*dt/volume(grid,x)));
-			temp(x) = -grid(x)+pow(grid(x),3)-laplacian(grid,x)+noise;
+			double noise = gaussian(0.0,sqrt(epsilon*dt/dV));
+			double phi = grid(i);
+			temp(i) = -phi+pow(phi,3)-laplacian(grid,i)+noise;
 		}
 		ghostswap(temp);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
-			update(x) = grid(x)+dt/(2.0*volume(grid,x))*laplacian(temp,x);
-		}
+		for (int i=0; i<nodes(grid); i++)
+			update(i) = grid(i)+dt/(2.0*dV)*laplacian(temp,i);
+
 		swap(grid,update);
 		ghostswap(grid);
 	}

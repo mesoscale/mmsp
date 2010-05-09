@@ -14,10 +14,8 @@ void generate(int dim, const char* filename)
 	if (dim==2) {
 		MMSP::grid<2,double> grid(1,0,128,0,128);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
-			grid(x) = 1.0-2.0*double(rand())/double(RAND_MAX);
-		}
+		for (int i=0; i<nodes(grid); i++)
+			grid(i) = 1.0-2.0*double(rand())/double(RAND_MAX);
 
 		output(grid,filename);
 	}
@@ -25,10 +23,8 @@ void generate(int dim, const char* filename)
 	if (dim==3) {
 		MMSP::grid<3,double> grid(1,0,64,0,64,0,64);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
-			grid(x) = 1.0-2.0*double(rand())/double(RAND_MAX);
-		}
+		for (int i=0; i<nodes(grid); i++)
+			grid(i) = 1.0-2.0*double(rand())/double(RAND_MAX);
 
 		MMSP::output(grid,filename);
 	}
@@ -46,8 +42,8 @@ template <int dim, typename T> void update(MMSP::grid<dim,T>& grid, int steps)
 
 	for (int step=0; step<steps; step++) {
 		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
-			update(x) = grid(x)-dt*M*(-r*grid(x)+u*pow(grid(x),3)-K*laplacian(grid,x));
+			double phi = grid(i);
+			update(i) = phi-dt*M*(-r*phi+u*pow(phi,3)-K*laplacian(grid,i));
 		}
 		swap(grid,update);
 		ghostswap(grid);

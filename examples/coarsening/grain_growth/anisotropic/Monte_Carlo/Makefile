@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.scalar.hpp
 
 # the program
-graingrowth: graingrowth.cpp $(incdir)/MCgrid.hpp MCgrid.anisotropy.hpp anisotropy.hpp $(core)
+graingrowth: graingrowth.cpp graingrowth.hpp anisotropy.hpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-parallel: graingrowth.cpp $(incdir)/MCgrid.hpp MCgrid.anisotropy.hpp anisotropy.hpp $(core)
+parallel: graingrowth.cpp graingrowth.hpp anisotropy.hpp $(core)
 	$(pcompiler) $(pflags) $< -o $@
 
 clean:

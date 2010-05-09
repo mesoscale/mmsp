@@ -41,10 +41,7 @@ void generate(int dim, const char* filename)
 	if (dim==2) {
 		MMSP::grid<2,double> grid(1,0,128,0,128);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
-			grid(x) = 0.0;
-		}
+		for (int i=0; i<nodes(grid); i++) grid(i) = 0.0;
 
 		MMSP::output(grid,filename);
 	}
@@ -52,18 +49,15 @@ void generate(int dim, const char* filename)
 	if (dim==3) {
 		MMSP::grid<3,double> grid(1,0,64,0,64,0,64);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
-			grid(x) = 0.0;
-		}
+		for (int i=0; i<nodes(grid); i++) grid(i) = 0.0;
 
 		MMSP::output(grid,filename);
 	}
 }
 
-template <int dim, typename T> void update(MMSP::grid<dim,T>& grid, int steps)
+template <int dim> void update(MMSP::grid<dim,double>& grid, int steps)
 {
-	MMSP::grid<dim,T> update(grid);
+	MMSP::grid<dim,double> update(grid);
 
 	double r = 1.0;
 	double u = 1.0;
@@ -71,12 +65,13 @@ template <int dim, typename T> void update(MMSP::grid<dim,T>& grid, int steps)
 	double M = 1.0;
 	double dt = 0.01;
 	double kT = 0.01;
+	double dV = 1.0;
 
 	for (int step=0; step<steps; step++) {
 		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
-			T noise = gaussian(0.0,sqrt(2.0*kT*M/(dt*volume(grid,x))));
-			update(x) = grid(x)-dt*M*(-r*grid(x)+u*pow(grid(x),3)-K*laplacian(grid,x))+dt*noise;
+			double phi = grid(i);
+			double noise = gaussian(0.0,sqrt(2.0*kT/(dt*dV)));
+			update(i) = phi-dt*M*(-r*phi+u*pow(phi,3)-K*laplacian(grid,i)+noise);
 		}
 		swap(grid,update);
 		ghostswap(grid);

@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.vector.hpp
 
 # the program
-graingrowth: graingrowth.cpp $(incdir)/PFgrid.hpp PFgrid.isotropy.hpp $(core)
+graingrowth: graingrowth.cpp graingrowth.hpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-parallel: graingrowth.cpp $(incdir)/PFgrid.hpp PFgrid.isotropy.hpp $(core)
+parallel: graingrowth.cpp graingrowth.hpp $(core)
 	$(pcompiler) $(pflags) $< -o $@
 
 clean:

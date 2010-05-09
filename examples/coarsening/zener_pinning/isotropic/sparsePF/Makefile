@@ -1,5 +1,5 @@
 # Makefile
-# GNU makefile for example isotropic Zener pinning code
+# GNU makefile for example Zener pinning code
 # Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 # includes
@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.sparse.hpp
 
 # the program
-zener: zener.cpp $(incdir)/sparsePF.hpp sparsePF.isotropy.hpp $(core)
+zener: zener.cpp zener.hpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-parallel: zener.cpp $(incdir)/sparsePF.hpp sparsePF.isotropy.hpp $(core)
+parallel: zener.cpp zener.hpp $(core)
 	$(pcompiler) $(pflags) $< -o $@
 
 clean:

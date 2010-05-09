@@ -425,77 +425,7 @@ public:
 		return *p;
 	}
 
-	T& operator()(int x, ...) const
-	{
-		va_list list;
-		va_start(list,x);
-
-		T* p = data;
-		check_boundary(x,x0[0],x1[0],b0[0],b1[0]);
-		p += (x-s0[0])*sx[0];
-
-		for (int i=1; i<dim; i++) {
-			x = va_arg(list,int);
-			check_boundary(x,x0[i],x1[i],b0[i],b1[i]);
-			p += (x-s0[i])*sx[i];
-		}
-
-		va_end(list);
-		return *p;
-	}
-
-
-	// math functions
-	T lap(MMSP::vector<int> x) const
-	{
-		const grid& GRID = *this;
-		MMSP::vector<int> s(dim,0); s[0] = 1;
-		T laplacian = (1.0/(dx[0]*dx[0]))*(GRID(x+s)-2.0*GRID(x)+GRID(x-s));
-
-		for (int i=1; i<dim; i++) {
-			MMSP::vector<int> s(dim,0); s[i] = 1;
-			laplacian += (1.0/(dx[i]*dx[i]))*(GRID(x+s)-2.0*GRID(x)+GRID(x-s));
-		}
-		return laplacian;
-	}
-
-	T laplacian(MMSP::vector<int> x) const {return lap(x);}
-
-	MMSP::vector<T> grad(MMSP::vector<int> x) const
-	{
-		const grid& GRID = *this;
-		MMSP::vector<T> gradient(dim);
-		for (int i=0; i<dim; i++) {
-			MMSP::vector<int> s(dim,0); s[i] = 1;
-			gradient[i] = (1.0/(2.0*dx[i]))*(GRID(x+s)-GRID(x-s));
-		}
-		return gradient;
-	}
-
-	MMSP::vector<T> gradient(MMSP::vector<int> x) const {return grad(x);}
-
-	T div(MMSP::vector<int> x) const
-	{
-		const grid& GRID = *this;
-		MMSP::vector<int> s(dim,0); s[0] = 1;
-		T divergence = (1.0/(2.0*dx[0]))*(GRID(x+s)-GRID(x-s));
-
-		for (int i=1; i<dim; i++) {
-			MMSP::vector<int> s(dim,0); s[i] = 1;
-			divergence += (1.0/(2.0*dx[i]))*(GRID(x+s)-GRID(x-s));
-		}
-		return divergence;
-	}
-
-	T divergence(MMSP::vector<int> x) const {return div(x);}
-
-	double volume(MMSP::vector<int> x) const
-	{
-		double volume = 1.0;
-		for (int i=0; i<dim; i++)
-			volume *= dx[i];
-		return volume;
-	}
+	T& operator()(int i) const {return data[i];}
 
 
 	// position utility function
@@ -1084,27 +1014,149 @@ protected:
 	int n1[dim];    // neighbor processor at x1
 };
 
+
 // math functions
-template <int dim, typename T> T lap(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
-	{return GRID.lap(x);}
+template <int dim, typename T> T laplacian(const grid<dim,T>& GRID, const vector<int>& x)
+{
+	T laplacian = 0.0;
+	MMSP::vector<int> s = x;
+	const T& y = GRID(x);
 
-template <int dim, typename T> T laplacian(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
-	{return GRID.laplacian(x);}
+	for (int i=0; i<dim; i++) {
+		s[i] += 1;
+		const T& yh = GRID(s);
+		s[i] -= 2;
+		const T& yl = GRID(s);
+		s[i] += 1;
+		
+		double weight = 1.0/(dx(GRID,i)*dx(GRID,i));
+		laplacian += weight*(yh-2.0*y+yl);
+	}
+	return laplacian;
+}
 
-template <int dim, typename T> MMSP::vector<T> grad(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
-	{return GRID.grad(x);}
+template <int dim, typename T> vector<T> laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x)
+{
+	int N = fields(GRID);
+	vector<T> laplacian(N,0.0);
+	vector<int> s = x;
 
-template <int dim, typename T> MMSP::vector<T> gradient(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
-	{return GRID.gradient(x);}
+	const vector<T>& y = GRID(x);
 
-template <int dim, typename T> T div(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
-	{return GRID.div(x);}
+	for (int i=0; i<dim; i++) {
+		s[i] += 1;
+		const vector<T>& yh = GRID(s);
+		s[i] -= 2;
+		const vector<T>& yl = GRID(s);
+		s[i] += 1;
+		
+		double weight = 1.0/(dx(GRID,i)*dx(GRID,i));
+		for (int j=0; j<N; j++)
+			laplacian[j] += weight*(yh[j]-2.0*y[j]+yl[j]);
+	}
+	return laplacian;
+}
 
-template <int dim, typename T> T divergence(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
-	{return GRID.divergence(x);}
+template <int dim, typename T> sparse<T> laplacian(const grid<dim,sparse<T> >& GRID, const vector<int>& x)
+{
+	sparse<T> laplacian;
+	vector<int> s = x;
 
-template <int dim, typename T> double volume(const grid<dim,T>& GRID, const MMSP::vector<int>& x)
-	{return GRID.volume(x);}
+	const sparse<T>& y = GRID(x);
+
+	for (int i=0; i<dim; i++) {
+		s[i] += 1;
+		const sparse<T>& yh = GRID(s);
+		s[i] -= 2;
+		const sparse<T>& yl = GRID(s);
+		s[i] += 1;
+		
+		double weight = 1.0/(dx(GRID,i)*dx(GRID,i));
+		laplacian += weight*(yh-2.0*y+yl);
+	}
+	return laplacian;
+}
+
+template <int dim, typename T> T laplacian(const grid<dim,T>& GRID, int i)
+{
+	vector<int> x = GRID.position(i);
+	return laplacian(GRID,x);
+}
+
+template <int dim, typename T> vector<T> laplacian(const grid<dim,vector<T> >& GRID, int i)
+{
+	vector<int> x = GRID.position(i);
+	return laplacian(GRID,x);
+}
+
+template <int dim, typename T> sparse<T> laplacian(const grid<dim,sparse<T> >& GRID, int i)
+{
+	vector<int> x = GRID.position(i);
+	return laplacian(GRID,x);
+}
+
+template <int dim, typename T> vector<T> gradient(const grid<dim,T>& GRID, const vector<int>& x)
+{
+	vector<T> gradient(dim);
+	vector<int> s = x;
+
+	for (int i=0; i<dim; i++) {
+		s[i] += 1;
+		const T& yh = GRID(s);
+		s[i] -= 2;
+		const T& yl = GRID(s);
+		s[i] += 1;
+
+		double weight = 1.0/(2.0*dx(GRID,i));
+		gradient[i] = weight*(yh-yl);
+	}
+	return gradient;
+}
+
+template <int dim, typename T> vector<T> grad(const grid<dim,T>& GRID, const vector<int>& x) {return gradient(GRID,x);}
+
+template <int dim, typename T> T divergence(const grid<dim,T>& GRID, const vector<int>& x)
+{
+	T divergence = 0.0;
+	vector<int> s = x;
+
+	for (int i=0; i<dim; i++) {
+		s[i] += 1;
+		const T& yh = GRID(s);
+		s[i] -= 2;
+		const T& yl = GRID(s);
+		s[i] += 1;
+		
+		double weight = 1.0/(2.0*dx(GRID,i));
+		divergence += weight*(yh-yl);
+	}
+	return divergence;
+}
+
+template <int dim, typename T> vector<T> divergence(const grid<dim,vector<T> >& GRID, const vector<int>& x)
+{
+	vector<T> divergence(dim,0.0);
+	vector<int> s = x;
+
+	int N = length(GRID(x));
+
+	for (int i=0; i<dim; i++) {
+		s[i] += 1;
+		const vector<T>& yh = GRID(s);
+		s[i] -= 2;
+		const vector<T>& yl = GRID(s);
+		s[i] += 1;
+		
+		double weight = 1.0/(2.0*dx(GRID,i));
+		for (int j=0; j<N; j++)
+			divergence[j] += weight*(yh[j]-yl[j]);
+	}
+	return divergence;
+}
+
+template <int dim, typename T> T div(const grid<dim,T>& GRID, const vector<int>& x) {return divergence(GRID,x);}
+
+template <int dim, typename T> vector<T> div(const grid<dim,vector<T> >& GRID, const vector<int>& x) {return divergence(GRID,x);}
 
 // position utility function
 template <int dim, typename T> MMSP::vector<int> position(const grid<dim,T>& GRID, int index)

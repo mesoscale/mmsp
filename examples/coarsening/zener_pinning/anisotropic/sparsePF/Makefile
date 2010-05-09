@@ -1,5 +1,5 @@
 # Makefile
-# GNU makefile for example grain growth code
+# GNU makefile for example Zener pinning code
 # Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 # includes
@@ -18,11 +18,11 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.sparse.hpp
 
 # the program
-graingrowth: graingrowth.cpp graingrowth.hpp anisotropy.hpp $(core)
+zener: zener.cpp zener.hpp anisotropy.hpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-parallel: graingrowth.cpp graingrowth.hpp anisotropy.hpp $(core)
+parallel: zener.cpp zener.hpp anisotropy.hpp $(core)
 	$(pcompiler) $(pflags) $< -o $@
 
 clean:
-	rm -f graingrowth parallel
+	rm -f zener parallel

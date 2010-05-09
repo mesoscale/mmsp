@@ -1,9 +1,0 @@
-This directory contains MMSP code for grain growth simulations using a number of different methods.  The models and notation used here (phase field, sparse phase field, Monte Carlo) come from the cited below.
-
-Send questions or comments to gruberja@gmail.com (Jason Gruber)
-
-References:
-
-1. L-Q Chen and W Yang, "Computer simulation of the domain dynamics of a quenched system with a large number of nonconserved order parameters: the grain-growth kinetics," Physical Review B 50:21;15752-15756 (1994).
-2. J Gruber, N Ma, Y Wang, AD Rollett, and GS Rohrer, "Sparse data structure and algorithm for the phase field method," Modelling and Simulation in Materials Science and Engineering 14:7;1189-1195 (2006).
-3. J Gruber, HM Miller, TD Hoffmann, GS Rohrer, and AD Rollett, "Misorientation texture development during grain growth. Part 1: Simulation and experiment," Acta Materialia 57:20;6102-6112 (2009).

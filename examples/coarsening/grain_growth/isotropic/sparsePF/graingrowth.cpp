@@ -1,14 +1,14 @@
 // graingrowth.cpp 
-// isotropic sparse phase field (sparsePF) grain growth using MMSP
+// Isotropic sparse phase field (sparsePF) grain growth example code
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#include"sparsePF.isotropy.hpp"
+#include"graingrowth.hpp"
 
 std::string PROGRAM = "graingrowth";
-std::string MESSAGE = "isotropic sparse phase field (sparsePF) grain growth using MMSP";
+std::string MESSAGE = "Isotropic sparse phase field (sparsePF) grain growth example code";
 
-typedef MMSP::sparsePF2D GRID2D;
-typedef MMSP::sparsePF3D GRID3D;
+typedef MMSP::grid<2,MMSP::sparse<double> > GRID2D;
+typedef MMSP::grid<3,MMSP::sparse<double> > GRID3D;
 
 #include"MMSP.main.hpp"
 

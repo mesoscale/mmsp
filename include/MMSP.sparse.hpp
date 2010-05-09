@@ -9,35 +9,32 @@
 namespace MMSP{
 
 template <typename T>
-struct item{
-	int index;
-	T value;
-};
+struct item{int index; T value;};
 
 template <typename T>
 class sparse{
 public:
 	// constructors / destructor
-	sparse() {size=0; data=reinterpret_cast<item<T>*>(malloc(sizeof(item<T>)));}
-	~sparse() {free(data);}
+	sparse() {size=0; data=NULL;}
+	~sparse() {delete [] data;}
 
 	// assignment operator
 	sparse& operator=(const sparse& x)
 	{
-		free(data);
+		delete [] data;
 		size = x.length();
-		data=reinterpret_cast<item<T>*>(malloc(size*sizeof(item<T>)));
+		data = new item<T>[size];
 		memcpy(data,x.data,size*sizeof(item<T>));
 		return *this;
 	}
 	template <typename U> sparse& operator=(const sparse<U>& x)
 	{
-		free(data);
+		delete [] data;
 		size = x.length();
-		data=reinterpret_cast<item<T>*>(malloc(size*sizeof(item<T>)));
+		data = new item<T>[size];
 		for (int i=0; i<size; i++) {
-			data[i].index = x.index(i);
-			data[i].value = static_cast<T>(x.value(i));
+			data[i].index = x.data[i].index;
+			data[i].value = static_cast<T>(x.data[i].value);
 		}
 		return *this;
 	}
@@ -48,20 +45,17 @@ public:
 		for (int i=0; i<size; i++)
 			if (data[i].index==index)
 				return data[i].value;
-		if (size==0) {
-			size = 1;
-			data[0].index = index;
-			data[0].value = static_cast<T>(0);
-			return data[0].value;
-		}
-		else {
-			size += 1;
-			data = reinterpret_cast<item<T>*>(realloc(data,size*sizeof(item<T>)));
-			item<T>& last = data[size-1];
-			last.index = index;
-			last.value = static_cast<T>(0);
-			return last.value;
-		}
+
+		item<T>* temp = new item<T>[size];
+		memcpy(temp,data,size*sizeof(item<T>));
+		delete [] data;
+		data = new item<T>[size+1];
+		memcpy(data,temp,size*sizeof(item<T>));
+		delete [] temp;
+		size += 1;
+		data[size-1].index = index;
+		data[size-1].value = static_cast<T>(0);
+		return data[size-1].value;
 	}
 
 	T operator[](int index) const
@@ -86,7 +80,8 @@ public:
 	int from_buffer(const char* buffer)
 	{
 		memcpy(&size,buffer,sizeof(size));
-		data = reinterpret_cast<item<T>*>(realloc(data,size*sizeof(item<T>)));
+		delete [] data;
+		data = new item<T>[size];
 		memcpy(data,buffer+sizeof(size),size*sizeof(item<T>));
 		return sizeof(size)+size*sizeof(item<T>);
 	}
@@ -100,7 +95,8 @@ public:
 	void read(std::ifstream& file)
 	{
 		file.read(reinterpret_cast<char*>(&size),sizeof(size));
-		data = reinterpret_cast<item<T>*>(realloc(data,size*sizeof(item<T>)));
+		delete [] data;
+		data = new item<T>[size];
 		file.read(reinterpret_cast<char*>(data),size*sizeof(item<T>));
 	}
 
@@ -154,44 +150,52 @@ template <typename T> std::string name(const sparse<T>& s) {return std::string("
 template <typename T, typename U> sparse<T>& operator+=(sparse<T>& x, const sparse<U>& y)
 {
 	int N = y.length();
-	for (int i=0; i<N; i++) x.set(y.index(i)) += y.value(i);
+	for (int i=0; i<N; i++)
+		x.set(y.index(i)) += static_cast<T>(y.value(i));
 	return x;
 }
 template <typename T, typename U> sparse<T> operator+(const sparse<T>& x, const sparse<U>& y)
 {
 	sparse<T> z;
 	int N1 = x.length();
-	for (int i=0; i<N1; i++) z.set(x.index(i)) += x.value(i);
+	for (int i=0; i<N1; i++)
+		z.set(x.index(i)) += static_cast<T>(x.value(i));
 	int N2 = y.length();
-	for (int i=0; i<N2; i++) z.set(y.index(i)) += y.value(i);
+	for (int i=0; i<N2; i++)
+		z.set(y.index(i)) += static_cast<T>(y.value(i));
 	return z;
 }
 template <typename T, typename U> sparse<T>& operator-=(sparse<T>& x, const sparse<U>& y)
 {
 	int N = y.length();
-	for (int i=0; i<N; i++) x.set(y.index(i)) -= y.value(i);
+	for (int i=0; i<N; i++)
+		x.set(y.index(i)) -= static_cast<T>(y.value(i));
 	return x;
 }
 template <typename T, typename U> sparse<T> operator-(const sparse<T>& x, const sparse<U>& y)
 {
 	sparse<T> z;
 	int N1 = x.length();
-	for (int i=0; i<N1; i++) z.set(x.index(i)) -= x.value(i);
+	for (int i=0; i<N1; i++)
+		z.set(x.index(i)) += static_cast<T>(x.value(i));
 	int N2 = y.length();
-	for (int i=0; i<N2; i++) z.set(y.index(i)) -= y.value(i);
+	for (int i=0; i<N2; i++)
+		z.set(y.index(i)) -= static_cast<T>(y.value(i));
 	return z;
 }
 template <typename T, typename U> sparse<T>& operator*=(vector<T>& x, const U& value)
 {
 	int N = x.length();
-	for (int i=0; i<N; i++) x.set(x.index(i)) *= static_cast<T>(value);
+	for (int i=0; i<N; i++)
+		x.set(x.index(i)) *= static_cast<T>(value);
 	return x;
 }
 template <typename T, typename U> sparse<T> operator*(const U& value, const sparse<T>& x)
 {
 	sparse<T> z;
 	int N = x.length();
-	for (int i=0; i<N; i++) z.set(x.index(i)) *= static_cast<T>(value); 
+	for (int i=0; i<N; i++)
+		z.set(x.index(i)) = static_cast<T>(value)*x.value(i); 
 	return z;
 }
 
@@ -258,15 +262,15 @@ template <int ind, typename T> std::string name(const target<0,ind,sparse<T> >& 
 
 // numerical operators
 template <int ind, typename T, typename U>
-sparse<T>& operator+=(target<0,ind,sparse<T> >& x, const target<0,ind,sparse<U> >& y) {return operator+=(*(x.data),*(y.data));}
+sparse<T>& operator+=(target<0,ind,sparse<T> > x, const target<0,ind,sparse<U> >& y) {return operator+=(*(x.data),*(y.data));}
 template <int ind, typename T, typename U>
-sparse<T> operator+(const target<0,ind,sparse<T> >& x, const target<0,ind,sparse<U> >& y) {return operator+(*(x.data),*(y.data));}
+sparse<T> operator+(const target<0,ind,sparse<T> > x, const target<0,ind,sparse<U> >& y) {return operator+(*(x.data),*(y.data));}
 template <int ind, typename T, typename U>
-sparse<T>& operator-=(target<0,ind,sparse<T> >& x, const target<0,ind,sparse<U> >& y) {return operator-=(*(x.data),*(y.data));}
+sparse<T>& operator-=(target<0,ind,sparse<T> > x, const target<0,ind,sparse<U> >& y) {return operator-=(*(x.data),*(y.data));}
 template <int ind, typename T, typename U>
-sparse<T> operator-(const target<0,ind,sparse<T> >& x, const target<0,ind,sparse<U> >& y) {return operator-(*(x.data),*(y.data));}
+sparse<T> operator-(const target<0,ind,sparse<T> > x, const target<0,ind,sparse<U> >& y) {return operator-(*(x.data),*(y.data));}
 template <int ind, typename T, typename U>
-sparse<T>& operator*=(target<0,ind,sparse<T> >& x, const U& value) {return operator*=(*(x.data),value);}
+sparse<T>& operator*=(target<0,ind,sparse<T> > x, const U& value) {return operator*=(*(x.data),value);}
 template <int ind, typename T, typename U>
 sparse<T> operator*(const U& value, const target<0,ind,sparse<T> >& x) {return operator*(value,*(x.data));}
 

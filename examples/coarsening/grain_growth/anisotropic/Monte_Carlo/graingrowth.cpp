@@ -1,14 +1,14 @@
 // graingrowth.cpp 
-// anisotropic Monte Carlo grain growth using MMSP
+// Anisotropic Monte Carlo grain growth example code
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#include"MCgrid.anisotropy.hpp"
+#include"graingrowth.hpp"
 
 std::string PROGRAM = "graingrowth";
-std::string MESSAGE = "anisotropic Monte Carlo grain growth using MMSP";
+std::string MESSAGE = "Anisotropic Monte Carlo grain growth example code";
 
-typedef MMSP::MCgrid2D GRID2D;
-typedef MMSP::MCgrid3D GRID3D;
+typedef MMSP::grid<2,int> GRID2D;
+typedef MMSP::grid<3,int> GRID3D;
 
 #include"MMSP.main.hpp"
 

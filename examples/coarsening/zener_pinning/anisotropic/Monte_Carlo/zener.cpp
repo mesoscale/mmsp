@@ -1,14 +1,14 @@
 // zener.cpp 
-// anisotropic Monte Carlo model for Zener pinning using MMSP
+// Anisotropic Monte Carlo Zener pinning example code
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#include"MCgrid.anisotropy.hpp"
+#include"zener.hpp"
 
 std::string PROGRAM = "zener";
-std::string MESSAGE = "anisotropic Monte Carlo model for Zener pinning using MMSP";
+std::string MESSAGE = "Anisotropic Monte Carlo Zener pinning example code";
 
-typedef MMSP::MCgrid2D GRID2D;
-typedef MMSP::MCgrid3D GRID3D;
+typedef MMSP::grid<2,int> GRID2D;
+typedef MMSP::grid<3,int> GRID3D;
 
 #include"MMSP.main.hpp"
 

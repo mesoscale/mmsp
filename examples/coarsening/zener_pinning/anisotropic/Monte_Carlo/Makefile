@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.scalar.hpp
 
 # the program
-zener: zener.cpp $(incdir)/MCgrid.hpp MCgrid.anisotropy.hpp anisotropy.hpp $(core)
+zener: zener.cpp zener.hpp anisotropy.hpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-parallel: zener.cpp $(incdir)/MCgrid.hpp MCgrid.anisotropy.hpp anisotropy.hpp $(core)
+parallel: zener.cpp zener.hpp anisotropy.hpp $(core)
 	$(pcompiler) $(pflags) $< -o $@
 
 clean:
