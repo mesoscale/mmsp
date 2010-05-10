@@ -814,6 +814,7 @@ public:
 						char* buffer = new char[size];
 						MPI::COMM_WORLD.Recv(buffer,size,MPI_CHAR,i,500);
 						GRID.from_buffer(buffer,min,max);
+						delete [] buffer;
 					}
 				}
 
