@@ -425,16 +425,32 @@ public:
 		return *p;
 	}
 
-	T& operator()(int i) const {return data[i];}
+	T& operator()(int i) const
+	{
+		#ifdef MPI_VERSION
+		int x[dim];
+		for (int j=0; j<dim; j++) {
+			int n = i/xx[j];
+			x[j] = n+x0[j];
+			i -= n*xx[j];
+		}
+		i = 0;
+		for (int j=0; j<dim; j++)
+			i += (x[j]-s0[j])*sx[j];
+		#endif
+
+		return data[i];
+	}
 
 
 	// position utility function
-	MMSP::vector<int> position(int index) const
+	MMSP::vector<int> position(int i) const
 	{
 		MMSP::vector<int> x(dim);
-		for (int i=0; i<dim; i++) {
-			x[i] = x0[i]+index/xx[i];
-			index -= x[i]*xx[i];
+		for (int j=0; j<dim; j++) {
+			int n = i/xx[j];
+			x[j] = n+x0[j];
+			i -= n*xx[j];
 		}
 		return x;
 	}
@@ -609,10 +625,9 @@ public:
 			input>>g0[i]>>g1[i];
 
 		// set number of ghosts
-		ghosts = 0;
-
-		#ifdef MPI_VERSION
 		ghosts = GHOSTS;
+		#ifndef MPI_VERSION
+		ghosts = 0;
 		#endif
 
 		// setup grid parameters
@@ -632,7 +647,11 @@ public:
 
 	void output(const char* filename) const
 	{
-		#ifndef MPI_VERSION
+		#ifdef MPI_VERSION
+		int id = MPI::COMM_WORLD.Get_rank();
+		int np = MPI::COMM_WORLD.Get_size();
+		#endif
+
 		// file open error check
 		std::ofstream output(filename);
 		if (!output) {
@@ -640,6 +659,10 @@ public:
 			std::cerr<<filename<<"."<<std::endl;
 			exit(-1);
 		}
+
+		#ifdef MPI_VERSION
+		if (id==0) {
+		#endif
 
 		// write grid data type
 		std::string type = name(*this);
@@ -658,38 +681,8 @@ public:
 		// write cell spacing
 		for (int i=0; i<dim; i++)
 			output<<dx[i]<<'\n';
-		#endif
 
 		#ifdef MPI_VERSION
-		int id = MPI::COMM_WORLD.Get_rank();
-		int np = MPI::COMM_WORLD.Get_size();
-
-		std::ofstream output(filename);
-		if (id==0) {
-			// file open error check
-			if (!output) {
-				std::cerr<<"File output error: could not open ";
-				std::cerr<<filename<<"."<<std::endl;
-				exit(-1);
-			}
-
-			// write grid data type
-			std::string type = name(*this);
-			output<<type<<'\n';
-
-			// write grid dimension
-			output<<dim<<'\n';
-
-			// write number of fields
-			output<<fields<<'\n';
-
-			// write grid size
-			for (int i=0; i<dim; i++)
-				output<<g0[i]<<" "<<g1[i]<<'\n';
-
-			// write cell spacing
-			for (int i=0; i<dim; i++)
-				output<<dx[i]<<'\n';
 		}
 		#endif
 
