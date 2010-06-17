@@ -176,6 +176,74 @@ std::string name(const float& value) {return "float";}
 std::string name(const double& value) {return "double";}
 std::string name(const long double& value) {return "long double";}
 
+// mathematical operations
+template <typename T> T max(const T& x, const T& y) {return x>y?x:y;}
+template <typename T> T min(const T& x, const T& y) {return x<y?x:y;}
+
+// global reducing function
+template <typename T> T global(T& value, const char* operation)
+{
+	// initialize global value
+	T global = value;
+
+	#ifdef MPI_VERSION
+	int id = MPI::COMM_WORLD.Get_rank();
+	int np = MPI::COMM_WORLD.Get_size();
+
+	if (id==0) {
+		// receive local values
+		for (int i=1; i<np; i++) {
+			T temp;
+			int size;
+			MPI::COMM_WORLD.Recv(&size,1,MPI_INT,i,100);
+			char* buffer = new char[size];
+			MPI::COMM_WORLD.Recv(buffer,size,MPI_CHAR,i,200);
+			from_buffer(temp,buffer);
+			delete [] buffer;
+
+			// perform operation
+			if (operation=="add" or operation=="sum")
+				global += temp;
+			else if (operation=="min" or operation=="minimum")
+				global = min(global,temp);
+			else if (operation=="max" or operation=="maximum")
+				global = max(global,temp);
+		}
+
+		// send global value
+		for (int i=1; i<np; i++) {
+			int size = buffer_size(global);
+			MPI::COMM_WORLD.Send(&size,1,MPI_INT,i,300);
+			char* buffer = new char[size];
+			to_buffer(global,buffer);
+			MPI::COMM_WORLD.Send(buffer,size,MPI_CHAR,i,400);
+			delete [] buffer;
+		}
+	}
+
+	else {
+		// send local value
+		int size = buffer_size(value);
+		MPI::COMM_WORLD.Send(&size,1,MPI_INT,0,100);
+		char* buffer = new char[size];
+		to_buffer(value,buffer);
+		MPI::COMM_WORLD.Send(buffer,size,MPI_CHAR,0,200);
+		delete [] buffer;
+
+		// receive global value
+		MPI::COMM_WORLD.Recv(&size,1,MPI_INT,0,300);
+		buffer = new char[size];
+		MPI::COMM_WORLD.Recv(buffer,size,MPI_CHAR,0,400);
+		from_buffer(global,buffer);
+		delete [] buffer;
+	}
+
+	MPI::COMM_WORLD.Barrier();
+	#endif
+
+	return global;
+}
+
 } // namespace MMSP
 
 #endif

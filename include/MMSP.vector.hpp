@@ -73,9 +73,21 @@ public:
 	}
 
 	// buffer I/O functions
-	int buffer_size() const {return size*sizeof(T);}
-	int to_buffer(char* buffer) const {memcpy(buffer,data,size*sizeof(T)); return size*sizeof(T);}
-	int from_buffer(const char* buffer) {memcpy(data,buffer,size*sizeof(T)); return size*sizeof(T);}
+	int buffer_size() const {return sizeof(size)+size*sizeof(T);}
+	int to_buffer(char* buffer) const 
+	{
+		memcpy(buffer,&size,sizeof(size));
+		memcpy(buffer+sizeof(size),data,size*sizeof(T));
+		return sizeof(size)+size*sizeof(T);
+	}
+	int from_buffer(const char* buffer)
+	{
+		delete [] data;
+		memcpy(&size,buffer,sizeof(size));
+		data = new T[size];
+		memcpy(data,buffer+sizeof(size),size*sizeof(T));
+		return sizeof(size)+size*sizeof(T);
+	}
 
 	// file I/O functions
 	void write(std::ofstream& file) const {file.write(reinterpret_cast<const char*>(data),size*sizeof(T));}
@@ -173,7 +185,23 @@ template <typename T, typename U> void append(vector<T>& v, const U& value) {v.a
 template <typename T, typename U> void append(vector<T>& v, const vector<U>& w) {v.append(w);}
 template <typename T> std::string name(const vector<T>& s) {return std::string("vector:")+name(T());}
 
-// numerical operators
+// mathematical operators
+template <typename T> vector<T> min(const vector<T>& x, const vector<T>& y)	
+{
+	int N = x.length();
+	vector<T> z(N);
+	for (int i=0; i<N; i++) z[i] = min(x[i],y[i]);
+	return z;
+}
+
+template <typename T> vector<T> max(const vector<T>& x, const vector<T>& y)	
+{
+	int N = x.length();
+	vector<T> z(N);
+	for (int i=0; i<N; i++) z[i] = max(x[i],y[i]);
+	return z;
+}
+
 template <typename T, typename U> vector<T>& operator+=(vector<T>& x, const vector<U>& y)	
 {
 	int N = x.length();
@@ -280,7 +308,11 @@ template <int ind, typename T, typename U> void append(const target<0,ind,vector
 template <int ind, typename T, typename U> void append(const target<0,ind,vector<T> >& v, const vector<U>& w) {v.append(w);}
 template <int ind, typename T> std::string name(const target<0,ind,vector<T> >& s) {return std::string("vector:")+name(T());}
 
-// numerical operators
+// mathematical operators
+template <int ind, typename T>
+vector<T> min(const target<0,ind,vector<T> >& x, const target<0,ind,vector<T> >& y) {return min(*(x.data),*(y.data));}
+template <int ind, typename T>
+vector<T> max(const target<0,ind,vector<T> >& x, const target<0,ind,vector<T> >& y) {return max(*(x.data),*(y.data));}
 template <int ind, typename T, typename U>
 vector<T>& operator+=(target<0,ind,vector<T> >& x, const target<0,ind,vector<U> >& y) {return operator+=(*(x.data),*(y.data));}
 template <int ind, typename T, typename U>

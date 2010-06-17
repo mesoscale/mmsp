@@ -187,9 +187,6 @@ public:
 
 		// read data from file
 		input(filename,GHOSTS,SINGLE);
-
-		// ghostswap if necessary
-		if (not SINGLE) ghostswap();
 	}
 
 	void setup(bool SINGLE=false)
@@ -643,6 +640,9 @@ public:
 
 		// input grid data
 		read(input,GHOSTS);
+
+		// ghostswap if necessary
+		if (not SINGLE) ghostswap();
 	}
 
 	void output(const char* filename) const

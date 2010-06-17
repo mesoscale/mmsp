@@ -147,6 +147,42 @@ template <typename T> T value(const sparse<T>& s, int i) {return s.value(i);}
 template <typename T> std::string name(const sparse<T>& s) {return std::string("sparse:")+name(T());}
 
 // numerical operators
+template <typename T> sparse<T> max(const sparse<T>& x, const sparse<T>& y)	
+{
+	sparse<T> z;
+	int N1 = x.length();
+	for (int i=0; i<N1; i++) {
+		T val = x.value(i);
+		int ind = x.index(i);
+		z.set(ind) = MMSP::max(val,y[ind]);
+	}
+	int N2 = y.length();
+	for (int i=0; i<N2; i++) {
+		T val = y.value(i);
+		int ind = y.index(i);
+		z.set(ind) = MMSP::max(val,x[ind]);
+	}
+	return z;
+}
+
+template <typename T> sparse<T> min(const sparse<T>& x, const sparse<T>& y)	
+{
+	sparse<T> z;
+	int N1 = x.length();
+	for (int i=0; i<N1; i++) {
+		T val = x.value(i);
+		int ind = x.index(i);
+		z.set(ind) = MMSP::min(val,y[ind]);
+	}
+	int N2 = y.length();
+	for (int i=0; i<N2; i++) {
+		T val = y.value(i);
+		int ind = y.index(i);
+		z.set(ind) = MMSP::min(val,x[ind]);
+	}
+	return z;
+}
+
 template <typename T, typename U> sparse<T>& operator+=(sparse<T>& x, const sparse<U>& y)
 {
 	int N = y.length();
@@ -261,6 +297,10 @@ template <int ind, typename T> void swap(const target<0,ind,sparse<T> >& s, cons
 template <int ind, typename T> std::string name(const target<0,ind,sparse<T> >& s) {return std::string("sparse:")+name(T());}
 
 // numerical operators
+template <int ind, typename T>
+sparse<T>& min(target<0,ind,sparse<T> > x, const target<0,ind,sparse<T> >& y) {return min(*(x.data),*(y.data));}
+template <int ind, typename T>
+sparse<T>& max(target<0,ind,sparse<T> > x, const target<0,ind,sparse<T> >& y) {return max(*(x.data),*(y.data));}
 template <int ind, typename T, typename U>
 sparse<T>& operator+=(target<0,ind,sparse<T> > x, const target<0,ind,sparse<U> >& y) {return operator+=(*(x.data),*(y.data));}
 template <int ind, typename T, typename U>
