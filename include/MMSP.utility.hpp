@@ -31,10 +31,10 @@ void Finalize()
 // MMSP boundary conditions
 enum{
 	mirror    = 0,
-	neumann   = 1,
+	Neumann   = 1,
 	periodic  = 2,
 	parallel  = 3,
-	dirichlet = 4
+	Dirichlet = 4
 };
 
 // check_boundary: a utility function that adjusts coordinates

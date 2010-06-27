@@ -226,6 +226,37 @@ This example shows the declaration of an {\tt MMSP::vector} object, and its assi
 While this kind of operation could be handled quite easily with the more traditional subscript operator, note that this code would be much easier to extend to any number of spatial dimensions.
 
 \subsection{Boundary conditions}
+Boundary conditions in \MMSP are handled automatically.  To show what this means, consider the following:
+\begin{shadebox}
+\begin{verbatim}
+    grid<2,double> f(1,0,100,0,100);
+
+    for (int x=xmin(f); x<xmax(f); x++)
+        for (int y=ymin(f); y<ymax(f); y++) {
+            double dfdx = (f[x+1][y]-f[x-1][y])/(2.0*dx(f));
+            ...
+        }
+\end{verbatim}
+\end{shadebox}
+This code traverses each node in the {\tt grid}, computing the derivative along the $x$ axis, among a number of other possible operations.  This is simple enough, but what happens at the {\tt grid} boundaries?  If similar code was written using built-in arrays, it would typically fail with a segmentation fault, and in any case, it certainly wouldn't produce the desired results.  However, with {\tt MMSP} {\tt grid} objects, this isn't a problem; all of the data access operators in \MMSP are cognizant of domain boundaries and always enforce the chosen boundary conditions.
+
+For the code example above, periodic boundary conditions are used.  This is the default boundary condition in \MMSP.  A number of other boundary conditions are possible, including Dirichlet, Neumann, and mirror boundaries.  Parallel processor boundaries are another special type of boundary condition which is not explicitly set by the user.
+
+To change the boundary conditions used for a {\tt grid}, one might use\footnote{Note, as usual, the boundary conditions and ``set'' functions all belong to namespace \MMSP and must be used in the absence of a {\tt using} statement.}
+\begin{shadebox}
+\begin{verbatim}
+    grid<2,double> GRID(1,0,100,0,100);
+
+    // set x-axis boundary conditions
+    b0(GRID,0) = Dirichlet;         // BC at lower x-axis boundary
+    b1(GRID,0) = mirror;            // BC at upper x-axis boundary
+
+    // set y-axis boundary conditions
+    b0(GRID,1) = periodic;          // BC at lower y-axis boundary
+    b1(GRID,1) = periodic;          // BC at upper y-axis boundary
+\end{verbatim}
+\end{shadebox}
+This example demonstrates that the boundary conditions may not only be set independently for each coordinate axis, but that it's also possible to independently set the conditions at the upper and lower boundaries (within reason).
 
 
 
