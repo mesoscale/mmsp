@@ -1,14 +1,14 @@
 % MMSP.chapter2.tex
 
-\chapter{{\tt MMSP} data classes}
+\chapter{\MMSP data classes}
 
 \section{Introduction}
-Aside from the dimension, the other defining characteristic of a {\tt grid} object is the type of data stored at each node or cell.  In {\tt MMSP}, valid {\tt grid} data may be either built-in variable types or one of several {\tt MMSP} data classes.  This chapter presents a more detailed look at using both kinds of data types.
+Aside from the dimension, the other defining characteristic of a {\tt grid} object is the type of data stored at each node or cell.  In \MMSP, valid {\tt grid} data may be either built-in variable types or one of several \MMSP data classes.  This chapter presents a more detailed look at using both kinds of data types.
 
 \section{Common features}
-{\tt MMSP} data classes share a number of common features.  Most importantly, the way we interact with them through functions and symbolic operators has been designed to be as intuitive and self-consistent as possible.  In this section, we list the functions common to all {\tt MMSP} data classes and built-in types, and in following sections we describe additional functions specific to each particular class.
+\MMSP data classes share a number of common features.  Most importantly, the way we interact with them through functions and symbolic operators has been designed to be as intuitive and self-consistent as possible.  In this section, we list the functions common to all \MMSP data classes and built-in types, and in following sections we describe additional functions specific to each particular class.
 
-The member functions common to every {\tt MMSP} data class include
+The member functions common to every \MMSP data class include
 \begin{itemize}
 \item {\tt length()} \\
 This function is used to determine the ``length'' of a given data object.  For example, the length of a {\tt scalar} is always one, the length of a {\tt vector} object is the number of values stored in it, and so on.
@@ -38,7 +38,7 @@ The {\tt read} function reads data from the given {\tt c++ ifstream} object to t
 The {\tt write} function writes the data of the calling object to the the {\tt c++ ofstream} object given in the parameter list.
 
 \item {\tt operator=({\it data\_object})} \\
-The assignment operator is overloaded for all {\tt MMSP} data classes to have the usual ``copy'' behavior.
+The assignment operator is overloaded for all \MMSP data classes to have the usual ``copy'' behavior.
 \end{itemize}
 Each of these functions may be called in either of two ways: as a class member function or as a globally defined function.  In the first case, calls to a member function {\tt f(...)} look like this:
 \begin{center}
@@ -50,15 +50,15 @@ In the second case, the global function {\tt f} is called with a similar syntax,
 \end{center}
 Globally defined functions have the same behavior as their associated grid member function.  The user is free to choose either based on convenience or aesthetics.  Symbolic operators are the only member functions that do not have associated functions.
 
-It is, of course, also possible to use built-in data types such as {\tt int}, {\tt float}, and {\tt double} anywhere an {\tt MMSP} data object might be used.  The functions listed above have been redefined to work for all built-in types, but note that because it's impossible to write member functions for built-ins, only the global function calls may be used.
+It is, of course, also possible to use built-in data types such as {\tt int}, {\tt float}, and {\tt double} anywhere an \MMSP data object might be used.  The functions listed above have been redefined to work for all built-in types, but note that because it's impossible to write member functions for built-ins, only the global function calls may be used.
 
-\section{Using {\tt MMSP} data types}
-All {\tt MMSP} data types are defined as template classes.  Just as a declaration of a {\tt grid} objects requires dimension and data type template parameters, each {\tt MMSP} data class object requires a single template parameter.
+\section{Using \MMSP data types}
+All \MMSP data types are defined as template classes.  Just as a declaration of a {\tt grid} objects requires dimension and data type template parameters, each \MMSP data class object requires a single template parameter.
 
-Most of the time, the user won't work with {\tt MMSP} data types directly, but through nodal data on {\tt grid}s.  It's important to know some of the basic workings of the {\tt MMSP} data classes for this reason.
+Most of the time, the user won't work with \MMSP data types directly, but through nodal data on {\tt grid}s.  It's important to know some of the basic workings of the \MMSP data classes for this reason.
 
 \subsection{The {\tt scalar} class}
-The {\tt scalar} class is essentially a wrapper for built-in data types.  It was defined primarily for consistency, i.e.\ as a complement to the {\\ vector} class discussed below.  {\tt MMSP} does not define any functions for {\tt scalar} objects other than the common functions discussed in the previous section.  However, because a {\tt scalar} object is an instantiation of a class, it is possible to use both the member function and global function calling syntax.
+The {\tt scalar} class is essentially a wrapper for built-in data types.  It was defined primarily for consistency, i.e.\ as a complement to the {\\ vector} class discussed below.  \MMSP does not define any functions for {\tt scalar} objects other than the common functions discussed in the previous section.  However, because a {\tt scalar} object is an instantiation of a class, it is possible to use both the member function and global function calling syntax.
 \begin{shadebox}
 \begin{verbatim}
     // MMSP scalar example
@@ -127,7 +127,7 @@ If a {\tt vector} of nonzero length is {\tt resize}d to a greater length, the or
 \pagebreak
 
 \subsection{The {\tt sparse} class}
-The {\tt MMSP} {\tt sparse} data class contains {\tt vector}-like data, but rather than maintaining a fixed length of data, {\tt sparse} objects grow as values are {\tt set} by the user.  {\tt sparse} data is most useful in situations where a large number of fields are defined, but only a small number of them have values that differ from some ``nominal'' value.
+The \MMSP {\tt sparse} data class contains {\tt vector}-like data, but rather than maintaining a fixed length of data, {\tt sparse} objects grow as values are {\tt set} by the user.  {\tt sparse} data is most useful in situations where a large number of fields are defined, but only a small number of them have values that differ from some ``nominal'' value.
 \begin{shadebox}
 \begin{verbatim}
     // MMSP sparse example
