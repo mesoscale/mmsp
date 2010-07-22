@@ -43,14 +43,11 @@ Programmers familiar with {\tt c++} will notice that there's obviously some \MMS
     int main(int argc, char* argv[])
     {
         Init(argc,argv);
-
-        // etc. 
-    }
 \end{verbatim}
 \end{shadebox}
-Namespaces serve to prevent programming errors and to ensure code reusability, so naturally we should apply {\tt using} statements with care.
+Namespaces serve to prevent programming errors and to ensure code reusability, so naturally we should apply {\tt using} statements with care.  In the examples that follow, we'll sometimes assume a {\tt using} statement has been issued for the sake of brevity.
 
-The observant reader may also notice that we've used some of the stream input/output functions of {\tt c++} without including the requisite {\tt <iostream>} header.  In fact, this header and many other standard {\tt c++} headers are included implicitly thorough the file {\tt MMSP.hpp}.  If you need a particular standard header for your application and aren't sure if it has been included by {\tt MMSP.hpp}, you can always just {\tt \#include} it in your source code without any ill effects.
+The observant reader may notice that we've used some of the stream input/output functions of {\tt c++} without including the requisite {\tt <iostream>} header.  In fact, this header and many other standard {\tt c++} headers are included implicitly thorough the file {\tt MMSP.hpp}.  If you need a particular standard header for your application and aren't sure if it has been included by {\tt MMSP.hpp}, you can always just {\tt \#include} it in your source code without any ill effects.
 
 So that's it as far as the code goes.  This is a source file that may be compiled for both single and parallel simulations of... nothing.  In a moment we will move on to code that actually does something, but for now we should say a few words about compiling the code and running the executable.
 
@@ -83,7 +80,7 @@ which again produces an executable named {\tt hello}.  This time, however, we ne
 \end{shadebox}
 which in this case produces our message four times.  The author sincerely hopes that your experience is this straightforward, but don't count on it!
 
-\section{An example using the {\tt grid} class}
+\section{A {\tt grid} class example}
 In this section, we look at an example that uses the \MMSP {\tt grid} template class, and actually resembles part of a program you might actually use:
 \begin{shadebox}
 \begin{verbatim}
@@ -96,9 +93,9 @@ In this section, we look at an example that uses the \MMSP {\tt grid} template c
 
         grid<2,int> GRID(1,0,100,0,100);
 
-        for (int x=xmin(GRID); x<xmax(GRID); x++)
-            for (int y=ymin(GRID); y<ymax(GRID); y++)
-                GRID[x][y] = x+y;
+        for (int x=x0(GRID); x<x1(GRID); x++)
+            for (int y=y0(GRID); y<y1(GRID); y++)
+                GRID[x][y] = GRID[x+1][y]-GRID[x-1][y];
 
         output(GRID,"testgrid");
 
@@ -114,9 +111,9 @@ Several new features have been introduced in this example.  First, the line
     grid<2,int> GRID(1,0,100,0,100);
 \end{verbatim}
 \end{shadebox}
-constructs the {\tt grid} object.  Objects of the {\tt grid} class take two template arguments, the first being the dimension ({\tt 2}) and the second being the data type ({\tt int}).  In {\tt MMSP}, the dimension of a {\tt grid} can be any (constant) integer greater than zero, while the data type can be any of {\tt c++}'s built-in types or any of the \MMSP data types (to be discussed later).  In other words, \MMSP allows for simulations in arbitrary spatial dimensions, and the type of data stored at each {\tt grid} point is quite flexible.
+constructs the {\tt grid} object.  Objects of the {\tt grid} class take two template arguments (those arguments within {\tt < >}), the first being the dimension ({\tt 2}) and the second being the data type ({\tt int}).  In {\tt MMSP}, the dimension of a {\tt grid} can be any (constant) integer greater than zero, while the data type can be any of {\tt c++}'s built-in types or any of the \MMSP data types (to be discussed later).  In other words, \MMSP allows for simulations in arbitrary spatial dimensions, and the type of data stored at each {\tt grid} point is quite flexible.
 
-The name of the {\tt grid} comes next ({\tt GRID}), followed by constructor arguments in parentheses.  These arguments indicate the total number of fields to create at each node (relevant only for vector-like data types) and the lower and upper limits in the {\tt x} and {\tt y} directions, respectively.  Note that these limits are the {\em global} limits, the portion of a {\tt grid} stored on a given machine may be smaller in parallel programs.  Also note that the limits may be either positive or negative, as long as the upper limit is always larger than the lower limit.
+The name of the {\tt grid} comes next, which in this case is ({\tt GRID}), and is followed by constructor arguments in parentheses.  These arguments indicate the total number of fields to create at each node (relevant only for vector-like data types) and the lower and upper limits in the {\tt x} and {\tt y} directions, respectively.  Like for {\tt c++} arrays, lower {\tt grid} limits are inclusive and upper limits are exclusive, so in this case we have that $0\leq x,y<100$, and a total number of $100$ nodes along each coordinate axis.  Unlike {\tt c++} arrays, the limits may be either positive or negative, as long as the upper limit is always larger than the lower limit.  Note that these limits are the {\em global} limits; they define the size of the entire {\tt grid} object.  The portion of a {\tt grid} that is actually stored on a given machine is usually smaller than this in parallel programs.
 
 To give a sense of how the above generalizes to other dimensions and data types, consider the following:
 \begin{shadebox}
@@ -124,19 +121,24 @@ To give a sense of how the above generalizes to other dimensions and data types,
     grid<3,double> GRID(1,0,128,0,256,0,256);
 \end{verbatim}
 \end{shadebox}
-This statement declares a 3-dimensional {\tt grid} object with size $128\times256\times256$ and the built-in data type {\tt double}.
+This statement declares a 3-dimensional {\tt grid} object with $0\leq x<128$, $0\leq y<256$, $0\leq z<256$, and storage for the built-in data type {\tt double} at each node.
 
-Returning to the example, the next lines iterate through the nodes of the {\tt grid},
+Returning to the example code, the next lines iterate through the nodes of the {\tt grid},
 \begin{shadebox}
 \begin{verbatim}
-    for (int x=xmin(GRID); x<xmax(GRID); x++)
-        for (int y=ymin(GRID); y<ymax(GRID); y++)
-            GRID[x][y] = x+y;
+    for (int x=x0(GRID); x<x1(GRID); x++)
+        for (int y=y0(GRID); y<y1(GRID); y++)
 \end{verbatim}
 \end{shadebox}
-The functions {\tt xmin}, {\tt xmax} and {\tt ymin}, {\tt ymax} have been invoked to retrieve the {\em local} limits in each direction.  As suggested above, the local grid size in a parallel program is always smaller than the global grid size because parallelization in \MMSP is achieved through spatial subdivision.  Use of these functions ensures that we iterate only through the nodes stored by the local process.  While it isn't strictly necessary to use these functions in code meant to be run on a single processor, using them now will make parallelization completely trivial.
+The functions {\tt x0}, {\tt x1} and {\tt y0}, {\tt y1} have been invoked to retrieve the {\em local} limits in each direction.  As suggested above, the local grid size in a parallel program is typically smaller than the global grid size because parallelization in \MMSP is achieved through spatial decomposition.  Use of these functions ensures that we iterate only through the nodes stored by the local process.  While it isn't strictly necessary to use these functions in code meant to be run on a single processor, using them now will make parallelization completely trivial.
 
-Also of note here is the fact that the subscript operator {\tt [ ]} works the same way for \MMSP grid objects as it does for subscripted arrays.  However, we will later see that the \MMSP subscript operators are ``smarter'' in the sense that they're cognizant of boundary conditions and adjust appropriately for calls made to nodes that are out of bounds.  There are also more advanced ways to access {\tt grid} data which we will discuss later.
+The line
+\begin{shadebox}
+\begin{verbatim}
+    GRID[x][y] = GRID[x+1][y]-GRID[x-1][y];
+\end{verbatim}
+\end{shadebox}
+uses subscript operators {\tt [ ]} to set and retrieve data stored at nodes of the {\tt grid}.  The usage of the subscript operator should look familiar to anyone who has programmed in {\tt c}-style languages, and it has the expected effect -- the subscript operator works the same way for \MMSP grid objects as it does for subscripted arrays.  However, we will later see that the \MMSP subscript operators are ``smarter'' in the sense that they're cognizant of boundary conditions and adjust appropriately for calls made to nodes that are out of bounds.  There are also more advanced ways to access {\tt grid} data which we will discuss later.
 
 Finally, the line 
 \begin{shadebox}
@@ -155,13 +157,13 @@ As a point of reference, let's now look at how we might do something similar to 
 
         for (int x=0; x<100; x++)
             for (int y=0; y<100; y++)
-                GRID[x][y] = x+y;
+                GRID[x][y] = GRID[x+1][y]-GRID[x-1][y];
 
         // etc.
     }
 \end{verbatim}
 \end{shadebox}
-This may look considerably simpler, but consider the following: how do we run this code as a parallel process?  The immediate answer is that we introduce MPI funtion calls, but then we also need to decide how to subdivide the grid, how to deal with boundary conditions, how to put the pieces back together when we're done, etc.  And what if we want to change the number of processors or number of nodes in each direction and maintain an optimal subdivision scheme?  Starting from scratch, these operations all require a great deal of code development, whereas all of these are done by \MMSP automatically.
+This may look considerably simpler, but consider the following: how do we run this code as a parallel process?  The immediate answer is that we introduce MPI funtion calls, but then we also need to decide how to subdivide the grid, how to deal with boundary conditions, how to put the pieces back together when we're done, etc.  Then again, what if we want to change the number of processors or number of nodes in each direction and maintain an optimal subdivision scheme?  And what about boundary conditions?  As written, the code will attempt to access data that is out of the bounds of the array.  This will probably lead to runtime errors, or at least some unintentional results.  Additional code needs to be written to remedy this problem.  Starting from scratch, these operations all require a great deal of code development, whereas all of these are done by \MMSP automatically.
 
 
 \section{More examples}
@@ -225,14 +227,54 @@ This example shows the declaration of an {\tt MMSP::vector} object, and its assi
 \end{shadebox}
 While this kind of operation could be handled quite easily with the more traditional subscript operator, note that this code would be much easier to extend to any number of spatial dimensions.
 
+\subsection{File input and output}
+Input and output of {\tt grid} data to a file are performed as follows:
+\begin{shadebox}
+\begin{verbatim}
+    const char* filename = "...";
+    grid<2,double> GRID(1,0,100,0,100);
+
+    // Input grid from file
+    input(GRID,filename);
+
+    // Output grid to file
+    output(GRID,filename);
+\end{verbatim}
+\end{shadebox}
+Note that the second argument to the {\tt input} and {\tt output} functions is a character array of type {\tt char*}.  Error checking does occur when a {\tt grid} is input from a file; attempts to input a {\tt grid} of the wrong dimension or data type will cause \MMSP to produce a error message and exit the code.
+
+To be sure, there's probably only rare occasions when we want to use {\tt input} to overwrite an existing {\tt grid}.  Quite often, though, we want to create a new {\tt grid} object from {\tt grid} data contained within a file.  In this case, we use the {\tt grid} constructor,
+\begin{shadebox}
+\begin{verbatim}
+    const char* filename = "...";
+    grid<2,double> GRID(filename);
+\end{verbatim}
+\end{shadebox}
+which reads {\tt grid} data from the specified file and uses it to construct the {\tt grid} object.
+
+In a later chapter, we discuss the {\tt grid} class in more detail, and in particular, we note that most functions operating on a {\tt grid} can be called in two ways.  This also applies here,
+\begin{shadebox}
+\begin{verbatim}
+    // One way to output a grid...
+    output(GRID,filename);
+
+    // ... and an equivalent way.
+    GRID.output(filename);
+\end{verbatim}
+\end{shadebox}
+The first case uses typical {\tt C} style syntax, while the second case uses the class member function syntax of {\tt C++}.  For now, note that almost all functions that operate on the {\tt grid} class or other \MMSP data classes may be called both ways.
+
+In case you were wondering, all of the code shown above can be used in a parallel program.  In this case, the functions {\tt input} and {\tt output} automatically coordinate I/O tasks over all processors.  The {\tt grid} constructor and the {\tt input} function also perform the task of determining the optimal\footnote{``Optimal'' here means that the subdivision is chosen such that it will produce the fewest number of ghost cells possible, while maintaining as evenly balanced a load as possible.} {\tt grid} subdivision scheme.  
+
+
 \subsection{Boundary conditions}
 Boundary conditions in \MMSP are handled automatically.  To show what this means, consider the following:
 \begin{shadebox}
 \begin{verbatim}
     grid<2,double> f(1,0,100,0,100);
 
-    for (int x=xmin(f); x<xmax(f); x++)
-        for (int y=ymin(f); y<ymax(f); y++) {
+    for (int x=x0(f); x<x1(f); x++)
+        for (int y=y0(f); y<y1(f); y++) {
             double dfdx = (f[x+1][y]-f[x-1][y])/(2.0*dx(f));
             ...
         }
@@ -308,10 +350,9 @@ Now that we have our prototype {\tt main()} function, let's look at the {\tt upd
         grid<2,double> update(GRID);
 
         for (int step=0; step<steps; step++) {
-            for (int x=xmin(GRID); x<xmax(GRID); x++)
-                for (int y=ymin(GRID); y<ymax(GRID); y++) {
-
-                    // replace with "real" computations...
+            for (int x=x0(GRID); x<x1(GRID); x++)
+                for (int y=y0(GRID); y<y1(GRID); y++) {
+                    // replace this with some "real" computation...
                     update[x][y] = GRID[x][y];
                 }
 
@@ -325,7 +366,7 @@ Here we define the {\tt update} function, with its first argument a {\tt grid} o
 
 On the first line within the {\tt update} function, we create a new {\tt grid} object, itself called {\tt update}.  The new {\tt grid} is created using a constructor with {\tt GRID} as its argument.  What this does is it generates a {\tt grid} with the same spatial extent, number of fields, parallel topology, etc.  In other words, the {\tt grid} called {\tt update} is a suitable workspace to store the values of {\tt GRID} for the next time step as we compute them.
 
-Next, we have a loop over all time steps.  Within this loop we iterate through the nodes of {\tt GRID} just as in the example of the previous section.  Again, note that the limiting values of {\tt x} and {\tt y} are obtained by appropriate function calls.  At each node, we would normally perform some meaningful computation to determine the value of {\tt GRID} at the next time step, then store the value in {\tt update}.  Here we simply copy the value of {\tt GRID} at this node to {\tt update}.
+Next, we have a loop over all time steps.  Within this loop we iterate through the nodes of {\tt GRID} just as in the example of the previous section.  The limiting values of {\tt x} and {\tt y} are obtained by appropriate function calls.  At each node, we would normally perform some meaningful computation to determine the value of {\tt GRID} at the next time step, then store the value in {\tt update}.  Here we simply copy the value of {\tt GRID} at this node to {\tt update}.
 
 After computations are performed at each node, we have two more operations.  First, we {\tt swap} the data of {\tt GRID} and {\tt update}.  {\tt GRID} now contains the new values, while {\tt update}, the workspace, contains the old.  Next, a function called {\tt ghostswap} is called with {\tt GRID} as its argument.  For single processor programs, the {\tt ghostswap} function does nothing.  For parallel programs, it performs a coordinated series of ``ghost'' cell data swaps, such that the ghosts associated with the local portion of {\tt GRID} are filled with the appropriate data from all neighboring processors.  And again, while it's not critical to include this line when our intent is to write a single processor program, it will serve us well to include it here because it will allow us to easily parallelize the code later.
 
