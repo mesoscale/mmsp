@@ -42,14 +42,14 @@ enum{
 void check_boundary(int& x, int x0, int x1, int b0, int b1)
 {
 	if (x<x0) {
-		if (b0==neumann or b0==dirichlet) x = x0;
+		if (b0==Neumann or b0==Dirichlet) x = x0;
 		#ifndef MPI_VERSION
 		else if (b0==periodic) x = x1-(x0-x);
 		#endif
 		else if (b0==mirror) x = 2*x0-x;
 	}
 	else if (x>=x1) {
-		if (b1==neumann or b1==dirichlet) x = (x1-1);
+		if (b1==Neumann or b1==Dirichlet) x = (x1-1);
 		#ifndef MPI_VERSION
 		else if (b1==periodic) x = x0+(x-x1);
 		#endif

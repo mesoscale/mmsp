@@ -1,9 +1,8 @@
 // sPF2PF.cpp
-// Convert MMSP sparsePF data format to PFgrid data format
+// Convert sparsePF data to phase field data 
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#include"PFgrid.hpp"
-#include"sparsePF.hpp"
+#include"MMSP.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -89,69 +88,67 @@ int main(int argc, char* argv[])
 	}
 
 	if (dim==1) {
-		MMSP::sparsePF1D grid1(argv[1]);
+		MMSP::grid<1,MMSP::sparse<double> > grid1(argv[1]);
 		int x0 = MMSP::x0(grid1);
 		int x1 = MMSP::x1(grid1);
 
 		int fields = 0;
-		for (int x=x0; x<x1; x++) {
-			int size = MMSP::length(grid1[x]);
-			for (int i=0; i<size; i++) {
-				int index = MMSP::index(grid1[x],i);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			int size = MMSP::length(grid1(i));
+			for (int j=0; j<size; j++) {
+				int index = MMSP::index(grid1(i),j);
 				if (index>fields) fields = index;
 			}
 		}
 		fields += 1;
 
-		MMSP::PFgrid1D grid2(fields,x0,x1,1);
-		for (int x=x0; x<x1; x++) {
-			for (int i=0; i<fields; i++)
-				grid2[x][i] = 0.0;
-			int size = MMSP::length(grid1[x]);
-			for (int i=0; i<size; i++) {
-				int index = MMSP::index(grid1[x],i);
-				double value = MMSP::value(grid1[x],i);
-				grid2[x][index] = value;
+		MMSP::grid<1,MMSP::vector<double> > grid2(fields,x0,x1);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			for (int j=0; j<fields; j++)
+				grid2(i)[j] = 0.0;
+			int size = MMSP::length(grid1(i));
+			for (int j=0; j<size; j++) {
+				int index = MMSP::index(grid1(i),j);
+				double value = MMSP::value(grid1(i),j);
+				grid2(i)[index] = value;
 			}
 		}
 		MMSP::output(grid2,filename.str().c_str());
 	}
 
 	if (dim==2) {
-		MMSP::sparsePF2D grid1(argv[1]);
+		MMSP::grid<2,MMSP::sparse<double> > grid1(argv[1]);
 		int x0 = MMSP::x0(grid1);
 		int x1 = MMSP::x1(grid1);
 		int y0 = MMSP::y0(grid1);
 		int y1 = MMSP::y1(grid1);
 
 		int fields = 0;
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++) {
-				int size = MMSP::length(grid1[x][y]);
-				for (int i=0; i<size; i++) {
-					int index = MMSP::index(grid1[x][y],i);
-					if (index>fields) fields = index;
-				}
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			int size = MMSP::length(grid1(i));
+			for (int j=0; j<size; j++) {
+				int index = MMSP::index(grid1(i),j);
+				if (index>fields) fields = index;
 			}
+		}
 		fields += 1;
 
-		MMSP::PFgrid2D grid2(fields,x0,x1,y0,y1,1);
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++) {
-				for (int i=0; i<fields; i++)
-					grid2[x][y][i] = 0.0;
-				int size = MMSP::length(grid1[x][y]);
-				for (int i=0; i<size; i++) {
-					int index = MMSP::index(grid1[x][y],i);
-					double value = MMSP::value(grid1[x][y],i);
-					grid2[x][y][index] = value;
-				}
+		MMSP::grid<2,MMSP::vector<double> > grid2(fields,x0,x1,y0,y1);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			for (int j=0; j<fields; j++)
+				grid2(i)[j] = 0.0;
+			int size = MMSP::length(grid1(i));
+			for (int j=0; j<size; j++) {
+				int index = MMSP::index(grid1(i),j);
+				double value = MMSP::value(grid1(i),j);
+				grid2(i)[index] = value;
 			}
+		}
 		MMSP::output(grid2,filename.str().c_str());
 	}
 
 	if (dim==3) {
-		MMSP::sparsePF3D grid1(argv[1]);
+		MMSP::grid<3,MMSP::sparse<double> > grid1(argv[1]);
 		int x0 = MMSP::x0(grid1);
 		int x1 = MMSP::x1(grid1);
 		int y0 = MMSP::y0(grid1);
@@ -160,30 +157,26 @@ int main(int argc, char* argv[])
 		int z1 = MMSP::z1(grid1);
 
 		int fields = 0;
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++)
-				for (int z=z0; z<z1; z++) {
-					int size = MMSP::length(grid1[x][y][z]);
-					for (int i=0; i<size; i++) {
-						int index = MMSP::index(grid1[x][y][z],i);
-						if (index>fields) fields = index;
-					}
-				}
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			int size = MMSP::length(grid1(i));
+			for (int j=0; j<size; j++) {
+				int index = MMSP::index(grid1(i),j);
+				if (index>fields) fields = index;
+			}
+		}
 		fields += 1;
 
-		MMSP::PFgrid3D grid2(fields,x0,x1,y0,y1,z0,z1,1);
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++)
-				for (int z=z0; z<z1; z++) {
-					for (int i=0; i<fields; i++)
-						grid2[x][y][z][i] = 0.0;
-					int size = MMSP::length(grid1[x][y][z]);
-					for (int i=0; i<size; i++) {
-						int index = MMSP::index(grid1[x][y][z],i);
-						double value = MMSP::value(grid1[x][y][z],i);
-						grid2[x][y][z][index] = value;
-					}
-				}
+		MMSP::grid<2,MMSP::vector<double> > grid2(fields,x0,x1,y0,y1,z0,z1);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			for (int j=0; j<fields; j++)
+				grid2(i)[j] = 0.0;
+			int size = MMSP::length(grid1(i));
+			for (int j=0; j<size; j++) {
+				int index = MMSP::index(grid1(i),j);
+				double value = MMSP::value(grid1(i),j);
+				grid2(i)[index] = value;
+			}
+		}
 		MMSP::output(grid2,filename.str().c_str());
 	}
 }

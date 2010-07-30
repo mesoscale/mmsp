@@ -1,9 +1,8 @@
 // MC2sPF.cpp
-// Convert MMSP MCgrid data format to sparsePF3D data format
+// Convert Monte Carlo data to sparsePF data 
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#include"MCgrid.hpp"
-#include"sparsePF.hpp"
+#include"MMSP.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -76,7 +75,7 @@ int main(int argc, char* argv[])
 
 	// check for valid MCgrid data
 	if (not scalar_type or not int_type) {
-		std::cerr<<"File input error: data must be of type scalar::int."<<std::endl;
+		std::cerr<<"File input error: data must be of type int or scalar::int."<<std::endl;
 		exit(-1);
 	}
 
@@ -97,36 +96,35 @@ int main(int argc, char* argv[])
 	}
 
 	if (dim==1) {
-		MMSP::MCgrid1D grid1(argv[1]);
+		MMSP::grid<1,int> grid1(argv[1]);
 		int x0 = MMSP::x0(grid1);
 		int x1 = MMSP::x1(grid1);
 
-		MMSP::sparsePF1D grid2(x0,x1,1);
-		for (int x=x0; x<x1; x++) {
-			int index = grid1[x];
-			MMSP::set(grid2[x],index) = 1.0;
+		MMSP::grid<1,MMSP::sparse<double> > grid2(0,x0,x1);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			int index = grid1(i);
+			MMSP::set(grid2(i),index) = 1.0;
 		}
 		MMSP::output(grid2,filename.str().c_str());
 	}
 
 	if (dim==2) {
-		MMSP::MCgrid2D grid1(argv[1]);
+		MMSP::grid<2,int> grid1(argv[1]);
 		int x0 = MMSP::x0(grid1);
 		int x1 = MMSP::x1(grid1);
 		int y0 = MMSP::y0(grid1);
 		int y1 = MMSP::y1(grid1);
 
-		MMSP::sparsePF2D grid2(x0,x1,y0,y1,1);
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++) {
-				int index = grid1[x][y];
-				MMSP::set(grid2[x][y],index) = 1.0;
-			}
+		MMSP::grid<2,MMSP::sparse<double> > grid2(0,x0,x1,y0,y1);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			int index = grid1(i);
+			MMSP::set(grid2(i),index) = 1.0;
+		}
 		MMSP::output(grid2,filename.str().c_str());
 	}
 
 	if (dim==3) {
-		MMSP::MCgrid3D grid1(argv[1]);
+		MMSP::grid<3,int> grid1(argv[1]);
 		int x0 = MMSP::x0(grid1);
 		int x1 = MMSP::x1(grid1);
 		int y0 = MMSP::y0(grid1);
@@ -134,13 +132,11 @@ int main(int argc, char* argv[])
 		int z0 = MMSP::z0(grid1);
 		int z1 = MMSP::z1(grid1);
 
-		MMSP::sparsePF3D grid2(x0,x1,y0,y1,z0,z1,1);
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++) 
-				for (int z=z0; z<z1; z++) {
-					int index = grid1[x][y][z];
-					MMSP::set(grid2[x][y][z],index) = 1.0;
-				}
+		MMSP::grid<3,MMSP::sparse<double> > grid2(0,x0,x1,y0,y1,z0,z1);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			int index = grid1(i);
+			MMSP::set(grid2(i),index) = 1.0;
+		}
 		MMSP::output(grid2,filename.str().c_str());
 	}
 }

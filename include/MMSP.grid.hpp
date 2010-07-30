@@ -73,7 +73,7 @@ template <int dim, typename T>
 class grid{ 
 public:
 	// constructors
-	grid(int FIELDS, int min[dim], int max[dim], int GHOSTS=1, int SINGLE=false)
+	grid(int FIELDS, int min[dim], int max[dim], int GHOSTS=1, bool SINGLE=false)
 	{
 		// set number of fields
 		fields = FIELDS;
@@ -180,13 +180,13 @@ public:
 		}
 	}
 
-	grid(const char* filename, int GHOSTS=1, int SINGLE=false)
+	grid(const char* filename, int GHOSTS=1)
 	{
 		// initialize data
 		data=NULL;
 
 		// read data from file
-		input(filename,GHOSTS,SINGLE);
+		input(filename,GHOSTS);
 	}
 
 	void setup(bool SINGLE=false)

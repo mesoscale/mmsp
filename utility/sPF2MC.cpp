@@ -1,9 +1,8 @@
 // sPF2MC.cpp
-// Convert MMSP sparsePF data format to MCgrid data format
+// Convert sparsePF data to Monte Carlo data 
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#include"MCgrid.hpp"
-#include"sparsePF.hpp"
+#include"MMSP.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -74,7 +73,7 @@ int main(int argc, char* argv[])
 		exit(-1);
 	}
 
-	// check for valid MCgrid data
+	// check for valid sparsePF data
 	if (not sparse_type or not double_type) {
 		std::cerr<<"File input error: data must be of type sparse::double."<<std::endl;
 		exit(-1);
@@ -89,54 +88,53 @@ int main(int argc, char* argv[])
 	}
 
 	if (dim==1) {
-		MMSP::sparsePF1D grid1(argv[1]);
+		MMSP::grid<1,MMSP::sparse<double> > grid1(argv[1]);
 		int x0 = MMSP::x0(grid1);
 		int x1 = MMSP::x1(grid1);
 
-		MMSP::MCgrid1D grid2(x0,x1,1);
-		for (int x=x0; x<x1; x++) {
+		MMSP::grid<1,int> grid2(1,x0,x1);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
 			int index = 0;
 			double max = 0.0;
-			int size = MMSP::length(grid1[x]);
-			for (int i=0; i<size; i++) {
-				double value = MMSP::value(grid1[x],i);
+			int size = MMSP::length(grid1(i));
+			for (int j=0; j<size; j++) {
+				double value = MMSP::value(grid1(i),j);
 				if (value>max) {
 					max = value;
-					index = MMSP::index(grid1[x],i);
+					index = MMSP::index(grid1(i),j);
 				}
 			}
-			grid2[x] = index;
+			grid2(i) = index;
 		}
 		MMSP::output(grid2,filename.str().c_str());
 	}
 
 	if (dim==2) {
-		MMSP::sparsePF2D grid1(argv[1]);
+		MMSP::grid<2,MMSP::sparse<double> > grid1(argv[1]);
 		int x0 = MMSP::x0(grid1);
 		int x1 = MMSP::x1(grid1);
 		int y0 = MMSP::y0(grid1);
 		int y1 = MMSP::y1(grid1);
 
-		MMSP::MCgrid2D grid2(x0,x1,y0,y1,1);
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++) {
-				int index = 0;
-				double max = 0.0;
-				int size = MMSP::length(grid1[x][y]);
-				for (int i=0; i<size; i++) {
-					double value = MMSP::value(grid1[x][y],i);
-					if (value>max) {
-						max = value;
-						index = MMSP::index(grid1[x][y],i);
-					}
+		MMSP::grid<2,int> grid2(1,x0,x1,y0,y1);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			int index = 0;
+			double max = 0.0;
+			int size = MMSP::length(grid1(i));
+			for (int j=0; j<size; j++) {
+				double value = MMSP::value(grid1(i),j);
+				if (value>max) {
+					max = value;
+					index = MMSP::index(grid1(i),j);
 				}
-				grid2[x][y] = index;
 			}
+			grid2(i) = index;
+		}
 		MMSP::output(grid2,filename.str().c_str());
 	}
 
 	if (dim==3) {
-		MMSP::sparsePF3D grid1(argv[1]);
+		MMSP::grid<3,MMSP::sparse<double> > grid1(argv[1]);
 		int x0 = MMSP::x0(grid1);
 		int x1 = MMSP::x1(grid1);
 		int y0 = MMSP::y0(grid1);
@@ -144,22 +142,20 @@ int main(int argc, char* argv[])
 		int z0 = MMSP::z0(grid1);
 		int z1 = MMSP::z1(grid1);
 
-		MMSP::MCgrid3D grid2(x0,x1,y0,y1,z0,z1,1);
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++)
-				for (int z=z0; z<z1; z++) {
-					int index = 0;
-					double max = 0.0;
-					int size = MMSP::length(grid1[x][y][z]);
-					for (int i=0; i<size; i++) {
-						double value = MMSP::value(grid1[x][y][z],i);
-						if (value>max) {
-							max = value;
-							index = MMSP::index(grid1[x][y][z],i);
-						}
-					}
-					grid2[x][y][z] = index;
+		MMSP::grid<3,int> grid2(1,x0,x1,y0,y1,z0,z1);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			int index = 0;
+			double max = 0.0;
+			int size = MMSP::length(grid1(i));
+			for (int j=0; j<size; j++) {
+				double value = MMSP::value(grid1(i),j);
+				if (value>max) {
+					max = value;
+					index = MMSP::index(grid1(i),j);
 				}
+			}
+			grid2(i) = index;
+		}
 		MMSP::output(grid2,filename.str().c_str());
 	}
 }

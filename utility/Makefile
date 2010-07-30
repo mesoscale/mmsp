@@ -26,22 +26,22 @@ mmsp2vti: mmsp2vti.cpp $(core)
 mmsp2pvd: mmsp2pvd.cpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-MC2PF: MC2PF.cpp ../include/MCgrid.hpp ../include/PFgrid.hpp $(core)
+MC2PF: MC2PF.cpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-MC2sPF: MC2sPF.cpp ../include/MCgrid.hpp ../include/sparsePF.hpp $(core)
+MC2sPF: MC2sPF.cpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-PF2MC: PF2MC.cpp ../include/PFgrid.hpp ../include/MCgrid.hpp $(core)
+PF2MC: PF2MC.cpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-PF2sPF: PF2sPF.cpp ../include/PFgrid.hpp ../include/sparsePF.hpp $(core)
+PF2sPF: PF2sPF.cpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-sPF2MC: sPF2MC.cpp ../include/sparsePF.hpp ../include/MCgrid.hpp $(core)
+sPF2MC: sPF2MC.cpp $(core)
 	$(compiler) $(flags) $< -o $@
 
-sPF2PF: sPF2PF.cpp ../include/sparsePF.hpp ../include/PFgrid.hpp $(core)
+sPF2PF: sPF2PF.cpp $(core)
 	$(compiler) $(flags) $< -o $@
 
 clean :

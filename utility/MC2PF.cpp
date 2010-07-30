@@ -1,9 +1,8 @@
 // MC2PF.cpp
-// Convert MMSP MCgrid data format to PFgrid data format
+// Convert Monte Carlo data to phase field data 
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#include"MCgrid.hpp"
-#include"PFgrid.hpp"
+#include"MMSP.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -76,7 +75,7 @@ int main(int argc, char* argv[])
 
 	// check for valid MCgrid data
 	if (not scalar_type or not int_type) {
-		std::cerr<<"File input error: data must be of type scalar::int."<<std::endl;
+		std::cerr<<"File input error: data must be of type int or scalar::int."<<std::endl;
 		exit(-1);
 	}
 
@@ -89,53 +88,51 @@ int main(int argc, char* argv[])
 	}
 
 	if (dim==1) {
-		MMSP::MCgrid1D grid1(argv[1]);
+		MMSP::grid<1,int> grid1(argv[1]);
 		int x0 = MMSP::x0(grid1);
 		int x1 = MMSP::x1(grid1);
 
 		int fields = 0;
-		for (int x=x0; x<x1; x++)
-			if (grid1[x]>fields)
-				fields = grid1[x];
+		for (int i=0; i<MMSP::nodes(grid1); i++)
+			if (grid1(i)>fields)
+				fields = grid1(i);
 		fields += 1;
 
-		MMSP::PFgrid1D grid2(fields,x0,x1,1);
-		for (int x=x0; x<x1; x++) {
-			for (int i=0; i<fields; i++)
-				grid2[x][i] = 0.0;
-			int index = grid1[x];
-			grid2[x][index] = 1.0;	
+		MMSP::grid<1,MMSP::vector<double> > grid2(fields,x0,x1);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			for (int j=0; j<fields; j++)
+				grid2(i)[j] = 0.0;
+			int index = grid1(i);
+			grid2(i)[index] = 1.0;	
 		}
 		MMSP::output(grid2,filename.str().c_str());
 	}
 
 	if (dim==2) {
-		MMSP::MCgrid2D grid1(argv[1]);
+		MMSP::grid<2,int> grid1(argv[1]);
 		int x0 = MMSP::x0(grid1);
 		int x1 = MMSP::x1(grid1);
 		int y0 = MMSP::y0(grid1);
 		int y1 = MMSP::y1(grid1);
 
 		int fields = 0;
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++) 
-				if (grid1[x][y]>fields)
-					fields = grid1[x][y];
+		for (int i=0; i<MMSP::nodes(grid1); i++)
+			if (grid1(i)>fields)
+				fields = grid1(i);
 		fields += 1;
 
-		MMSP::PFgrid2D grid2(fields,x0,x1,y0,y1,1);
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++) {
-				for (int i=0; i<fields; i++)
-					grid2[x][y][i] = 0.0;
-				int index = grid1[x][y];
-				grid2[x][y][index] = 1.0;	
-			}
+		MMSP::grid<2,MMSP::vector<double> > grid2(fields,x0,x1,y0,y1);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			for (int j=0; j<fields; j++)
+				grid2(i)[j] = 0.0;
+			int index = grid1(i);
+			grid2(i)[index] = 1.0;	
+		}
 		MMSP::output(grid2,filename.str().c_str());
 	}
 
 	if (dim==3) {
-		MMSP::MCgrid3D grid1(argv[1]);
+		MMSP::grid<3,int> grid1(argv[1]);
 		int x0 = MMSP::x0(grid1);
 		int x1 = MMSP::x1(grid1);
 		int y0 = MMSP::y0(grid1);
@@ -144,22 +141,18 @@ int main(int argc, char* argv[])
 		int z1 = MMSP::z1(grid1);
 
 		int fields = 0;
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++) 
-				for (int z=z0; z<z1; z++)
-					if (grid1[x][y][z]>fields)
-						fields = grid1[x][y][z];
+		for (int i=0; i<MMSP::nodes(grid1); i++)
+			if (grid1(i)>fields)
+				fields = grid1(i);
 		fields += 1;
 
-		MMSP::PFgrid3D grid2(fields,x0,x1,y0,y1,z0,z1,1);
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++) 
-				for (int z=z0; z<z1; z++) {
-					for (int i=0; i<fields; i++)
-						grid2[x][y][z][i] = 0.0;
-					int index = grid1[x][y][z];
-					grid2[x][y][z][index] = 1.0;	
-				}
+		MMSP::grid<3,MMSP::vector<double> > grid2(fields,x0,x1,y0,y1,z0,z1);
+		for (int i=0; i<MMSP::nodes(grid1); i++) {
+			for (int j=0; j<fields; j++)
+				grid2(i)[j] = 0.0;
+			int index = grid1(i);
+			grid2(i)[index] = 1.0;	
+		}
 		MMSP::output(grid2,filename.str().c_str());
 	}
 }
