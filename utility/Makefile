@@ -44,5 +44,11 @@ sPF2MC: sPF2MC.cpp $(core)
 sPF2PF: sPF2PF.cpp $(core)
 	$(compiler) $(flags) $< -o $@
 
+vox2MC: vox2MC.cpp $(core)
+	$(compiler) $(flags) $< -o $@
+
+MC2vox: MC2vox.cpp $(core)
+	$(compiler) $(flags) $< -o $@
+
 clean :
-	rm -f mmsp2vti mmsp2pvd MC2PF MC2sPF PF2MC PF2sPF sPF2MC sPF2PF
+	rm -f mmsp2vti mmsp2pvd MC2PF MC2sPF PF2MC PF2sPF sPF2MC sPF2PF vox2MC MC2vox

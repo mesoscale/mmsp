@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
 	}
 
 	// check for valid MCgrid data
-	if (not scalar_type or not int_type) {
+	if (not int_type or vector_type or sparse_type) {
 		std::cerr<<"File input error: data must be of type int or scalar::int."<<std::endl;
 		exit(-1);
 	}

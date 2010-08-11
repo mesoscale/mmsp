@@ -82,12 +82,12 @@ void update(MMSP::grid<2,int>& grid, int steps)
 
 				if (spin1!=spin2 and spin2!=0) {
 					// compute energy change
-					double dE = -E(spin1,spin2);
+					double dE = -energy(spin1,spin2);
 					for (int i=-1; i<=1; i++)
 						for (int j=-1; j<=1; j++)
 							for (int k=-1; k<=1; k++) {
 								int spin = grid[x[0]+i][x[1]+j][x[2]+k];
-								dE += E(spin,spin2)-E(spin,spin1);
+								dE += energy(spin,spin2)-energy(spin,spin1);
 							}
 
 					// compute boundary energy, mobility
@@ -132,12 +132,12 @@ void update(MMSP::grid<3,int>& grid, int steps)
 
 				if (spin1!=spin2 and spin2!=0) {
 					// compute energy change
-					double dE = -E(spin1,spin2);
+					double dE = -energy(spin1,spin2);
 					for (int i=-1; i<=1; i++)
 						for (int j=-1; j<=1; j++)
 							for (int k=-1; k<=1; k++) {
 								int spin = grid[x[0]+i][x[1]+j][x[2]+k];
-								dE += E(spin,spin2)-E(spin,spin1);
+								dE += energy(spin,spin2)-energy(spin,spin1);
 							}
 
 					// compute boundary energy, mobility

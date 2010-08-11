@@ -1,8 +1,9 @@
-// MC2sPF.cpp
-// Convert Monte Carlo data to sparsePF data 
+// MC2vox.cpp
+// Convert MMSP grid data to MBuilder voxel data 
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #include"MMSP.hpp"
+#include<set>
 
 int main(int argc, char* argv[])
 {
@@ -14,7 +15,7 @@ int main(int argc, char* argv[])
 
 	// help diagnostic
 	if (std::string(argv[1])=="--help") {
-		std::cout<<argv[0]<<": convert MMSP MCgrid data format to sparsePF data format.\n";
+		std::cout<<argv[0]<<": convert MMSP MCgrid data format to PFgrid data format.\n";
 		std::cout<<"Usage: "<<argv[0]<<" [--help] infile [outfile]\n";
 		std::cout<<"Questions/comments to gruberja@gmail.com (Jason Gruber).\n\n";
 		exit(0);
@@ -30,7 +31,7 @@ int main(int argc, char* argv[])
 	// generate output file name
 	std::stringstream filename;
 	if (argc<3) 
-		filename<<std::string(argv[1]).substr(0,std::string(argv[1]).find_last_of("."))<<".sPF";
+		filename<<std::string(argv[1]).substr(0,std::string(argv[1]).find_last_of("."))<<".PF";
 	else
 		filename<<argv[2];
 
@@ -82,62 +83,42 @@ int main(int argc, char* argv[])
 	// read grid dimension
 	int dim;
 	input>>dim;
-	if (not dim==1 and not dim==2 and not dim==3) {
-		std::cerr<<"File input error: grid dimension must be 1, 2, or 3."<<std::endl;
+	if (not dim==3) {
+		std::cerr<<"File input error: grid dimension must be 3."<<std::endl;
 		exit(-1);
 	}
 
-	// read fields
-	int fields;
-	input>>fields;
-	if (not fields==1) {
-		std::cerr<<"File input error: number of fields must equal 1."<<std::endl;
+	// open output file
+	std::ofstream output(filename.str().c_str());
+	if (!output) {
+		std::cerr<<"File output error: could not open "<<filename.str()<<".\n\n";
 		exit(-1);
 	}
 
-	if (dim==1) {
-		MMSP::grid<1,int> grid1(argv[1]);
-		int x0 = MMSP::x0(grid1);
-		int x1 = MMSP::x1(grid1);
+	// read in MMSP grid data
+	MMSP::grid<3,int> GRID(argv[1]);
 
-		MMSP::grid<1,MMSP::sparse<double> > grid2(0,x0,x1);
-		for (int i=0; i<MMSP::nodes(grid1); i++) {
-			int index = grid1(i);
-			MMSP::set(grid2(i),index) = 1.0;
+	// compute number of grains
+	std::set<int> gset;
+	for (int i=0; i<MMSP::nodes(GRID); i++) gset.insert(GRID(i));
+	int grains = gset.size();
+
+	// output grid dimensions
+	output<<MMSP::xlength(GRID)<<" ";
+	output<<MMSP::ylength(GRID)<<" ";
+	output<<MMSP::zlength(GRID)<<"\n";
+	output<<"\'grwXXX\'				52.00 1.000 1.0		"<<grains<<"\n";
+	output<<"3.000 0.000 0.000			0\n";
+
+	// output grid data
+	int count = 0;
+	for (int i=0; i<MMSP::nodes(GRID); i++) {
+		output<<GRID(i)<<" ";
+		count += 1;
+		if (count==20) {
+			output<<"\n";
+			count = 20;
 		}
-		MMSP::output(grid2,filename.str().c_str());
-	}
-
-	if (dim==2) {
-		MMSP::grid<2,int> grid1(argv[1]);
-		int x0 = MMSP::x0(grid1);
-		int x1 = MMSP::x1(grid1);
-		int y0 = MMSP::y0(grid1);
-		int y1 = MMSP::y1(grid1);
-
-		MMSP::grid<2,MMSP::sparse<double> > grid2(0,x0,x1,y0,y1);
-		for (int i=0; i<MMSP::nodes(grid1); i++) {
-			int index = grid1(i);
-			MMSP::set(grid2(i),index) = 1.0;
-		}
-		MMSP::output(grid2,filename.str().c_str());
-	}
-
-	if (dim==3) {
-		MMSP::grid<3,int> grid1(argv[1]);
-		int x0 = MMSP::x0(grid1);
-		int x1 = MMSP::x1(grid1);
-		int y0 = MMSP::y0(grid1);
-		int y1 = MMSP::y1(grid1);
-		int z0 = MMSP::z0(grid1);
-		int z1 = MMSP::z1(grid1);
-
-		MMSP::grid<3,MMSP::sparse<double> > grid2(0,x0,x1,y0,y1,z0,z1);
-		for (int i=0; i<MMSP::nodes(grid1); i++) {
-			int index = grid1(i);
-			MMSP::set(grid2(i),index) = 1.0;
-		}
-		MMSP::output(grid2,filename.str().c_str());
 	}
 }
 
