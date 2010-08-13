@@ -18,7 +18,8 @@ core = ../include/MMSP.hpp \
 utility : mmsp2vti mmsp2pvd \
           MC2PF MC2sPF \
           PF2MC PF2sPF \
-          sPF2MC sPF2PF
+          sPF2MC sPF2PF \
+          vox2MC MC2vox
 
 mmsp2vti: mmsp2vti.cpp $(core)
 	$(compiler) $(flags) $< -o $@
