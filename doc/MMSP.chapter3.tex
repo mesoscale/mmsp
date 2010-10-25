@@ -301,7 +301,6 @@ To change the boundary conditions used for a {\tt grid}, one might use\footnote{
 This example demonstrates that the boundary conditions may not only be set independently for each coordinate axis, but that it's also possible to independently set the conditions at the upper and lower boundaries (within reason).
 
 
-
 \section{The prototypical \MMSP program}
 \MMSP was created with the intent that it would be used for mesoscale microstructure simulation.  So let's look at how we would typically write code to do just that.
 \begin{shadebox}
@@ -352,7 +351,7 @@ Now that we have our prototype {\tt main()} function, let's look at the {\tt upd
         for (int step=0; step<steps; step++) {
             for (int x=x0(GRID); x<x1(GRID); x++)
                 for (int y=y0(GRID); y<y1(GRID); y++) {
-                    // replace this with some "real" computation...
+                    // replace this with a "real" computation...
                     update[x][y] = GRID[x][y];
                 }
 
@@ -369,6 +368,71 @@ On the first line within the {\tt update} function, we create a new {\tt grid} o
 Next, we have a loop over all time steps.  Within this loop we iterate through the nodes of {\tt GRID} just as in the example of the previous section.  The limiting values of {\tt x} and {\tt y} are obtained by appropriate function calls.  At each node, we would normally perform some meaningful computation to determine the value of {\tt GRID} at the next time step, then store the value in {\tt update}.  Here we simply copy the value of {\tt GRID} at this node to {\tt update}.
 
 After computations are performed at each node, we have two more operations.  First, we {\tt swap} the data of {\tt GRID} and {\tt update}.  {\tt GRID} now contains the new values, while {\tt update}, the workspace, contains the old.  Next, a function called {\tt ghostswap} is called with {\tt GRID} as its argument.  For single processor programs, the {\tt ghostswap} function does nothing.  For parallel programs, it performs a coordinated series of ``ghost'' cell data swaps, such that the ghosts associated with the local portion of {\tt GRID} are filled with the appropriate data from all neighboring processors.  And again, while it's not critical to include this line when our intent is to write a single processor program, it will serve us well to include it here because it will allow us to easily parallelize the code later.
+
+
+\section{Application: the Allen-Cahn equation}
+Now that we've seen much of the basic syntax used in \MMSP, let's apply it to a few realistic physical problems.  The first application we'll discuss is the numerical solution of the Allen-Cahn equation, which comes from a well-known model for order-disorder phase transformations in solids.  In this model, the state of the system is described by a single parameter, $\phi$, which represents the local atomic ordering.  Two distinct, stable variants are represented when $\phi=-1$ and $\phi=1$.  The energy density of the system includes a penalty for states other than these as well as a term that depends on the gradient of $\phi$.  The total energy of the system takes the form
+\begin{equation}
+F = \int_V -\frac{r}{2}\phi^2+\frac{u}{4}\phi^4+\frac{\kappa}{2}|\nabla \phi|^2\, dV
+\end{equation}
+where $r$, $u$, and $\kappa$ are phenomenological constants.  The time evolution of $\phi$ is assumed to take the form
+\begin{equation}
+\frac{d\phi}{dt} = -M\frac{\delta F}{\delta \phi} = -M(-r\phi+u\phi^3-\kappa\Delta \phi).
+\end{equation}
+Using a forward Euler time step, the above would be discretized as
+\begin{equation}
+\phi^{t+\Delta t} = \phi^t -\Delta t\, M(-r\phi^t+u(\phi^t)3-\kappa\Delta \phi^t).
+\end{equation}
+
+Now, let's look at an \MMSP code representation of the above.  Suppose we aim to write an {\tt update} function, similar to what was shown in the previous section.  This time, we'll additionally use the {\tt c++} template syntax to write a code that will work for {\tt grid} objects of any dimension (and any scalar data type):
+\begin{shadebox}
+\begin{verbatim}
+template <int dim, typename T>
+void update(MMSP::grid<dim,T>& grid, int steps)
+{
+    MMSP::grid<dim,T> update(grid);
+
+    double r = 1.0;
+    double u = 1.0;
+    double K = 1.0;
+    double M = 1.0;
+    double dt = 0.01;
+
+    for (int step=0; step<steps; step++) {
+       for (int i=0; i<nodes(grid); i++) {
+          double phi = grid(i);
+          update(i) =
+             phi-dt*M*(-r*phi+u*pow(phi,3)-K*laplacian(grid,i));
+       }
+       swap(grid,update);
+       ghostswap(grid);
+    }
+}
+\end{verbatim}
+\end{shadebox}
+The {\tt update} function declaration is equivalent to those shown before, although the use of template syntax affords us some greater generality.  A temporary {\tt grid} object called {\tt update} is declared next, again with template syntax.  The constants $r$, $u$, etc.\ are then declared and initialized.  The remainder of the code performs the desired time steps.  At each time step, the following computation is performed at each node:
+\begin{shadebox}
+\begin{verbatim}
+double phi = grid(i);
+update(i) = phi-dt*M*(-r*phi+u*pow(phi,3)-K*laplacian(grid,i));
+\end{verbatim}
+\end{shadebox}
+The reader will notice that this looks nearly identical to the pseudocode given above.  Here, the {\tt c++} math library function {\tt pow} is used to compute $\phi^3$ and the {\tt grid} class {\tt laplacian} operator is used to compute $\Delta \phi$.
+
+The Allen-Cahn equation is a fairly simple model, yet it demonstrates many of the powerful features that \MMSP offers.  Note that, with only a few unique lines of {\tt c++}, we have produced a code that
+\begin{enumerate}
+\item{Solves a realistic physical problem with minimal software development.}
+\item{Works for {\tt grid}s of arbitrary spatial dimension.}
+\item{Works for {\tt grid}s of arbitrary scalar data type.}
+\item{Handles boundary conditions with no user intervention.}
+\item{Produces both single processor and parallel code, depending only on compiler options.}
+\item{Automatically produces an optimal parallel mesh topology, when required.}
+\end{enumerate}
+
+
+\section{Running the example codes}
+More to come...
+
 
 
 
