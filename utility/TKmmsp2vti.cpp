@@ -6,6 +6,12 @@
 #include<zlib.h>
 #include<sstream>
 
+bool fexists(const char *filename)
+{
+  std::ifstream ifile(filename);
+  return ifile;
+}
+
 int main(int argc, char* argv[])
 {
 	// command line error check
@@ -31,12 +37,15 @@ int main(int argc, char* argv[])
 
 	// generate output file name
 	std::stringstream filename;
-	if (argc<3) 
+	if (argc<3)
 		filename<<std::string(argv[1]).substr(0,std::string(argv[1]).find_last_of("."))<<".vti";
 	else
 		filename<<argv[2];
 
 	// file open error check
+	if ( fexists(filename.str().c_str()) ) {
+	  std::cerr<<"File output warning: "<<filename.str()<<" already exists."<<std::endl;
+	}
 	std::ofstream output(filename.str().c_str());
 	if (!output) {
 		std::cerr<<"File output error: could not open ";
@@ -81,6 +90,10 @@ int main(int argc, char* argv[])
         not double_type  and  not long_double_type) {
 		std::cerr<<"File input error: unknown grid data type."<<std::endl;
 		exit(-1);
+	}
+	if (not sparse_type)
+	{
+	  std::cerr<<"File input error: sparse data expected."<<std::endl;
 	}
 
 	// read grid dimension
@@ -132,11 +145,13 @@ int main(int argc, char* argv[])
 	int blocks;
 	input.read(reinterpret_cast<char*>(&blocks),sizeof(blocks));
 
-	for (int i=0; i<blocks; i++) {
+	for (int i=0; i<blocks; i++)
+	{
 		// read block limits
 		int lmin[3] = {0,0,0};
 		int lmax[3] = {0,0,0};
-		for (int j=0; j<dim; j++) {
+		for (int j=0; j<dim; j++)
+		{
 			input.read(reinterpret_cast<char*>(&lmin[j]),sizeof(lmin[j]));
 			input.read(reinterpret_cast<char*>(&lmax[j]),sizeof(lmax[j]));
 		}
@@ -159,7 +174,7 @@ int main(int argc, char* argv[])
 
 		else if (sparse_type) {
 			output<<"      <CellData>\n";
-			output<<"        <DataArray Name=\"scalar_data\"";
+			output<<"        <DataArray Name=\"grain_id\"";
 		}
 
 		else /* built-in data types */ {
@@ -187,17 +202,19 @@ int main(int argc, char* argv[])
 			output<<" type=\"UInt16\" format=\"ascii\">\n";
 		else if (float_type)
 			output<<" type=\"Float32\" format=\"ascii\">\n";
-		else if (double_type)
+		else if (double_type && !sparse_type)
 			output<<" type=\"Float64\" format=\"ascii\">\n";
+		else if (double_type && sparse_type)
+			output<<" type=\"UInt16\" format=\"ascii\">\n";
 		else if (long_double_type)
 			output<<" type=\"Float128\" format=\"ascii\">\n";
 
 		// read grid data
 		unsigned long size, rawSize;
-		input.read(reinterpret_cast<char*>(&rawSize),sizeof(rawSize)); // read raw size
+    input.read(reinterpret_cast<char*>(&rawSize),sizeof(rawSize)); // read raw size
     input.read(reinterpret_cast<char*>(&size),sizeof(size)); // read compressed size
-    char* compressed_buffer = new char[size];
-    input.read(compressed_buffer,size);
+		char* compressed_buffer = new char[size];
+		input.read(compressed_buffer,size);
     // Decompress data
     char* buffer = new char[rawSize];
     int status;
@@ -218,457 +235,7 @@ int main(int argc, char* argv[])
     delete [] compressed_buffer;
 
 		// write grid data
-		if (not vector_type and not sparse_type) {
-			if (bool_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::scalar<bool> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::scalar<bool> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::scalar<bool> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-			}
-			if (char_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::scalar<char> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::scalar<char> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::scalar<char> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-			}
-			if (unsigned_char_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::scalar<unsigned char> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::scalar<unsigned char> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::scalar<unsigned char> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-			}
-			if (int_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::scalar<int> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::scalar<int> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::scalar<int> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-			}
-			if (unsigned_int_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::scalar<unsigned int> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::scalar<unsigned int> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::scalar<unsigned int> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-			}
-			if (long_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::scalar<long> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::scalar<long> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::scalar<long> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-			}
-			if (unsigned_long_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::scalar<unsigned long> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (long k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::scalar<unsigned long> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (long k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::scalar<unsigned long> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (long k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-			}
-			if (short_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::scalar<short> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::scalar<short> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::scalar<short> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-			}
-			if (unsigned_short_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::scalar<unsigned short> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::scalar<unsigned short> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::scalar<unsigned short> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-			}
-			if (float_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::scalar<float> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::scalar<float> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::scalar<float> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-			}
-			if (double_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::scalar<double> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::scalar<double> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::scalar<double> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-			}
-			if (long_double_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::scalar<long double> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::scalar<long double> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::scalar<long double> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) output<<GRID(k)<<" ";
-				}
-			}
-		}
-
-		else if (vector_type) {
-			if (bool_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::vector<bool> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::vector<bool> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::vector<bool> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-			}
-			if (char_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::vector<char> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::vector<char> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::vector<char> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-			}
-			if (unsigned_char_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::vector<unsigned char> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::vector<unsigned char> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::vector<unsigned char> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-			}
-			if (int_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::vector<int> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::vector<int> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::vector<int> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-			}
-			if (unsigned_int_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::vector<unsigned int> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::vector<unsigned int> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::vector<unsigned int> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-			}
-			if (long_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::vector<long> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::vector<long> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::vector<long> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-			}
-			if (unsigned_long_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::vector<unsigned long> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::vector<unsigned long> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::vector<unsigned long> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-			}
-			if (short_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::vector<short> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::vector<short> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::vector<short> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-			}
-			if (unsigned_short_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::vector<unsigned short> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::vector<unsigned short> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::vector<unsigned short> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-			}
-			if (float_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::vector<float> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::vector<float> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::vector<float> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-			}
-			if (double_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::vector<double> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::vector<double> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::vector<double> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-			}
-			if (long_double_type) {
-				if (dim==1) {
-					MMSP::grid<1,MMSP::vector<long double> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==2) {
-					MMSP::grid<2,MMSP::vector<long double> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-				else if (dim==3) {
-					MMSP::grid<3,MMSP::vector<long double> > GRID(fields,lmin,lmax);
-					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++)
-						for (int h=0; h<fields; h++) output<<GRID(k)[h]<<" ";
-				}
-			}
-		}
-
-		else if (sparse_type) {
+		if (sparse_type) {
 			if (bool_type) {
 				if (dim==1) {
 					MMSP::grid<1,MMSP::sparse<bool> > GRID(fields,lmin,lmax);
@@ -984,74 +551,46 @@ int main(int argc, char* argv[])
 					}
 				}
 			}
+			// === FLOAT ===
 			if (float_type) {
 				if (dim==1) {
 					MMSP::grid<1,MMSP::sparse<float> > GRID(fields,lmin,lmax);
 					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) {
-						float sum = 0;
-						int nonzero = MMSP::length(GRID(k));
-						for (int h=0; h<nonzero; h++)
-							sum += static_cast<float>(GRID(k).value(h)*GRID(k).value(h));
-						output<<sum<<" ";
-					}
+					for (int k=0; k<MMSP::nodes(GRID); k++)
+					  output<<GRID(k).grain_id()<<" ";
 				}
 				else if (dim==2) {
 					MMSP::grid<2,MMSP::sparse<float> > GRID(fields,lmin,lmax);
 					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) {
-						float sum = 0;
-						int nonzero = MMSP::length(GRID(k));
-						for (int h=0; h<nonzero; h++)
-							sum += static_cast<float>(GRID(k).value(h)*GRID(k).value(h));
-						output<<sum<<" ";
-					}
+					for (int k=0; k<MMSP::nodes(GRID); k++)
+						output<<GRID(k).grain_id()<<" ";
 				}
 				else if (dim==3) {
 					MMSP::grid<3,MMSP::sparse<float> > GRID(fields,lmin,lmax);
 					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) {
-						float sum = 0;
-						int nonzero = MMSP::length(GRID(k));
-						for (int h=0; h<nonzero; h++)
-							sum += static_cast<float>(GRID(k).value(h)*GRID(k).value(h));
-						output<<sum<<" ";
-					}
+					for (int k=0; k<MMSP::nodes(GRID); k++)
+						output<<GRID(k).grain_id()<<" ";
 				}
 			}
+			// === DOUBLE ===
 			if (double_type) {
 				if (dim==1) {
 					MMSP::grid<1,MMSP::sparse<double> > GRID(fields,lmin,lmax);
 					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) {
-						double sum = 0;
-						int nonzero = MMSP::length(GRID(k));
-						for (int h=0; h<nonzero; h++)
-							sum += static_cast<double>(GRID(k).value(h)*GRID(k).value(h));
-						output<<sum<<" ";
-					}
+					for (int k=0; k<MMSP::nodes(GRID); k++)
+						output<<GRID(k).grain_id()<<" ";
 				}
 				else if (dim==2) {
 					MMSP::grid<2,MMSP::sparse<double> > GRID(fields,lmin,lmax);
 					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) {
-						double sum = 0;
-						int nonzero = MMSP::length(GRID(k));
-						for (int h=0; h<nonzero; h++)
-							sum += static_cast<double>(GRID(k).value(h)*GRID(k).value(h));
-						output<<sum<<" ";
-					}
+					for (int k=0; k<MMSP::nodes(GRID); k++)
+						output<<GRID(k).grain_id()<<" ";
 				}
 				else if (dim==3) {
 					MMSP::grid<3,MMSP::sparse<double> > GRID(fields,lmin,lmax);
 					GRID.from_buffer(buffer);
-					for (int k=0; k<MMSP::nodes(GRID); k++) {
-						double sum = 0;
-						int nonzero = MMSP::length(GRID(k));
-						for (int h=0; h<nonzero; h++)
-							sum += static_cast<double>(GRID(k).value(h)*GRID(k).value(h));
-						output<<sum<<" ";
-					}
+					for (int k=0; k<MMSP::nodes(GRID); k++)
+						output<<GRID(k).grain_id()<<" ";
 				}
 			}
 			if (long_double_type) {

@@ -3,6 +3,7 @@
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #include"MMSP.hpp"
+#include<zlib.h>
 
 int main(int argc, char* argv[])
 {
