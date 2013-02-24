@@ -4,7 +4,12 @@
 
 #ifndef MMSP_SPARSE
 #define MMSP_SPARSE
+#include <cmath>
+#include <limits>
+#include <cassert>
 #include"MMSP.utility.hpp"
+
+typedef unsigned short id_type;
 
 namespace MMSP{
 
@@ -64,6 +69,33 @@ public:
 			if (data[i].index==index)
 				return data[i].value;
 		return static_cast<T>(0);
+	}
+
+	int grain_id() const
+	{
+		int max_index = 0;
+		T max_value = -1.0;
+
+		for (int i=0; i<size; i++) {
+			if (data[i].value > max_value) {
+				max_index = data[i].index;
+				max_value = data[i].value;
+			}
+		}
+		assert(max_index < std::numeric_limits<id_type>::max());
+		return max_index;
+	}
+
+	double getMagPhi() const
+	{
+		double sum = 0.0;
+
+		for (int i=0; i<size; i++) {
+			double phi = data[i].value;
+			sum += phi*phi;
+		}
+
+		return sqrt(sum);
 	}
 
 	int index(int i) const {return data[i].index;}

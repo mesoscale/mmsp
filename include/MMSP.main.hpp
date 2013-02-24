@@ -34,10 +34,12 @@
 #include<fstream>
 #include<sstream>
 #include<cstdlib>
+#include<cctype>
 
 int main(int argc, char* argv[])
 {
 	MMSP::Init(argc,argv);
+
 
 	// check argument list
 	if (argc<2) {
@@ -46,6 +48,7 @@ int main(int argc, char* argv[])
 		std::cout<<"to generate help message.\n\n";
 		exit(-1);
 	}
+
 
 	// print help message and exit
 	if (std::string(argv[1])==std::string("--help")) {
@@ -81,6 +84,7 @@ int main(int argc, char* argv[])
 		exit(0);
 	}
 
+
 	// generate example grid
 	else if (std::string(argv[1])==std::string("--example")) {
 		// check argument list
@@ -101,6 +105,7 @@ int main(int argc, char* argv[])
 
 		int dim = atoi(argv[2]);
 
+		/*
 		// dimension must be 2 or 3
 		if (dim<2 or dim>3) {
 			std::cout<<PROGRAM<<": example grid must be of dimension 2 or 3.  Use\n\n";
@@ -108,15 +113,62 @@ int main(int argc, char* argv[])
 			std::cout<<"to generate help message.\n\n";
 			exit(-1);
 		}
+		*/
 
 		// set output file name
 		std::string outfile;
 		if (argc<4) outfile = "example";
 		else outfile = argv[3];
-			
+
 		// generate test problem
 		MMSP::generate(dim,outfile.c_str());
 	}
+
+	// analyze topology
+	#ifndef MPI_VERSION
+	#ifdef TOPOLOGY
+
+	else if (std::string(argv[1])==std::string("--topo"))
+	{
+		// bad argument list
+		if (argc<3 or argc>5) {
+			std::cout<<PROGRAM<<": bad argument list.  Use\n\n";
+			std::cout<<"    "<<PROGRAM<<" --help\n\n";
+			std::cout<<"to generate help message.\n\n";
+			exit(-1);
+		}
+
+		// file open error check
+		std::ifstream input(argv[2]);
+		if (!input) {
+			std::cerr<<"File input error: could not open "<<argv[2]<<".\n\n";
+			exit(-1);
+		}
+
+		// read data type
+		std::string type;
+		getline(input,type,'\n');
+
+		// grid type error check
+		if (type.substr(0,4)!="grid") {
+			std::cerr<<"File input error: file does not contain grid data."<<std::endl;
+			exit(-1);
+		}
+
+		// read grid dimension
+		int dim;
+		input>>dim;
+
+		if (dim==3)
+		{
+			// construct grid object
+			//GRID3D grid(argv[2]);
+			MMSP::grid<3,MMSP::sparse<double> > grid(argv[2]);
+			MMSP::record_topology<3,double>(grid);
+		}
+	}
+	#endif
+	#endif
 
 	// run simulation
 	else {
@@ -175,10 +227,10 @@ int main(int argc, char* argv[])
 			// set number of time steps
 			if (std::string(argv[3]).find_first_not_of("0123456789")!=std::string::npos) {
 				// must have integral number of time steps
-					std::cout<<PROGRAM<<": number of time steps must have integral value.  Use\n\n";
-					std::cout<<"    "<<PROGRAM<<" --help\n\n";
-					std::cout<<"to generate help message.\n\n";
-					exit(-1);
+				std::cout<<PROGRAM<<": number of time steps must have integral value.  Use\n\n";
+				std::cout<<"    "<<PROGRAM<<" --help\n\n";
+				std::cout<<"to generate help message.\n\n";
+				exit(-1);
 			}
 
 			steps = atoi(argv[3]);
@@ -227,7 +279,29 @@ int main(int argc, char* argv[])
 		input>>dim;
 
 		// set output file basename
-		std::string base = outfile.substr(0,outfile.find_last_of("."))+".";
+		int iterations_start(0);
+		if (outfile.find_first_of(".") != outfile.find_last_of("."))
+		{
+		  std::string number = outfile.substr(outfile.find_first_of(".")+1,outfile.find_last_of(".")-1);
+		  iterations_start = atoi(number.c_str());
+		}
+		std::string base;
+		if (outfile.rfind(".",outfile.find_last_of(".")-1) == -1) // only one dot found
+		  base = outfile.substr(0,outfile.find_last_of("."))+".";
+		else
+		{
+		  int last_dot = outfile.find_last_of(".");
+		  int prev_dot = outfile.rfind('.', last_dot-1);
+      std::string number = outfile.substr(prev_dot+1, last_dot-prev_dot-1);
+		  bool isNumeric(true);
+		  for (int i=0; i<number.size(); ++i)
+		  {
+		    if (!isdigit(number[i])) isNumeric = false;
+		  }
+		  if (isNumeric)
+		    base = outfile.substr(0,outfile.rfind(".",outfile.find_last_of(".")-1))+".";
+		  else base = outfile.substr(0,outfile.find_last_of("."))+".";
+		}
 
 		// set output file suffix
 		std::string suffix = "";
@@ -243,12 +317,13 @@ int main(int argc, char* argv[])
 		}
 
 
-		if (dim==2) {
+		#ifdef DEBUG
+		if (dim==1) {
 			// construct grid object
-			GRID2D grid(argv[1]);
+			GRID1D grid(argv[1]);
 
-			// perform computation 
-			for (int i=0; i<steps; i+=increment) {
+			// perform computation
+			for (int i=iterations_start; i<steps; i+=increment) {
 				MMSP::update(grid,increment);
 
 				// generate output filename
@@ -263,7 +338,40 @@ int main(int argc, char* argv[])
 				}
 
 				// write grid output to file
+				#ifdef MPI_VERSION
+				MMSP::output_mpi(grid,filename.str().c_str());
+				#else
 				MMSP::output(grid,filename.str().c_str());
+				#endif
+			}
+		}
+		#endif
+
+		if (dim==2) {
+			// construct grid object
+			GRID2D grid(argv[1]);
+
+			// perform computation
+			for (int i=iterations_start; i<steps; i+=increment) {
+				MMSP::update(grid,increment);
+
+				// generate output filename
+				std::stringstream filename;
+				int n = filename.str().length();
+				for (int j=0; n<length; j++) {
+					filename.str("");
+					filename<<base;
+					for (int k=0; k<j; k++) filename<<0;
+					filename<<i+increment<<suffix;
+					n = filename.str().length();
+				}
+
+				// write grid output to file
+				#ifdef MPI_VERSION
+				MMSP::output_mpi(grid,filename.str().c_str());
+				#else
+				MMSP::output(grid,filename.str().c_str());
+				#endif
 			}
 		}
 
@@ -271,8 +379,8 @@ int main(int argc, char* argv[])
 			// construct grid object
 			GRID3D grid(argv[1]);
 
-			// perform computation 
-			for (int i=0; i<steps; i+=increment) {
+			// perform computation
+			for (int i=iterations_start; i<steps; i+=increment) {
 				MMSP::update(grid,increment);
 
 				// generate output filename
@@ -287,7 +395,11 @@ int main(int argc, char* argv[])
 				}
 
 				// write grid output to file
+				#ifdef MPI_VERSION
+				MMSP::output_mpi(grid,filename.str().c_str());
+				#else
 				MMSP::output(grid,filename.str().c_str());
+				#endif
 			}
 		}
 	}

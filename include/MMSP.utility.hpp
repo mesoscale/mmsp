@@ -137,11 +137,11 @@ public:
 
 // buffer I/O functions for primitive and POD data types
 // overload as friend functions within new non-POD class definitions 
-template <typename T> int buffer_size(const T& value) 
+template <typename T> unsigned long buffer_size(const T& value) 
 	{return sizeof(value);}
-template <typename T> int to_buffer(const T& value, char* buffer)
+template <typename T> unsigned long to_buffer(const T& value, char* buffer)
 	{memcpy(buffer,&value,sizeof(value)); return sizeof(value);}
-template <typename T> int from_buffer(T& value, const char* buffer)
+template <typename T> unsigned long from_buffer(T& value, const char* buffer)
 	{memcpy(&value,buffer,sizeof(value)); return sizeof(value);}
 
 // file I/O functions for primitive and POD data types
