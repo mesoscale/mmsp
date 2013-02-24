@@ -1,0 +1,9 @@
+This directory contains MMSP code for phase field simulation of solidification, with coupled phase and heat equations. 
+Modeled after FiPy examples.phase.anisotropy.
+
+Send questions or comments to kellet@rpi.edu (Trevor Keller)
+
+References:
+
+1. JA Warren, R Kobayashi, AE Lobkovsky, and WC Carter, "Extending phase field models of solidification to polycrystalline materials," Acta Mat. 51:20;6035-6058 (2003).
+2. JE Guyer, D Wheeler, and JA Warren, "FiPy: Partial Differential Equations with Python," Computing in Science & Engineering 11:3;6-15 (2009).
