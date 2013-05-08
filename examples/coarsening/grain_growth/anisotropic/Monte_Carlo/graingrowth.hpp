@@ -31,7 +31,13 @@ void generate(int dim, const char* filename)
 			}
 		}
 
+		#ifdef MPI_VERSION
+		std::cout<<"MPI working fine on Rank "<<MPI::COMM_WORLD.Get_rank()<<std::endl;
+		output_mpi(grid,filename);
+		#else
+		std::cout<<"No MPI here!"<<std::endl;
 		output(grid,filename);
+		#endif
 	}
 
 	if (dim==3) {

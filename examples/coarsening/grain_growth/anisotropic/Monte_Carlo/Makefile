@@ -19,10 +19,10 @@ core = $(incdir)/MMSP.main.hpp \
 
 # the program
 graingrowth: graingrowth.cpp graingrowth.hpp anisotropy.hpp $(core)
-	$(compiler) $(flags) $< -o $@
+	$(compiler) $(flags) $< -o $@ -lz
 
 parallel: graingrowth.cpp graingrowth.hpp anisotropy.hpp $(core)
-	$(pcompiler) $(pflags) $< -o $@
+	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
 	rm -f graingrowth parallel
