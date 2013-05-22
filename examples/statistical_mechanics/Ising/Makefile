@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
 
 # the program
 ising: ising.cpp ising.hpp $(core)
-	$(compiler) $(flags) $< -o $@
+	$(compiler) $(flags) $< -o $@ -lz
 
 parallel: ising.cpp ising.hpp $(core)
-	$(pcompiler) $(pflags) $< -o $@
+	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
 	rm -f ising parallel

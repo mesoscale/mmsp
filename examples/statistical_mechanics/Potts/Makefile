@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
 
 # the program
 potts: potts.cpp potts.hpp $(core)
-	$(compiler) $(flags) $< -o $@
+	$(compiler) $(flags) $< -o $@ -lz
 
 parallel: potts.cpp potts.hpp $(core)
-	$(pcompiler) $(pflags) $< -o $@
+	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
 	rm -f potts parallel

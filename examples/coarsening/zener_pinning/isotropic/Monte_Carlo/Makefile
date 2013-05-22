@@ -19,10 +19,10 @@ core = $(incdir)/MMSP.main.hpp \
 
 # the program
 zener: zener.cpp zener.hpp $(core)
-	$(compiler) $(flags) $< -o $@
+	$(compiler) $(flags) $< -o $@ -lz
 
 parallel: zener.cpp zener.hpp $(core)
-	$(pcompiler) $(pflags) $< -o $@
+	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
 	rm -f zener parallel

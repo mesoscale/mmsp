@@ -19,10 +19,10 @@ core = $(incdir)/MMSP.main.hpp \
 
 # the program
 ostwald: ostwald.cpp $(incdir)/PFgrid.hpp ostwald.hpp $(core)
-	$(compiler) $(flags) $< -o $@
+	$(compiler) $(flags) $< -o $@ -lz
 
 parallel: ostwald.cpp $(incdir)/PFgrid.hpp ostwald.hpp $(core)
-	$(pcompiler) $(pflags) $< -o $@
+	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
 	rm -f ostwald parallel

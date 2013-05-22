@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
 
 # the program
 model_A: model_A.cpp model_A.hpp $(core)
-	$(compiler) $(flags) $< -o $@
+	$(compiler) $(flags) $< -o $@ -lz
 
 parallel: model_A.cpp model_A.hpp $(core)
-	$(pcompiler) $(pflags) $< -o $@
+	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
 	rm -f model_A parallel

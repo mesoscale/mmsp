@@ -19,10 +19,10 @@ core = $(incdir)/MMSP.main.hpp \
 
 # the program
 heisenberg: heisenberg.cpp heisenberg.hpp $(core)
-	$(compiler) $(flags) $< -o $@
+	$(compiler) $(flags) $< -o $@ -lz
 
 parallel: heisenberg.cpp heisenberg.hpp $(core)
-	$(pcompiler) $(pflags) $< -o $@
+	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
 	rm -f heisenberg parallel

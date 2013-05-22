@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
 
 # the program
 allen-cahn: allen-cahn.cpp allen-cahn.hpp $(core)
-	$(compiler) $(flags) $< -o $@
+	$(compiler) $(flags) $< -o $@ -lz
 
 parallel: allen-cahn.cpp allen-cahn.hpp $(core)
-	$(pcompiler) $(pflags) $< -o $@
+	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
 	rm -f allen-cahn parallel

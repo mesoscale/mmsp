@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
 
 # the program
 cahn-hilliard: cahn-hilliard.cpp cahn-hilliard.hpp $(core)
-	$(compiler) $(flags) $< -o $@
+	$(compiler) $(flags) $< -o $@ -lz
 
 parallel: cahn-hilliard.cpp cahn-hilliard.hpp $(core)
-	$(pcompiler) $(pflags) $< -o $@
+	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
 	rm -f cahn-hilliard parallel

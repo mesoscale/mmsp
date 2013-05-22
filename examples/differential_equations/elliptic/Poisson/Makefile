@@ -17,10 +17,10 @@ core = $(incdir)/MMSP.hpp \
 
 # the program
 poisson: poisson.cpp poisson.hpp multigrid.hpp $(core)
-	$(compiler) $(flags) $< -o $@
+	$(compiler) $(flags) $< -o $@ -lz
 
 parallel: poisson.cpp poisson.hpp multigrid.hpp $(core)
-	$(pcompiler) $(pflags) $< -o $@
+	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
 	rm -f poisson parallel
