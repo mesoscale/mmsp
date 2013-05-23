@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.vector.hpp
 
 # the program
-ostwald: ostwald.cpp $(incdir)/PFgrid.hpp ostwald.hpp $(core)
+ostwald: ostwald.cpp ostwald.hpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: ostwald.cpp $(incdir)/PFgrid.hpp ostwald.hpp $(core)
+parallel: ostwald.cpp ostwald.hpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

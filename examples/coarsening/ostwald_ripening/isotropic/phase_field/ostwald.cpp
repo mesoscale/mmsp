@@ -7,8 +7,8 @@
 std::string PROGRAM = "ostwald";
 std::string MESSAGE = "isotropic phase field model for Ostwald ripening using MMSP";
 
-typedef MMSP::PFgrid2D GRID2D;
-typedef MMSP::PFgrid3D GRID3D;
+typedef MMSP::grid<2,MMSP::vector<double> > GRID2D;
+typedef MMSP::grid<3,MMSP::vector<double> > GRID3D;
 
 #include"MMSP.main.hpp"
 

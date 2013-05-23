@@ -4,7 +4,7 @@
 
 #ifndef OSTWALD_UPDATE
 #define OSTWALD_UPDATE
-#include"PFgrid.hpp"
+#include"MMSP.hpp"
 #include<cmath>
 
 namespace MMSP{
@@ -12,7 +12,7 @@ namespace MMSP{
 void generate(int dim, const char* filename)
 {
 	if (dim==2) {
-		MMSP::PFgrid2D grid(2,128,128);
+		MMSP::grid<2,MMSP::vector<double> > grid(2,0,128,0,128);
 		int x0 = MMSP::x0(grid);
 		int x1 = MMSP::x1(grid);
 		int y0 = MMSP::y0(grid);
@@ -29,7 +29,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		MMSP::PFgrid3D grid(2,64,64,64);
+		MMSP::grid<3,MMSP::vector<double> > grid(2,0,64,0,64,0,64);
 		int x0 = MMSP::x0(grid);
 		int x1 = MMSP::x1(grid);
 		int y0 = MMSP::y0(grid);
@@ -49,9 +49,9 @@ void generate(int dim, const char* filename)
 	}
 }
 
-void update(PFgrid2D& grid, int steps)
+void update(MMSP::grid<2,MMSP::vector<double> >& grid, int steps)
 {
-	PFgrid2D update(grid);
+	MMSP::grid<2,MMSP::vector<double> > update(grid);
 	MMSP::grid<2,double> wspace(grid,1);
 
 	double dt = 0.01;
@@ -119,9 +119,9 @@ void update(PFgrid2D& grid, int steps)
 	}
 }
 
-void update(PFgrid3D& grid, int steps)
+void update(MMSP::grid<3,MMSP::vector<double> >& grid, int steps)
 {
-	PFgrid3D update(grid);
+	MMSP::grid<3,MMSP::vector<double> > update(grid);
 	MMSP::grid<3,double> wspace(grid,1);
 
 	double dt = 0.01;
