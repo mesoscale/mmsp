@@ -25,9 +25,9 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-  if ( argc != 3 )
+  if ( argc < 2 )
   {
-    cout << "Usage: " << argv[0] << " data.dat output.csv\n";
+    cout << "Usage: " << argv[0] << " data.dat [output.png]\n";
     return ( 1 );
   }
 
@@ -37,6 +37,15 @@ int main(int argc, char* argv[])
     std::cerr<<"File input error: could not open "<<argv[1]<<".\n\n";
     exit(-1);
   }
+
+	string outfile(argv[1]);
+	if (argc==3) outfile=string(argv[2]);
+	else {
+		int ext_start=outfile.find_last_of('.');
+		outfile[ext_start+1]='p';
+		outfile[ext_start+2]='n';
+		outfile[ext_start+3]='g';
+	}
 
   // read data type
   std::string type;
@@ -99,7 +108,7 @@ int main(int argc, char* argv[])
   Error = ilGetError();
   if (Error!=IL_NO_ERROR) cout<<"Error making image: "<<iluErrorString(Error)<<endl;
   ilEnable(IL_FILE_OVERWRITE);
-  ilSave( IL_PNG, argv[2] ) ;
+  ilSave( IL_PNG, outfile.c_str() ) ;
   Error = ilGetError();
   if (Error!=IL_NO_ERROR) cout<<"Error saving image: "<<iluErrorString(Error)<<endl;
 

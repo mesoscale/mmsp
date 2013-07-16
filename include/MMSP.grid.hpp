@@ -799,11 +799,17 @@ public:
 		for (int i = 0; i < blocks; i++) {
 			int lmin[dim];
 			int lmax[dim];
-
 			// read block limits
 			for (int j = 0; j < dim; j++) {
 				file.read(reinterpret_cast<char*>(&lmin[j]), sizeof(lmin[j]));
 				file.read(reinterpret_cast<char*>(&lmax[j]), sizeof(lmax[j]));
+			}
+			int blo[dim];
+			int bhi[dim];
+			// read boundary conditions
+			for (int j = 0; j < dim; j++) {
+				file.read(reinterpret_cast<char*>(&blo[j]), sizeof(blo[j]));
+				file.read(reinterpret_cast<char*>(&bhi[j]), sizeof(bhi[j]));
 			}
 
 			// read block data
@@ -854,6 +860,12 @@ public:
 				this->from_buffer(buffer, min, max);
 				delete [] buffer;
 			}
+
+			// set boundary conditions from file
+			for (int j = 0; j < dim; j++) {
+				if (x0[j]==g0[j]) b0[j]=blo[j];
+				if (x1[j]==g1[j]) b1[j]=bhi[j];
+			}
 		}
 
 #ifdef MPI_VERSION
@@ -903,31 +915,59 @@ public:
 			requests[1] = output.Iwrite_shared(reinterpret_cast<const char*>(&np), sizeof(np), MPI_CHAR);
 
 			MPI::Request::Waitall(2, requests);
+			#ifdef PDEBUG
+			std::cout<<"\nWrote MMSP header on rank "<<id<<" to "<<filename<<std::endl;
+			#endif
 		}
 		MPI::COMM_WORLD.Barrier();
+		output.Sync();
+		MPI::COMM_WORLD.Barrier();
+		output.Sync();
 
-		// get grid data to write
+
+		// get grid data to write -- compressed with zlib
 		char* buffer;
 		unsigned long size = write_buffer(buffer);
+		#ifdef PDEBUG
+		int vote=1;
+		int total_procs=0;
+		MPI::COMM_WORLD.Barrier();
+		MPI::COMM_WORLD.Allreduce(&vote, &total_procs, 1, MPI_INT, MPI_SUM);
+		if (id==0) std::cout<<"\nCompressed MMSP grid data on "<<total_procs<<" ranks."<<std::endl;
+		#endif
 
 		// Write the buffer to disk!
 		MPI::Status status;
 		MPI::Request request;
+
+		output.Sync();
+		MPI::COMM_WORLD.Barrier();
+		output.Sync();
 
 		//output.Write_ordered(buffer,size,MPI_CHAR,status);
 		request = output.Iwrite_shared(buffer, size, MPI_CHAR);
 
 		// After non-blocking shared write, wait for file IO to complete
 		request.Wait();
+		MPI::COMM_WORLD.Barrier();
+		#ifdef PDEBUG
+		total_procs=0;
+		MPI::COMM_WORLD.Allreduce(&vote, &total_procs, 1, MPI_INT, MPI_SUM);
+		if (id==0) std::cout<<"\nWrote MMSP grid data from "<<total_procs<<" ranks to "<<filename<<std::endl;
+		#endif
 		delete [] buffer;
 		buffer = NULL;
-		output.Sync();
 
 		// Make sure everything's written before closing the file.
+		output.Sync();
 		MPI::COMM_WORLD.Barrier();
+		output.Sync();
 		output.Close();
 
 		// Make sure everything's written before closing the file.
+		#ifdef PDEBUG
+		if (id==0) std::cout<<"\nFinished writing "<<filename<<'\n'<<std::endl;
+		#endif
 		std::cout << std::flush;
 		MPI::COMM_WORLD.Barrier();
 #endif
@@ -953,6 +993,8 @@ public:
 		for (int j = 0; j < dim; j++) {
 			header_size += static_cast<unsigned long>(sizeof(x0[j]));
 			header_size += static_cast<unsigned long>(sizeof(x1[j]));
+			header_size += static_cast<unsigned long>(sizeof(b0[j]));
+			header_size += static_cast<unsigned long>(sizeof(b1[j]));
 		}
 		// Make a buffer to hold all the data
 		unsigned long size = header_size + static_cast<unsigned long>(sizeof(data_size))
@@ -969,6 +1011,16 @@ public:
 			p += increment;
 			increment = sizeof(x1[j]);
 			memcpy(p, reinterpret_cast<const char*>(&x1[j]), increment);
+			p += increment;
+		}
+
+		// Write local boundary conditions
+		for (int j = 0; j < dim; j++) {
+			increment = sizeof(b0[j]);
+			memcpy(p, reinterpret_cast<const char*>(&b0[j]), increment);
+			p += increment;
+			increment = sizeof(b1[j]);
+			memcpy(p, reinterpret_cast<const char*>(&b1[j]), increment);
 			p += increment;
 		}
 
@@ -994,7 +1046,6 @@ public:
 		// Compress the data block to the buffer
 		int status;
 		int level = 9; // highest compression level (slowest speed)
-		//assert(data_size>0);
 		status = compress2(reinterpret_cast<Bytef*>(p), &compressed_size, reinterpret_cast<Bytef*>(raw), data_size, level);
 		switch( status ) {
 		case Z_OK:

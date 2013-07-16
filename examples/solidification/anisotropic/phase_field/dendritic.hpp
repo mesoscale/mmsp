@@ -18,7 +18,7 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
-  const int edge=4096;
+  const int edge=1024;
   const double deltaX=0.025;
   const double undercooling=-0.5;
   if (dim==2)
@@ -44,7 +44,7 @@ void generate(int dim, const char* filename)
   }
   else
   {
-    std::cerr<<"Snowflake code is intended for 2D, only."<<std::endl;
+    std::cerr<<"Anisotropic solidification code is only implemented for 2D."<<std::endl;
     exit(1);
   }
 }
@@ -86,16 +86,9 @@ template <int dim> void update(MMSP::grid<dim,vector<double> >& grid, int steps)
 
   int minus=0;
   int plus=0;
-  #ifdef DEBUG
-  if (id==0 && iterations==1) std::cout<<"dt is "<<dt<<", CFL condition is "<<dt/CFL<<'.'<<std::endl;
-  double total_heat=0.;
-  double total_phase=0.;
-  #endif
   for (int step=0; step<steps; ++step)
   {
-    #if (!defined DEBUG) && (!defined SILENT)
     if (id==0) print_progress(step, steps, iterations);
-    #endif
     ghostswap(grid);
     MMSP::grid<dim,vector<double> > Dgradphi(grid);
 
@@ -120,18 +113,6 @@ template <int dim> void update(MMSP::grid<dim,vector<double> >& grid, int steps)
       // Origin of this form for D is uncertain.
       Dgradphi(i)[0]=alpha*alpha*(1.+c*beta)*(   (1.+c*beta)*gradphi[0] - (c*dBetadPsi)*gradphi[1] );
       Dgradphi(i)[1]=alpha*alpha*(1.+c*beta)*( (c*dBetadPsi)*gradphi[0] +   (1.+c*beta)*gradphi[1] );
-      #ifdef DEBUG
-      if (step==0 && x[1]==g1(grid,1)/2+int(5/sqrt(2)*dx(grid,1)) && x[0]==g1(grid,0)/2-int(5/sqrt(2)*dx(grid,0)))
-        std::cout<<"\n\n Iter.:  "<<iterations
-                 <<"\n phase:  "<<grid(i)[0]
-                 <<"\n alpha:  "<<alpha
-                 <<"\n beta:   "<<beta
-                 <<"\n psi:    "<<psi
-                 <<"\n Phi:    "<<Phi
-                 <<"\n dBdpsi: "<<dBetadPsi
-                 <<"\n D∇φ:    ["<<std::setw(6)<<std::left<<Dgradphi(i)[0]
-                 <<         ","<<std::setw(6)<<std::left<<Dgradphi(i)[1]<<"]";
-      #endif
     }
     // Sync parallel grids
     ghostswap(Dgradphi);
@@ -151,16 +132,13 @@ template <int dim> void update(MMSP::grid<dim,vector<double> >& grid, int steps)
       }
       vector<double> old=grid(i);
       double m_phi=old[0]-0.5-(k1/M_PI)*atan(k2*old[1]);
-      //double dphidt=divDgradphi+m_phi*phi_old*(1.-phi_old);
       // Semi-implicit scheme per Warren 2003
       if (m_phi>0)
       {
-        ++plus;
         update(x)[0] = ((m_phi+tau/dt)*old[0]+divDgradphi)/(tau/dt+old[0]*m_phi);
       }
       else
       {
-        ++minus;
         update(x)[0] = (old[0]*tau/dt+divDgradphi)/(tau/dt-(1.-old[0])*m_phi);
       }
       // Fully explicit forward-Euler discretization
@@ -179,48 +157,12 @@ template <int dim> void update(MMSP::grid<dim,vector<double> >& grid, int steps)
       }
       double dTdt = DiffT*lapT+(old[0]-grid_old(i))/dt;
       update(x)[1] = old[1] + dt*dTdt;
-      #ifdef DEBUG
-      if (step==0)
-      {
-        total_phase+=grid(i)[0];
-        total_heat+=grid(i)[1];
-      }
-      #endif
     }
-    #ifdef DEBUG
-    if (step==0)
-    {
-      #ifdef MPI_VERSION
-      double total_total_phase;
-      MPI::COMM_WORLD.Allreduce(&total_phase, &total_total_phase, 1, MPI_DOUBLE, MPI_SUM);
-      total_phase=total_total_phase;
-      double total_total_heat;
-      MPI::COMM_WORLD.Allreduce(&total_heat, &total_total_heat, 1, MPI_DOUBLE, MPI_SUM);
-      total_heat=total_total_heat;
-      #endif
-      if (id==0) std::cout<<" Phase:  "<<total_phase
-                          <<"\n Heat:   "<<total_heat
-                          <<std::endl;
-    }
-    #endif
     for (int i=0; i<nodes(grid_old); ++i) grid_old(i)=grid(i)[0];
     swap(grid,update);
   }
   ghostswap(grid);
   ++iterations;
-  #ifdef MDEBUG
-    #ifdef MPI_VERSION
-      int total_plus;
-      int total_minus;
-      MPI::COMM_WORLD.Allreduce(&plus, &total_plus, 1, MPI_INT, MPI_SUM);
-      plus=total_plus;
-      MPI::COMM_WORLD.Allreduce(&minus, &total_minus, 1, MPI_INT, MPI_SUM);
-      minus=total_minus;
-    #endif
-    #ifndef SILENT
-    if (id==0) std::cout<<"m_phi<0 "<<minus<<" times; m_phi≥0 "<<plus<<" times."<<std::endl;
-    #endif
-  #endif
 }
 
 } // namespace MMSP
