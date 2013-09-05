@@ -139,6 +139,13 @@ int main(int argc, char* argv[]) {
 			input.read(reinterpret_cast<char*>(&lmin[j]), sizeof(lmin[j]));
 			input.read(reinterpret_cast<char*>(&lmax[j]), sizeof(lmax[j]));
 		}
+		int blo[dim];
+    int bhi[dim];
+    // read boundary conditions
+    for (int j = 0; j < dim; j++) {
+      input.read(reinterpret_cast<char*>(&blo[j]), sizeof(blo[j]));
+      input.read(reinterpret_cast<char*>(&bhi[j]), sizeof(bhi[j]));
+    }
 
 		// write header markup
 		if (dim == 1) output << "    <Piece Extent=\"" << lmin[0] << " " << lmax[0] << " 0 0 0 0\">\n";

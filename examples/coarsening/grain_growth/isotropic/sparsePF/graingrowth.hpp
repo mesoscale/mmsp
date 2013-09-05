@@ -21,7 +21,11 @@ void generate(int dim, const char* filename)
 			else set(grid(i),0) = 1.0;
 		}
 
-		output(grid,filename);
+		#ifdef MPI_VERSION
+			output_mpi(grid,filename);
+		#else
+			output(grid,filename);
+		#endif
 	}
 
 	if (dim==3) {
@@ -34,7 +38,11 @@ void generate(int dim, const char* filename)
 			else set(grid(i),0) = 1.0;
 		}
 
-		output(grid,filename);
+		#ifdef MPI_VERSION
+			output_mpi(grid,filename);
+		#else
+			output(grid,filename);
+		#endif
 	}
 }
 

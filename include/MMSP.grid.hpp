@@ -908,19 +908,21 @@ public:
 			for (int i = 0; i < dim; i++) outstr << dx[i] << '\n';
 
 			// Write file header to file
-			MPI::Request requests[2];
-			requests[0] = output.Iwrite_shared(outstr.str().c_str(), outstr.str().size(), MPI_CHAR);
+			MPI::Request request;
+			request = output.Iwrite_shared(outstr.str().c_str(), outstr.str().size(), MPI_CHAR);
+			request.Wait();
 
 			// Write number of blocks (processors) to file
-			requests[1] = output.Iwrite_shared(reinterpret_cast<const char*>(&np), sizeof(np), MPI_CHAR);
+			request = output.Iwrite_shared(reinterpret_cast<const char*>(&np), sizeof(np), MPI_CHAR);
+			request.Wait();
 
-			MPI::Request::Waitall(2, requests);
+			//MPI::Request::Waitall(2, requests);
 			#ifdef PDEBUG
 			std::cout<<"\nWrote MMSP header on rank "<<id<<" to "<<filename<<std::endl;
 			#endif
 		}
-		MPI::COMM_WORLD.Barrier();
-		output.Sync();
+		//MPI::COMM_WORLD.Barrier();
+		//output.Sync();
 		MPI::COMM_WORLD.Barrier();
 		output.Sync();
 
