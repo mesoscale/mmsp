@@ -103,6 +103,12 @@ In this section, we look at an example that uses the \MMSP {\tt grid} template c
     }
 \end{verbatim}
 \end{shadebox}
+To compile, issue
+\begin{shadebox}
+\begin{verbatim}
+    g++ -I MMSP/include grid_example.cpp -o grid_example -lz
+\end{verbatim}
+\end{shadebox}
 This program performs the amazing feat of generating a new 2-dimensional {\tt grid} object, assigning to each node the sum of {\tt x} and {\tt y}, and then writing the final state of the {\tt grid} to a file, the name of which is simply {\tt testgrid}.  Of course this isn't really anything special, but the imaginative reader may begin to see how this program might be used as a template to generate other, more useful {\tt grid} objects.
 
 Several new features have been introduced in this example.  First, the line
@@ -146,7 +152,7 @@ Finally, the line
     output(GRID,"testgrid");
 \end{verbatim}
 \end{shadebox}
-seems fairly self-explanatory, and it is.  This writes the data contained within the {\tt grid} object to a file.  Here we also note that in the case of a parallel program, the {\tt output} function performs the additional task of pieceing back together the global {\tt grid} object from all local {\tt grid} objects before writing to a file.
+seems fairly self-explanatory, and it is.  This function passes the data contained in the {\tt grid} class through {\tt zlib} and writes the compressed data to a file; this requires the flag {\tt -lz} appended to the compiler command.  Here we also note that in the case of a parallel program, the {\tt output} function performs the additional task of piecing back together the global {\tt grid} object from all local {\tt grid} objects before writing to a file.
 
 As a point of reference, let's now look at how we might do something similar to the example above with the usual {\tt c} or {\tt c++} subscripted arrays:
 \begin{shadebox}
@@ -431,8 +437,38 @@ The Allen-Cahn equation is a fairly simple model, yet it demonstrates many of th
 
 
 \section{Running the example codes}
-More to come...
+Each example program in the {\tt MMSP/examples} directory contains at least three files: the {\tt example.hpp}, defining the {\tt generate} and {\tt update} functions; {\tt example.cpp}, defining the {\tt grid} types to be used; and a {\tt Makefile}, which helps to simplify compiling {\tt MMSP} code.  The {\tt hpp} and {\tt cpp} files should be self-explanatory, based on the preceding discussion.  A file named {\tt notes} may also be included, identifying key research papers used in developing the program.
 
+Let's take a closer look at the {\tt Makefile} from the Allen-Cahn example code, available in {\tt MMSP/examples/phase\_transitions/allen-cahn/}:
+\begin{shadebox}
+\begin{verbatim}
+# includes
+incdir = ../../../include
 
+# compilers/flags
+compiler = g++
+flags = -O3 -I $(incdir)
+pcompiler = mpic++
+pflags = -O3 -I $(incdir) -include mpi.h
 
+# dependencies
+core = $(incdir)/MMSP.main.hpp \
+       $(incdir)/MMSP.utility.hpp \
+       $(incdir)/MMSP.grid.hpp
 
+# the program
+allen-cahn: allen-cahn.cpp allen-cahn.hpp $(core)
+	$(compiler) $(flags) $< -o $@ -lz
+
+parallel: allen-cahn.cpp allen-cahn.hpp $(core)
+	$(pcompiler) $(pflags) $< -o $@ -lz
+
+clean:
+	rm -f allen-cahn parallel
+\end{verbatim}
+\end{shadebox}
+The purpose of this file is to specify the compiler and paths to any file required to build the code.  The folder {\tt ../../../include} specified in the first block equals {\tt MMSP/include}, where the core {\tt MMSP} header files are stored.  The second block specifies the compiler and relevant flags, including optimization level.  Options are set for both {\tt g++} and {\tt mpic++} here.  The last defninition block lists the specific {\tt MMSP} headers to be used in the program.  Note that not every header is included!
+
+The blocks starting with {\tt allen-cahn:} and {\tt parallel:} specify the {\tt make} commands and their output.  Executing {\tt make allen-cahn} will build the executable {\tt allen-cahn} using {\tt g++}; {\tt make parallel} builds the executable {\tt parallel} using {\tt mpic++}.  Finally, executing {\tt make clean} will delete the executable files.
+
+Any entry in the {\tt Makefile} can be modified.  For example, if you copy an example code as the basis for your own project, you can move it anywhere on your hard drive so long as you edit the {\tt incdir} variable appropriately.  You may also change the executable names and compiler flags at will.  The {\tt Makefile} is a powerful tool for keeping track of lengthy compiler commands.

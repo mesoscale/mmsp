@@ -739,57 +739,6 @@ public:
 		if (not SINGLE) ghostswap();
 	}
 
-	void output(const char* filename) const {
-		int id = 0;
-		int np = 1;
-#ifdef MPI_VERSION
-		id = MPI::COMM_WORLD.Get_rank();
-		np = MPI::COMM_WORLD.Get_size();
-		std::cout << "\nWARNING: Use output_mpi(filename) instead of output(filename).\n" << std::endl;
-#endif
-		// file open error check
-		std::ofstream output(filename);
-		if (!output) {
-			std::cerr << "File output error: could not open ";
-			std::cerr << filename << "." << std::endl;
-			exit(-1);
-		}
-
-		std::stringstream outstr;
-
-		// get grid data type
-		std::string type = name(*this);
-		outstr << type << '\n';
-
-		// get grid dimension
-		outstr << dim << '\n';
-
-		// get number of fields
-		outstr << fields << '\n';
-
-		// get grid size
-		for (int i = 0; i < dim; i++) outstr << g0[i] << " " << g1[i] << '\n';
-
-		// get cell spacing
-		for (int i = 0; i < dim; i++) outstr << dx[i] << '\n';
-
-		// Write file header to file
-		output.write(outstr.str().c_str(), outstr.str().size());
-		// Write number of blocks (processors) to file
-		output.write(reinterpret_cast<const char*>(&np), sizeof(np));
-#ifdef DEBUG
-		std::cout << "Header complete. Writing data.\n";
-#endif
-
-		// get grid data to write
-		char* buffer;
-		unsigned long size = write_buffer(buffer);
-		// output grid data
-		output.write(buffer, size);
-		delete [] buffer;
-		buffer = NULL;
-	}
-
 	void read(std::ifstream& file, int GHOSTS = 1) {
 		// read number of blocks
 		int blocks;
@@ -874,11 +823,8 @@ public:
 #endif
 	}
 
-	void output_mpi(const char* filename) const {
-#ifndef MPI_VERSION
-		std::cerr << "Function output_mpi() requires MPI." << std::endl;
-		exit(-1);
-#else
+#ifdef MPI_VERSION
+	void output(const char* filename) const {
 		int id = MPI::COMM_WORLD.Get_rank();
 		int np = MPI::COMM_WORLD.Get_size();
 
@@ -972,8 +918,54 @@ public:
 		#endif
 		std::cout << std::flush;
 		MPI::COMM_WORLD.Barrier();
-#endif
 	}
+#else
+	void output(const char* filename) const {
+		int id = 0;
+		int np = 1;
+		// file open error check
+		std::ofstream output(filename);
+		if (!output) {
+			std::cerr << "File output error: could not open ";
+			std::cerr << filename << "." << std::endl;
+			exit(-1);
+		}
+
+		std::stringstream outstr;
+
+		// get grid data type
+		std::string type = name(*this);
+		outstr << type << '\n';
+
+		// get grid dimension
+		outstr << dim << '\n';
+
+		// get number of fields
+		outstr << fields << '\n';
+
+		// get grid size
+		for (int i = 0; i < dim; i++) outstr << g0[i] << " " << g1[i] << '\n';
+
+		// get cell spacing
+		for (int i = 0; i < dim; i++) outstr << dx[i] << '\n';
+
+		// Write file header to file
+		output.write(outstr.str().c_str(), outstr.str().size());
+		// Write number of blocks (processors) to file
+		output.write(reinterpret_cast<const char*>(&np), sizeof(np));
+#ifdef DEBUG
+		std::cout << "Header complete. Writing data.\n";
+#endif
+
+		// get grid data to write
+		char* buffer;
+		unsigned long size = write_buffer(buffer);
+		// output grid data
+		output.write(buffer, size);
+		delete [] buffer;
+		buffer = NULL;
+	}
+#endif
 
 	unsigned long write_buffer(char* &buf) const {
 		int id = 0;
@@ -1030,14 +1022,14 @@ public:
 		increment = sizeof(data_size);
 		memcpy(p, reinterpret_cast<const char*>(&data_size), increment);
 		p += increment;
-		char* q(p); // save current location: need to re-write this value later
 
 		// Write the size of the compressed block
+		char* q(p); // save current location: need to re-write this value later
 		increment = sizeof(compressed_size);
 		memcpy(p, reinterpret_cast<const char*>(&compressed_size), increment);
 		p += increment;
 
-		// Read the data block
+		// Read the data block from grid private data
 		char* raw = new char[data_size];
 		unsigned long xfer_size = this->to_buffer(raw);
 		if (xfer_size > size - header_size) {
@@ -1546,14 +1538,6 @@ template <int dim, typename T> void output(const grid<dim, T>& GRID, const char*
 template <int dim, typename T> unsigned long write_buffer(const grid<dim, T>& GRID, char* &buf) {
 	GRID.write_buffer(buf);
 }
-#ifdef MPI_VERSION
-template <int dim, typename T> void write_mpi(const grid<dim, T>& GRID, MPI::File& file) {
-	GRID.write_mpi(file);
-}
-template <int dim, typename T> void output_mpi(const grid<dim, T>& GRID, const char* filename) {
-	GRID.output_mpi(filename);
-}
-#endif
 
 // utility functions
 template <int dim, typename T> int length(const grid<dim, T>& GRID) {

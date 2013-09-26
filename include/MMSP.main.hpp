@@ -332,11 +332,7 @@ int main(int argc, char* argv[]) {
 				}
 
 				// write grid output to file
-#ifdef MPI_VERSION
-				MMSP::output_mpi(grid, filename.str().c_str());
-#else
 				MMSP::output(grid, filename.str().c_str());
-#endif
 			}
 		}
 #endif
@@ -361,11 +357,7 @@ int main(int argc, char* argv[]) {
 				}
 
 				// write grid output to file
-#ifdef MPI_VERSION
-				MMSP::output_mpi(grid, filename.str().c_str());
-#else
 				MMSP::output(grid, filename.str().c_str());
-#endif
 			}
 		}
 
@@ -389,11 +381,7 @@ int main(int argc, char* argv[]) {
 				}
 
 				// write grid output to file
-#ifdef MPI_VERSION
-				MMSP::output_mpi(grid, filename.str().c_str());
-#else
 				MMSP::output(grid, filename.str().c_str());
-#endif
 			}
 		}
 	}
