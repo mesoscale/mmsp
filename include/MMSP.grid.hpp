@@ -11,7 +11,9 @@
 #include<cmath>
 #include<iomanip>
 #include<limits>
+#ifndef RAW
 #include<zlib.h>
+#endif
 
 #include"MMSP.utility.hpp"
 #include"MMSP.scalar.hpp"
@@ -24,7 +26,7 @@ namespace MMSP {
 template <int dim, typename T> class grid;
 
 // grid utility functions
-template <int dim, typename T> int nodes(const grid<dim, T>& GRID) {
+template <int dim, typename T> unsigned long nodes(const grid<dim, T>& GRID) {
 	return nodes(GRID);
 }
 template <int dim, typename T> int fields(const grid<dim, T>& GRID) {
@@ -163,9 +165,9 @@ public:
 		// set number of ghosts
 		ghosts = 0;
 
-#ifdef MPI_VERSION
+		#ifdef MPI_VERSION
 		ghosts = GHOSTS;
-#endif
+		#endif
 
 		// setup grid properties
 		setup(SINGLE);
@@ -188,9 +190,9 @@ public:
 		// set number of ghosts
 		ghosts = 0;
 
-#ifdef MPI_VERSION
+		#ifdef MPI_VERSION
 		ghosts = 1;
-#endif
+		#endif
 
 		// setup grid properties
 		setup();
@@ -209,9 +211,9 @@ public:
 		// set number of ghosts
 		ghosts = 0;
 
-#ifdef MPI_VERSION
+		#ifdef MPI_VERSION
 		ghosts = MMSP::ghosts(GRID);
-#endif
+		#endif
 
 		// setup grid properties
 		setup();
@@ -238,9 +240,9 @@ public:
 		// set number of ghosts
 		ghosts = 0;
 
-#ifdef MPI_VERSION
+		#ifdef MPI_VERSION
 		ghosts = MMSP::ghosts(GRID);
-#endif
+		#endif
 
 		// setup grid properties
 		setup();
@@ -280,7 +282,7 @@ public:
 			n1[i] = 0;
 		}
 
-#ifdef MPI_VERSION
+		#ifdef MPI_VERSION
 		// get global grid data, set neighbor processors
 		int id = MPI::COMM_WORLD.Get_rank();
 		int np = MPI::COMM_WORLD.Get_size();
@@ -413,7 +415,7 @@ public:
 				if (x1[i] != g1[i]) b1[i] = parallel;
 			}
 		}
-#endif
+		#endif
 
 		// compute slice sizes
 		for (int i = 0; i < dim; i++) {
@@ -438,9 +440,9 @@ public:
 		for (int i = 0; i < cells; i++)
 			resize(data[i], fields);
 
-#ifdef MPI_VERSION
+		#ifdef MPI_VERSION
 		MPI::COMM_WORLD.Barrier();
-#endif
+		#endif
 	}
 
 
@@ -488,7 +490,7 @@ public:
 	}
 
 	T& operator()(int i) const {
-#ifdef MPI_VERSION
+		#ifdef MPI_VERSION
 		int x[dim];
 		for (int j = 0; j < dim; j++) {
 			int n = i / xx[j];
@@ -498,7 +500,7 @@ public:
 		i = 0;
 		for (int j = 0; j < dim; j++)
 			i += (x[j] - s0[j]) * sx[j];
-#endif
+		#endif
 
 		return data[i];
 	}
@@ -518,7 +520,7 @@ public:
 
 	// parallelization
 	void ghostswap() {
-#ifdef MPI_VERSION
+		#ifdef MPI_VERSION
 		int np = MPI::COMM_WORLD.Get_size();
 		int id = MPI::COMM_WORLD.Get_rank();
 		for (int i = 0; i < dim; i++) {
@@ -618,7 +620,7 @@ public:
 			}
 		}
 		MPI::COMM_WORLD.Barrier();
-#endif
+		#endif
 	}
 
 
@@ -717,9 +719,9 @@ public:
 
 		// set number of ghosts
 		ghosts = GHOSTS;
-#ifndef MPI_VERSION
+		#ifndef MPI_VERSION
 		ghosts = 0;
-#endif
+		#endif
 
 		// setup grid parameters
 		delete [] data;
@@ -768,28 +770,34 @@ public:
 			char* buffer = new char[size];
 			file.read(buffer, size);
 			grid<dim, T> GRID(fields, lmin, lmax, 0, true);
-			// Decompress data
-			char* raw = new char[rawSize];
-			int status;
-			status = uncompress(reinterpret_cast<unsigned char*>(raw), &rawSize, reinterpret_cast<unsigned char*>(buffer), size);
-			switch( status ) {
-			case Z_OK:
-				break;
+			if (rawSize!=size) {
+				#ifdef RAW
+				std::cerr<<"Unable to uncompress data: compiled without zlib."<<std::endl;
+				exit(1);
+				#else
+				// Decompress data
+				char* raw = new char[rawSize];
+				int status;
+				status = uncompress(reinterpret_cast<unsigned char*>(raw), &rawSize, reinterpret_cast<unsigned char*>(buffer), size);
+				switch( status ) {
+				case Z_OK:
+					break;
 
-			case Z_MEM_ERROR:
-				std::cerr << "Uncompress: out of memory." << std::endl;
-				exit(1);    // quit.
-				break;
+				case Z_MEM_ERROR:
+					std::cerr << "Uncompress: out of memory." << std::endl;
+					exit(1);    // quit.
+					break;
 
-			case Z_BUF_ERROR:
-				std::cerr << "Uncompress: output buffer wasn't large enough." << std::endl;
-				exit(1);    // quit.
-				break;
-			}
-
+				case Z_BUF_ERROR:
+					std::cerr << "Uncompress: output buffer wasn't large enough." << std::endl;
+					exit(1);    // quit.
+					break;
+				}
+				GRID.from_buffer(raw);
+				delete [] raw;
+				#endif
+			} else GRID.from_buffer(buffer);
 			delete [] buffer;
-			GRID.from_buffer(raw);
-			delete [] raw;
 
 			// find overlapping region
 			int min[dim];
@@ -817,10 +825,10 @@ public:
 			}
 		}
 
-#ifdef MPI_VERSION
+		#ifdef MPI_VERSION
 		int id = MPI::COMM_WORLD.Get_rank();
 		MPI::COMM_WORLD.Barrier();
-#endif
+		#endif
 	}
 
 #ifdef MPI_VERSION
@@ -834,6 +842,8 @@ public:
 			std::cerr << "File output error: could not open " << filename << "." << std::endl;
 			exit(-1);
 		}
+		output.Set_atomicity(true);
+		unsigned long header_offset=0;
 
 		if (id == 0) {
 			std::stringstream outstr;
@@ -855,68 +865,58 @@ public:
 
 			// Write file header to file
 			MPI::Request request;
-			request = output.Iwrite_shared(outstr.str().c_str(), outstr.str().size(), MPI_CHAR);
+			request = output.Iwrite_at(0,outstr.str().c_str(), outstr.str().size(), MPI_CHAR);
 			request.Wait();
+			header_offset+=outstr.str().size();
 
 			// Write number of blocks (processors) to file
-			request = output.Iwrite_shared(reinterpret_cast<const char*>(&np), sizeof(np), MPI_CHAR);
+			request = output.Iwrite_at(header_offset,reinterpret_cast<const char*>(&np), sizeof(np), MPI_CHAR);
 			request.Wait();
+			header_offset+=sizeof(np);
 
-			//MPI::Request::Waitall(2, requests);
 			#ifdef PDEBUG
 			std::cout<<"\nWrote MMSP header on rank "<<id<<" to "<<filename<<std::endl;
 			#endif
+			outstr.str("");
 		}
-		//MPI::COMM_WORLD.Barrier();
-		//output.Sync();
 		MPI::COMM_WORLD.Barrier();
 		output.Sync();
+		MPI::COMM_WORLD.Bcast(&header_offset, 1, MPI_UNSIGNED_LONG, 0); // retrieve header size from rank 0
 
-
-		// get grid data to write -- compressed with zlib
-		char* buffer;
+		// get grid data to write
+		char* buffer=NULL;
 		unsigned long size = write_buffer(buffer);
-		#ifdef PDEBUG
-		int vote=1;
-		int total_procs=0;
-		MPI::COMM_WORLD.Barrier();
-		MPI::COMM_WORLD.Allreduce(&vote, &total_procs, 1, MPI_INT, MPI_SUM);
-		if (id==0) std::cout<<"\nCompressed MMSP grid data on "<<total_procs<<" ranks."<<std::endl;
-		#endif
 
-		// Write the buffer to disk!
+		// Compute file offsets based on buffer sizes
+    unsigned long *datasizes = new unsigned long[np];
+    MPI::COMM_WORLD.Allgather(&size, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
+    MPI::COMM_WORLD.Barrier();
+    #ifdef PDEBUG
+    if (datasizes[id]!=size) {
+      std::cerr<<"Error on Rank "<<id<<": incorrect data size ("<<datasizes[id]<<" != "<<size<<").\n";
+      std::exit(-1);
+    }
+    #endif
+    MPI::COMM_WORLD.Barrier();
+
+    unsigned long *offsets = new unsigned long[np];
+    offsets[0]=header_offset;
+    for (unsigned int n=1; n<np; ++n) offsets[n]=offsets[n-1]+datasizes[n-1];
+
+		// Write buffer to disk
 		MPI::Status status;
 		MPI::Request request;
-
-		output.Sync();
 		MPI::COMM_WORLD.Barrier();
-		output.Sync();
 
-		//output.Write_ordered(buffer,size,MPI_CHAR,status);
-		request = output.Iwrite_shared(buffer, size, MPI_CHAR);
-
-		// After non-blocking shared write, wait for file IO to complete
+		request = output.Iwrite_at(offsets[id],buffer,size,MPI_CHAR);
 		request.Wait();
 		MPI::COMM_WORLD.Barrier();
-		#ifdef PDEBUG
-		total_procs=0;
-		MPI::COMM_WORLD.Allreduce(&vote, &total_procs, 1, MPI_INT, MPI_SUM);
-		if (id==0) std::cout<<"\nWrote MMSP grid data from "<<total_procs<<" ranks to "<<filename<<std::endl;
-		#endif
 		delete [] buffer;
 		buffer = NULL;
 
 		// Make sure everything's written before closing the file.
-		output.Sync();
 		MPI::COMM_WORLD.Barrier();
-		output.Sync();
 		output.Close();
-
-		// Make sure everything's written before closing the file.
-		#ifdef PDEBUG
-		if (id==0) std::cout<<"\nFinished writing "<<filename<<'\n'<<std::endl;
-		#endif
-		std::cout << std::flush;
 		MPI::COMM_WORLD.Barrier();
 	}
 #else
@@ -953,9 +953,6 @@ public:
 		output.write(outstr.str().c_str(), outstr.str().size());
 		// Write number of blocks (processors) to file
 		output.write(reinterpret_cast<const char*>(&np), sizeof(np));
-#ifdef DEBUG
-		std::cout << "Header complete. Writing data.\n";
-#endif
 
 		// get grid data to write
 		char* buffer;
@@ -970,17 +967,17 @@ public:
 	unsigned long write_buffer(char* &buf) const {
 		int id = 0;
 		int np = 1;
-#ifdef MPI_VERSION
+		#ifdef MPI_VERSION
 		id = MPI::COMM_WORLD.Get_rank();
 		np = MPI::COMM_WORLD.Get_size();
-#endif
+		#endif
 
 		// Find out how big the dataset is
 		unsigned long data_size = this->buffer_size();
 		unsigned long compressed_size = 1.125 * data_size + 12;
-
-		// write number of blocks
-		int blocks = np;
+		#ifdef RAW
+    compressed_size = data_size;
+    #endif
 
 		// Figure out the block extents
 		unsigned long header_size = 0;
@@ -996,7 +993,7 @@ public:
 		buf = new char[size];
 		for (unsigned long i = 0; i < size; ++i) buf[i] = 0;
 		char* p = buf;
-		int increment = 0; // number of bytes to copy (1 char per byte)
+		unsigned long increment = 0; // number of bytes to copy
 
 		// Write local limits
 		for (int j = 0; j < dim; j++) {
@@ -1030,6 +1027,9 @@ public:
 		p += increment;
 
 		// Read the data block from grid private data
+		#ifdef RAW
+    compressed_size=this->to_buffer(p);
+    #else
 		char* raw = new char[data_size];
 		unsigned long xfer_size = this->to_buffer(raw);
 		if (xfer_size > size - header_size) {
@@ -1041,20 +1041,21 @@ public:
 		int status;
 		int level = 9; // highest compression level (slowest speed)
 		status = compress2(reinterpret_cast<Bytef*>(p), &compressed_size, reinterpret_cast<Bytef*>(raw), data_size, level);
-		switch( status ) {
-		case Z_OK:
-			break;
-
-		case Z_MEM_ERROR:
-			std::cerr << "Compress: out of memory." << std::endl;
-			exit(1);    // quit.
-			break;
-
-		case Z_BUF_ERROR:
-			std::cerr << "Compress: output buffer wasn't large enough." << std::endl;
-			exit(1);    // quit.
-			break;
+		switch(status) {
+			case Z_OK:
+				break;
+			case Z_MEM_ERROR:
+				std::cerr << "Compress: out of memory." << std::endl;
+				exit(1);
+				break;
+			case Z_BUF_ERROR:
+				std::cerr << "Compress: output buffer wasn't large enough." << std::endl;
+				exit(1);
+				break;
 		}
+		delete [] raw;
+    raw=NULL;
+    #endif
 
 		// Re-write the size of the (compressed) data block
 		increment = sizeof(compressed_size);
@@ -1063,13 +1064,11 @@ public:
 		// Update size of the write-buffer
 		size = header_size + static_cast<unsigned long>(sizeof(data_size)) + static_cast<unsigned long>(sizeof(compressed_size)) + compressed_size;
 
-		// Cleanup
-		delete [] raw;
 		return size;
 	}
 
 	// grid utility functions
-	friend int nodes(const grid& GRID) {
+	friend unsigned long nodes(const grid& GRID) {
 		return GRID.nodes;
 	}
 	friend int fields(const grid& GRID) {
@@ -1204,7 +1203,7 @@ public:
 		GRID.data = DATA;
 
 		// swap number of nodes
-		int NODES = nodes;
+		unsigned long NODES = nodes;
 		nodes = GRID.nodes;
 		GRID.nodes = NODES;
 
@@ -1331,10 +1330,10 @@ public:
 protected:
 	T* data;        // local grid data
 
-	int nodes;      // number of nodes (excluding ghosts)
-	int cells;      // number of nodes (including ghosts)
-	int fields;     // number of fields
-	int ghosts;     // ghost cell depth
+	unsigned long nodes;	// number of nodes (excluding ghosts)
+	unsigned long cells;	// number of nodes (including ghosts)
+	int fields;						// number of fields
+	int ghosts;						// ghost cell depth
 
 	int g0[dim];    // global lower coordinate limit (excluding ghosts)
 	int g1[dim];    // global upper coordinate limit (excluding ghosts)
@@ -1540,7 +1539,7 @@ template <int dim, typename T> unsigned long write_buffer(const grid<dim, T>& GR
 }
 
 // utility functions
-template <int dim, typename T> int length(const grid<dim, T>& GRID) {
+template <int dim, typename T> unsigned long length(const grid<dim, T>& GRID) {
 	return nodes(GRID);
 }
 template <int dim, typename T> void resize(int n, grid<dim, T>& GRID) {}

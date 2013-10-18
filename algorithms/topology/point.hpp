@@ -12,6 +12,17 @@ public:
 	Point<T>(const Point<T>& old): x(old.x), y(old.y), z(old.z) {}
 	template <class U>
 	Point<T>(const Point<U>& old): x(old.x), y(old.y), z(old.z) {}
+	//Accessors
+	T& operator [](int i) {
+		if (i==0) return this->x;
+		else if (i==1) return this->y;
+		else if (i==2) return this->z;
+	}
+	const T& operator [](int i) const {
+		if (i==0) return this->x;
+		else if (i==1) return this->y;
+		else if (i==2) return this->z;
+	}
 	// Modifiers
 	Point& operator+=(const Point<T>& rhs) {
 		this->x += rhs.x;
@@ -76,7 +87,6 @@ Point<T> operator/(const Point<T>& p, const U& f) {
 
 
 // Point output operator
-//std::ostream& operator<<(std::ostream& out, Point<T>& p)
 template <class T> std::ostream& operator<<(std::ostream& out, const Point<T>& p) {
 	out << '(' << p.x << ',' << p.y << ',' << p.z << ')';
 	return out;
@@ -86,6 +96,10 @@ template <class T> std::ostream& operator<<(std::ostream& out, const Point<T>& p
 template <class T>
 double distance_function( Point<T> p, Point<T> q) {
 	return sqrt((p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y) + (p.z - q.z) * (p.z - q.z));
+}
+
+template <class T> bool operator==(const Point<T>& a, const Point<T>&b) {
+	return (a.x==b.x) && (a.y==b.y) && (a.z==b.z);
 }
 
 #endif

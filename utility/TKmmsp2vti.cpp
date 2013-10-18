@@ -40,10 +40,6 @@ int main(int argc, char* argv[]) {
 	else
 		filename << argv[2];
 
-	// file open error check
-	if ( fexists(filename.str().c_str()) ) {
-		std::cerr << "File output warning: " << filename.str() << " already exists." << std::endl;
-	}
 	std::ofstream output(filename.str().c_str());
 	if (!output) {
 		std::cerr << "File output error: could not open ";
@@ -158,7 +154,6 @@ int main(int argc, char* argv[]) {
       input.read(reinterpret_cast<char*>(&bhi[j]), sizeof(bhi[j]));
     }
 
-
 		// write header markup
 		if (dim == 1) output << "    <Piece Extent=\"" << lmin[0] << " " << lmax[0] << " 0 0 0 0\">\n";
 		if (dim == 2) output << "    <Piece Extent=\"" << lmin[1] << " " << lmax[1] << " " << lmin[0] << " " << lmax[0] << " 0 0\">\n";
@@ -218,23 +213,29 @@ int main(int argc, char* argv[]) {
 		input.read(reinterpret_cast<char*>(&size), sizeof(size)); // read compressed size
 		char* compressed_buffer = new char[size];
 		input.read(compressed_buffer, size);
-		// Decompress data
-		char* buffer = new char[rawSize];
-		int status;
-		status = uncompress(reinterpret_cast<unsigned char*>(buffer), &rawSize, reinterpret_cast<unsigned char*>(compressed_buffer), size);
-		switch( status ) {
-		case Z_OK:
-			break;
-		case Z_MEM_ERROR:
-			std::cerr << "Uncompress: out of memory." << std::endl;
-			exit(1);    // quit.
-			break;
-		case Z_BUF_ERROR:
-			std::cerr << "Uncompress: output buffer wasn't large enough." << std::endl;
-			exit(1);    // quit.
-			break;
+		char* buffer;
+		if (size!=rawSize) {
+			// Decompress data
+			buffer = new char[rawSize];
+			int status;
+			status = uncompress(reinterpret_cast<unsigned char*>(buffer), &rawSize, reinterpret_cast<unsigned char*>(compressed_buffer), size);
+			switch( status ) {
+			case Z_OK:
+				break;
+			case Z_MEM_ERROR:
+				std::cerr << "Uncompress: out of memory." << std::endl;
+				exit(1);
+				break;
+			case Z_BUF_ERROR:
+				std::cerr << "Uncompress: output buffer wasn't large enough." << std::endl;
+				exit(1);
+				break;
+			}
+			delete [] compressed_buffer;
+		} else {
+			buffer=compressed_buffer;
+			compressed_buffer=NULL;
 		}
-		delete [] compressed_buffer;
 
 		// write grid data
 		if (sparse_type) {

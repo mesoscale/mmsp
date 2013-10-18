@@ -123,50 +123,6 @@ int main(int argc, char* argv[]) {
 		MMSP::generate(dim, outfile.c_str());
 	}
 
-	// analyze topology
-#ifndef MPI_VERSION
-#ifdef TOPOLOGY
-
-	else if (std::string(argv[1]) == std::string("--topo")) {
-		// bad argument list
-		if (argc<3 or argc>5) {
-			std::cout << PROGRAM << ": bad argument list.  Use\n\n";
-			std::cout << "    " << PROGRAM << " --help\n\n";
-			std::cout << "to generate help message.\n\n";
-			exit(-1);
-		}
-
-		// file open error check
-		std::ifstream input(argv[2]);
-		if (!input) {
-			std::cerr << "File input error: could not open " << argv[2] << ".\n\n";
-			exit(-1);
-		}
-
-		// read data type
-		std::string type;
-		getline(input, type, '\n');
-
-		// grid type error check
-		if (type.substr(0, 4) != "grid") {
-			std::cerr << "File input error: file does not contain grid data." << std::endl;
-			exit(-1);
-		}
-
-		// read grid dimension
-		int dim;
-		input >> dim;
-
-		if (dim == 3) {
-			// construct grid object
-			//GRID3D grid(argv[2]);
-			MMSP::grid<3, MMSP::sparse<double> > grid(argv[2]);
-			MMSP::record_topology<3, double>(grid);
-		}
-	}
-#endif
-#endif
-
 	// run simulation
 	else {
 		// bad argument list
@@ -310,32 +266,6 @@ int main(int argc, char* argv[]) {
 			length += slength.str().length();
 		}
 
-
-#ifdef DEBUG
-		if (dim == 1) {
-			// construct grid object
-			GRID1D grid(argv[1]);
-
-			// perform computation
-			for (int i = iterations_start; i < steps; i += increment) {
-				MMSP::update(grid, increment);
-
-				// generate output filename
-				std::stringstream filename;
-				int n = filename.str().length();
-				for (int j = 0; n < length; j++) {
-					filename.str("");
-					filename << base;
-					for (int k = 0; k < j; k++) filename << 0;
-					filename << i + increment << suffix;
-					n = filename.str().length();
-				}
-
-				// write grid output to file
-				MMSP::output(grid, filename.str().c_str());
-			}
-		}
-#endif
 
 		if (dim == 2) {
 			// construct grid object

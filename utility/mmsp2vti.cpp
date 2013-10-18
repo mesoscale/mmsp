@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
 	input.ignore(10, '\n');
 
 
-	// determine byte order
+	// determine byte order: 01 AND 01 = 01; 01 AND 10 = 00.
 	std::string byte_order;
 	if (0x01 & static_cast<int>(1)) byte_order = "LittleEndian";
 	else byte_order = "BigEndian";
@@ -204,23 +204,30 @@ int main(int argc, char* argv[]) {
 		input.read(reinterpret_cast<char*>(&size), sizeof(size)); // read compressed size
 		char* compressed_buffer = new char[size];
 		input.read(compressed_buffer, size);
-		// Decompress data
-		char* buffer = new char[rawSize];
-		int status;
-		status = uncompress(reinterpret_cast<unsigned char*>(buffer), &rawSize, reinterpret_cast<unsigned char*>(compressed_buffer), size);
-		switch( status ) {
-		case Z_OK:
-			break;
-		case Z_MEM_ERROR:
-			std::cerr << "Uncompress: out of memory." << std::endl;
-			exit(1);    // quit.
-			break;
-		case Z_BUF_ERROR:
-			std::cerr << "Uncompress: output buffer wasn't large enough." << std::endl;
-			exit(1);    // quit.
-			break;
+		char* buffer = NULL;
+		if (size!=rawSize) {
+			// Decompress data
+			buffer = new char[rawSize];
+			int status;
+			status = uncompress(reinterpret_cast<unsigned char*>(buffer), &rawSize, reinterpret_cast<unsigned char*>(compressed_buffer), size);
+			switch( status ) {
+			case Z_OK:
+				break;
+			case Z_MEM_ERROR:
+				std::cerr << "Uncompress: out of memory." << std::endl;
+				exit(1);
+				break;
+			case Z_BUF_ERROR:
+				std::cerr << "Uncompress: output buffer wasn't large enough." << std::endl;
+				exit(1);
+				break;
+			}
+			delete [] compressed_buffer;
+			compressed_buffer=NULL;
+		} else {
+			buffer = compressed_buffer;
+			compressed_buffer=NULL;
 		}
-		delete [] compressed_buffer;
 
 		// write grid data
 		if (not vector_type and not sparse_type) {
@@ -1038,4 +1045,3 @@ int main(int argc, char* argv[]) {
 	output << "  </ImageData>\n";
 	output << "</VTKFile>\n";
 }
-
