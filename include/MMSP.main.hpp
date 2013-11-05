@@ -238,14 +238,14 @@ int main(int argc, char* argv[]) {
 			iterations_start = atoi(number.c_str());
 		}
 		std::string base;
-		if (outfile.rfind(".", outfile.find_last_of(".") - 1) == -1) // only one dot found
+		if (outfile.find(".", outfile.find_first_of(".") + 1) == std::string::npos) // only one dot found
 			base = outfile.substr(0, outfile.find_last_of(".")) + ".";
 		else {
 			int last_dot = outfile.find_last_of(".");
 			int prev_dot = outfile.rfind('.', last_dot - 1);
 			std::string number = outfile.substr(prev_dot + 1, last_dot - prev_dot - 1);
 			bool isNumeric(true);
-			for (int i = 0; i < number.size(); ++i) {
+			for (unsigned int i = 0; i < number.size(); ++i) {
 				if (!isdigit(number[i])) isNumeric = false;
 			}
 			if (isNumeric)

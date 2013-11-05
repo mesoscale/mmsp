@@ -436,6 +436,13 @@ template <int ind, typename T, typename U>
 vector<T> operator*(const U& value, const target<0, ind, vector<T> >& x) {
 	return operator*(value, *(x.data));
 }
+template <typename T> bool operator==(const vector<T>& a, const vector<T>& b) {
+	int N=a.length();
+	if (N != b.length()) return false;
+	for (int i=0; i<N; ++i)
+		if (a[i]!=b[i]) return false;
+	return true;
+}
 
 } // namespace MMSP
 

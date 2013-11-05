@@ -265,11 +265,11 @@ template <typename T> T global(T& value, const char* operation) {
 			delete [] buffer;
 
 			// perform operation
-			if (operation == "add" or operation == "sum")
+			if (std::string(operation)=="add" or std::string(operation)=="sum")
 				global += temp;
-			else if (operation == "min" or operation == "minimum")
+			else if (std::string(operation)=="min" or std::string(operation)=="minimum")
 				global = min(global, temp);
-			else if (operation == "max" or operation == "maximum")
+			else if (std::string(operation)=="max" or std::string(operation)=="maximum")
 				global = max(global, temp);
 		}
 
