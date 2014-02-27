@@ -31,8 +31,8 @@ Point<T> getPoint(const MMSP::vector<T>& v) {
 }
 
 // Scan neighboring voxels, adding neighboring grain ID's to a temporary map.
-template <class T>
-int check_neighbors(id_type me, const MMSP::vector<int>& v, const MMSP::grid<3, MMSP::sparse<T> >& data, set<id_type>& adjacent) {
+template <int dim, class T>
+int check_neighbors(id_type me, const MMSP::vector<int>& v, const MMSP::grid<dim, MMSP::sparse<T> >& data, set<id_type>& adjacent) {
 	adjacent.clear();
 	MMSP::vector<int> x = v;
 	// Check adjacent points for other grain ID's
@@ -40,14 +40,21 @@ int check_neighbors(id_type me, const MMSP::vector<int>& v, const MMSP::grid<3, 
 		if (x[0] < MMSP::x0(data, 0) || x[0] >= MMSP::x1(data, 0)) continue;
 		for (x[1] = v[1] - 1; x[1] < v[1] + 2; ++x[1]) {
 			if (x[1] < MMSP::x0(data, 1) || x[1] >= MMSP::x1(data, 1)) continue;
-			for (x[2] = v[2] - 1; x[2] < v[2] + 2; ++x[2]) {
-				if (x[2] < MMSP::x0(data, 2) || x[2] >= MMSP::x1(data, 2)) continue;
-				if ( x[0] == v[0] && x[1] == v[1] && x[2] == v[2] ) continue;
+			if (dim==2) {
+				if ( x[0] == v[0] && x[1] == v[1] ) continue;
 				else if ( data(x).grain_id() == me ) continue;
-				// Skip the 8 corners of this 27-voxel domain.
-				else if ( (x[0] == v[0] - 1 || x[0] == v[0] + 1) && (x[1] == v[1] - 1 || x[1] == v[1] + 1) && (x[2] == v[2] - 1 || x[2] == v[2] + 1) ) continue;
 				// Add 1st and 2nd nearest neighbors.
 				else adjacent.insert( data(x).grain_id() );
+			} else {
+				for (x[2] = v[2] - 1; x[2] < v[2] + 2; ++x[2]) {
+					if (x[2] < MMSP::x0(data, 2) || x[2] >= MMSP::x1(data, 2)) continue;
+					if ( x[0] == v[0] && x[1] == v[1] && x[2] == v[2] ) continue;
+					else if ( data(x).grain_id() == me ) continue;
+					// Skip the 8 corners of this 27-voxel domain. This may skip some valid edge points, but hopefully not all of them.
+					else if ( (x[0] == v[0] - 1 || x[0] == v[0] + 1) && (x[1] == v[1] - 1 || x[1] == v[1] + 1) && (x[2] == v[2] - 1 || x[2] == v[2] + 1) ) continue;
+					// Add 1st and 2nd nearest neighbors.
+					else adjacent.insert( data(x).grain_id() );
+				}
 			}
 		}
 	}
@@ -58,6 +65,7 @@ int main(int argc, char* argv[]) {
 	const float epsilon(1e-8);
 	std::time_t rawtime;
 	time_t starttime = std::time( &rawtime );
+	time_t timeinfo;
 	stringstream timestr;
 
 	if ( argc != 3 ) {
@@ -93,26 +101,12 @@ int main(int argc, char* argv[]) {
 	// read grid dimension
 	int dim;
 	input >> dim;
-
-	if (dim != 3) {
-		std::cerr << "ERROR in " << argv[1] << ": grain topology is limited to 3D grids.\n" << std::endl;
+	if (dim<2 || dim>3) {
+		std::cerr << "ERROR in " << argv[1] << ": "<<dim<<"-dimensional topology is not implemented.\n" << std::endl;
 		exit(-1);
 	}
 
-	// construct grid object
-	MMSP::grid<3, MMSP::sparse<float> > grid(argv[1]);
-	time_t timeinfo = std::time( &rawtime );
-	timestr << "File IO:    " << timeinfo - starttime << " sec. ";
-#ifdef DEBUG
-	cout << '\n' << flush;
-#endif
-	starttime = timeinfo;
-
-	int x_min = g0(grid, 0), x_max = g1(grid, 0), y_min = g0(grid, 1), y_max = g1(grid, 1), z_min = g0(grid, 2), z_max = g1(grid, 2); // Dimensions of the matrix, in voxels: upper limits of array indices
-	float x_scale = dx(grid, 0), y_scale = dx(grid, 1), z_scale = dx(grid, 2); // Dimensions of each voxel, in microns
-	//#ifdef DEBUG
 	float min_phi = 1., max_phi = 0.;
-	//#endif
 	map<int, int> topologies; // number of vertices, edges, etc.
 	map<int, int> exclusions;
 	exclusions[138] = 0;
@@ -124,47 +118,115 @@ int main(int argc, char* argv[]) {
 	// Read grain ID's from the VTK file. Populate the data matrix.
 	map<id_type, Grain> grains;
 
-	// Populate the data matrix from MMSP data.
-	for (int i = 0; i < nodes(grid); ++i) {
-		MMSP::vector<int> x = position(grid, i);
-		id_type major_phase(grid(i).grain_id());
-		float phi = grid(i)[major_phase];
-		if (phi < min_phi) min_phi = phi;
-		else if (phi > max_phi) max_phi = phi;
-		map<id_type, Grain>::iterator itr = grains.insert( make_pair(major_phase, Grain(major_phase)) ).first; // second = bool indicating success
-		itr->second.addMass(phi, Point<float>(x[0], x[1], x[2]));
-		int n = length(grid(i));
-		for (int h = 0; h < n; ++h) {
-			id_type minor_phase(MMSP::index(grid(i), h));
-			if (minor_phase == major_phase) continue;
-			map<id_type, Grain>::iterator tmp = grains.insert( make_pair(minor_phase, Grain(minor_phase)) ).first;
-			float phi = grid(i)[minor_phase];
-			tmp->second.addMass(phi, Point<float>(x[0], x[1], x[2]));
+	// global grid dimensions and spacing
+	int* gmin = new int[dim];
+	int* gmax = new int[dim];
+	float* gscale = new float[dim];
+
+	if (dim==2) {
+		// construct grid object
+		MMSP::grid<2, MMSP::sparse<float> > grid(argv[1]);
+		timeinfo = std::time( &rawtime );
+		timestr << "File IO:    " << timeinfo - starttime << " sec. ";
+		#ifdef DEBUG
+		cout << '\n' << flush;
+		#endif
+		starttime = timeinfo;
+
+		for (int d=0; d<dim; ++d) {
+			gmin[d]=g0(grid,d);
+			gmax[d]=g1(grid,d);
+			gscale[d]=dx(grid,d);
 		}
-		set<id_type> neighbors;
-		int count = check_neighbors<float>(major_phase, x, grid, neighbors);
-		++topologies[neighbors.size()];
-		if (neighbors.size() == 2) {
-			// voxel sits on a triple-line between grains
-			itr = grains.find(major_phase);
-			itr->second.updateEdges(neighbors, Point<int>(x[0], x[1], x[2]));
-			for (set<id_type>::iterator sitr = neighbors.begin(); sitr != neighbors.end(); ++sitr) itr->second.addNeighbor(*sitr);
-		}
-		if ( ( x[0] == x_min || x[0] == x_max - 1 ) || ( x[1] == y_min || x[1] == y_max - 1 ) || ( x[2] == z_min || x[2] == z_max - 1 ) ) {
-			if (!(itr->second.isExcluded())) {
-				// EXPERIMENTAL
-				/*
-				++exclusions[138];
-				itr->second.setExclusion(); // grain touches the boundary
-				*/
+
+		// Populate the data matrix from MMSP data.
+		for (int i = 0; i < nodes(grid); ++i) {
+			MMSP::vector<int> x = position(grid, i);
+			id_type major_phase(grid(i).grain_id());
+			float phi = grid(i)[major_phase];
+			if (phi < min_phi) min_phi = phi;
+			else if (phi > max_phi) max_phi = phi;
+			map<id_type, Grain>::iterator itr = grains.insert( make_pair(major_phase, Grain(major_phase)) ).first; // second = bool indicating success
+			itr->second.addMass(phi, Point<float>(x[0], x[1]));
+			int n = length(grid(i));
+			for (int h = 0; h < n; ++h) {
+				id_type minor_phase(MMSP::index(grid(i), h));
+				if (minor_phase == major_phase) continue;
+				map<id_type, Grain>::iterator tmp = grains.insert( make_pair(minor_phase, Grain(minor_phase)) ).first;
+				float phi = grid(i)[minor_phase];
+				tmp->second.addMass(phi, Point<float>(x[0], x[1]));
+			}
+			set<id_type> neighbors;
+			int count = check_neighbors<2,float>(major_phase, x, grid, neighbors);
+			++topologies[neighbors.size()];
+			if (neighbors.size() == dim-1) {
+				// voxel sits on a grain boundary
+				itr = grains.find(major_phase);
+				itr->second.updateEdges(neighbors, Point<int>(x[0], x[1]));
+			}	else if (neighbors.size() == dim) {
+				// voxel sits on a grain boundary vertex
+				for (set<id_type>::const_iterator j=neighbors.begin(); j!=neighbors.end(); ++j) {
+					itr = grains.find(*j);
+					itr->second.updateVertices(neighbors);
+				}
 			}
 		}
+		#ifdef DEBUG
+			cout << "\n Neighbors  Count\n";
+			for (map<int, int>::iterator itr = topologies.begin(); itr != topologies.end(); ++itr) cout << " " << setw(9) << right << itr->first << "  " << itr->second << '\n';
+			cout << '\n';
+		#endif
+	} else if (dim==3) {
+		// construct grid object
+		MMSP::grid<3, MMSP::sparse<float> > grid(argv[1]);
+		timeinfo = std::time( &rawtime );
+		timestr << "File IO:    " << timeinfo - starttime << " sec. ";
+		#ifdef DEBUG
+		cout << '\n' << flush;
+		#endif
+		starttime = timeinfo;
+
+		for (int d=0; d<dim; ++d) {
+			gmin[d]=g0(grid,d);
+			gmax[d]=g1(grid,d);
+			gscale[d]=dx(grid,d);
+		}
+
+		// Populate the data matrix from MMSP data.
+		for (int i = 0; i < nodes(grid); ++i) {
+			MMSP::vector<int> x = position(grid, i);
+			id_type major_phase(grid(i).grain_id());
+			float phi = grid(i)[major_phase];
+			if (phi < min_phi) min_phi = phi;
+			else if (phi > max_phi) max_phi = phi;
+			map<id_type, Grain>::iterator itr = grains.insert( make_pair(major_phase, Grain(major_phase)) ).first; // second = bool indicating success
+			itr->second.addMass(phi, Point<float>(x[0], x[1], x[2]));
+			int n = length(grid(i));
+			for (int h = 0; h < n; ++h) {
+				id_type minor_phase(MMSP::index(grid(i), h));
+				if (minor_phase == major_phase) continue;
+				map<id_type, Grain>::iterator tmp = grains.insert( make_pair(minor_phase, Grain(minor_phase)) ).first;
+				float phi = grid(i)[minor_phase];
+				tmp->second.addMass(phi, Point<float>(x[0], x[1], x[2]));
+			}
+			set<id_type> neighbors;
+			int count = check_neighbors<3,float>(major_phase, x, grid, neighbors);
+			++topologies[neighbors.size()];
+			if (neighbors.size() == dim-1) {
+				// voxel sits on a triple-line between grains
+				itr = grains.find(major_phase);
+				itr->second.updateEdges(neighbors, Point<int>(x[0], x[1], x[2]));
+				if (dim==3)
+					for (set<id_type>::iterator sitr = neighbors.begin(); sitr != neighbors.end(); ++sitr)
+						itr->second.addNeighbor(*sitr);
+			}
+		}
+		#ifdef DEBUG
+			cout << "\n Neighbors  Count\n";
+			for (map<int, int>::iterator itr = topologies.begin(); itr != topologies.end(); ++itr) cout << " " << setw(9) << right << itr->first << "  " << itr->second << '\n';
+			cout << '\n';
+		#endif
 	}
-#ifdef DEBUG
-	cout << "\n Neighbors  Count\n";
-	for (map<int, int>::iterator itr = topologies.begin(); itr != topologies.end(); ++itr) cout << " " << setw(9) << right << itr->first << "  " << itr->second << '\n';
-	cout << '\n';
-#endif
 
 
 	//  +=========================== Distinguish Bulk from Surface grains ===============================+
@@ -182,38 +244,33 @@ int main(int argc, char* argv[]) {
 			continue;
 		}
 		++BulkGrains;
-		average_volume += x_scale * y_scale * z_scale * vol; // cubic microns
+		if (dim==2) average_volume += gscale[0] * gscale[1] * vol; // square microns
+		else average_volume += gscale[0] * gscale[1] * gscale[2] * vol; // cubic microns
 	}
 	average_volume /= BulkGrains;
-	float average_radius = pow(3 * average_volume / (4 * M_PI), 1. / 3.); // Sphere-equivalent grain radius
-	Point<float> average_radii(average_radius / x_scale, average_radius / y_scale, average_radius / z_scale); // voxel units
+	float average_radius;
+	if (dim==2) {
+		average_radius= sqrt(average_volume/M_PI); // Circle-equivalent grain radius
+	} else {
+		average_radius= pow(3 * average_volume / (4 * M_PI), 1. / 3.); // Sphere-equivalent grain radius
+	}
+	Point<float> average_radii(average_radius / gscale[0], average_radius / gscale[1], 0.0f);
+	if (dim==3) average_radii.z=average_radius / gscale[2]; // voxel units
 
 	Point<float> centroid(0, 0, 0); // should be (L/2, L/2, L/2)... right? ... and so it is, roughly. Depends on exclusion.
-	Point<int> min(1000, 1000, 1000);
+	Point<int> min(1000, 1000);
+	if (dim==3) min.z=1000;
 	Point<int> max(0, 0, 0);
 	BulkGrains = 0;
 	for (map<id_type, Grain>::iterator itr = grains.begin(); itr != grains.end(); ++itr) {
 		Point<float> center = itr->second.getCentroid();
-		if ( ((center.x < x_min + 2.*average_radii.x) || (center.x > x_max - 1. - 2.*average_radii.x)) ||
-		     ((center.y < y_min + 2.*average_radii.y) || (center.y > y_max - 1. - 2.*average_radii.y)) ||
-		     ((center.z < z_min + 2.*average_radii.z) || (center.z > z_max - 1. - 2.*average_radii.z)) ) {
-			if (!(itr->second.isExcluded())) {
-				// EXPERIMENTAL
-				/*
-				++exclusions[202];
-				itr->second.setExclusion(); // grain lies within exclusion zone
-				*/
-			}
-		}
 		if (itr->second.isExcluded()) continue;
 		++BulkGrains;
 		centroid += center;
-		if (center.x < min.x) min.x = center.x;
-		else if (center.x > max.x) max.x = center.x;
-		if (center.y < min.y) min.y = center.y;
-		else if (center.y > max.y) max.y = center.y;
-		if (center.z < min.z) min.z = center.z;
-		else if (center.z > max.z) max.z = center.z;
+		for (int d=0; d<dim; ++d) {
+			if (center[d] < min[d]) min[d] = center[d];
+			else if (center[d] > max[d]) max[d] = center[d];
+		}
 	}
 	centroid /= BulkGrains;
 	cout << argv[1] << ": " << BulkGrains << " bulk grains, " << grains.size() - BulkGrains << " surface grains. Phase spanned [" << min_phi << ", " << max_phi << "].\n";
@@ -221,19 +278,22 @@ int main(int argc, char* argv[]) {
 	cout << "Centers-of-Mass span " << setprecision(0) << fixed << min << " -- " << setprecision(0) << fixed << max << ".\n";
 	timeinfo = std::time( &rawtime );
 	timestr << "Setup:    " << timeinfo - starttime << " sec. ";
-#ifdef DEBUG
+	#ifdef DEBUG
 	cout << '\n' << flush;
-#endif
+	#endif
 	starttime = timeinfo;
 
+	delete [] gmin; gmin=NULL;
+	delete [] gmax; gmax=NULL;
+	delete [] gscale; gscale=NULL;
 
 	//  +=========================== Process the data matrix, mapping each Edge voxel to a grain =============================+
 
 	unsigned int maxp = 0, maxN = 0;
 
-#ifdef DEBUG
+	#ifdef DEBUG
 	cout << "\nAnalyzing grains.\n";
-#endif
+	#endif
 
 	for(map<id_type, Grain>::iterator gitr = grains.begin(); gitr != grains.end(); ++gitr) {
 		// Sanitize topologies
@@ -242,7 +302,9 @@ int main(int argc, char* argv[]) {
 #endif
 
 		// Infer vertices from edges
-		std::vector<int> stats = gitr->second.computeTopology();
+		std::vector<int> stats;
+		if (dim==2) stats = gitr->second.computeTopology<2>();
+		else stats = gitr->second.computeTopology<3>();
 		assert(stats.size() == 4);
 		if (stats[0] == -1) {
 			if (!(gitr->second.isExcluded())) {
@@ -292,17 +354,28 @@ int main(int argc, char* argv[]) {
 	ofile << '\n';
 	for (map<id_type, Grain>::iterator itr = grains.begin(); itr != grains.end(); ++itr) {
 		if (itr->second.isExcluded()) continue;
-		if (int(2) != (itr->second.getEuler())) ++euler_error;
-		if (fabs((6 - 12. / itr->second.numFaces()) - itr->second.getPbar()) > 0.01) ++smith_error;
-		if (!(itr->second.isPlateaunic())) ++plateau_error;
-		printCSV(ofile, itr->second, maxp, maxN); // finishes with a newline
+		if (dim==2) {
+			if (int(1) != itr->second.getEuler()) ++euler_error;
+			if (!(itr->second.isPlateaunic<2>())) ++plateau_error;
+			printCSV<2>(ofile, itr->second, maxp, maxN); // finishes with a newline
+		} else {
+			if (int(2) != (itr->second.getEuler())) ++euler_error;
+			if (fabs((6 - 12. / itr->second.numFaces()) - itr->second.getPbar<3>()) > 0.01) ++smith_error;
+			if (!(itr->second.isPlateaunic<3>())) ++plateau_error;
+			printCSV<3>(ofile, itr->second, maxp, maxN); // finishes with a newline
+		}
 	}
 	ofile << '\n';
 	// Print excluded grains
 	for (map<id_type, Grain>::iterator itr = grains.begin(); itr != grains.end(); ++itr) {
 		if (!(itr->second.isExcluded())) continue;
-		itr->second.estimateCentroid(); // unify bifurcated set
-		printCSV(ofile, itr->second, maxp, maxN); // finishes with a newline
+		if (dim==2) {
+			itr->second.estimateCentroid<2>(); // unify bifurcated set
+			printCSV<2>(ofile, itr->second, maxp, maxN); // finishes with a newline
+		} else {
+			itr->second.estimateCentroid<3>(); // unify bifurcated set
+			printCSV<3>(ofile, itr->second, maxp, maxN); // finishes with a newline
+		}
 	}
 	ofile << '\n';
 

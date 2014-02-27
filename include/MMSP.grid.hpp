@@ -521,6 +521,7 @@ public:
 	// parallelization
 	void ghostswap() {
 		#ifdef MPI_VERSION
+		MPI::COMM_WORLD.Barrier();
 		for (int i=0; i<dim; i++) {
 			if (1) {
 				// send to processor above and receive from processor below
@@ -741,6 +742,11 @@ public:
 		int blocks;
 		file.read(reinterpret_cast<char*>(&blocks), sizeof(blocks));
 
+		#ifdef DEBUG
+		int actual_read=0;
+		unsigned long data_read=0;
+		#endif
+
 		// for each block...
 		for (int i=0; i<blocks; i++) {
 			int lmin[dim];
@@ -762,34 +768,6 @@ public:
 			unsigned long size_on_disk, size_in_mem;
 			file.read(reinterpret_cast<char*>(&size_in_mem), sizeof(size_in_mem)); // read grid data size
 			file.read(reinterpret_cast<char*>(&size_on_disk), sizeof(size_on_disk)); // read compressed size
-			char* buffer = new char[size_on_disk];
-			file.read(buffer, size_on_disk);
-			grid<dim, T> GRID(fields, lmin, lmax, 0, true);
-			if (size_in_mem!=size_on_disk) {
-				#ifdef RAW
-				std::cerr<<"Unable to uncompress data: compiled without zlib."<<std::endl;
-				exit(1);
-				#else
-				// Uncompress data
-				char* raw = new char[size_in_mem];
-				int status = uncompress(reinterpret_cast<Bytef*>(raw), &size_in_mem, reinterpret_cast<Bytef*>(buffer), size_on_disk);
-				switch( status ) {
-				case Z_OK:
-					break;
-				case Z_MEM_ERROR:
-					std::cerr << "Uncompress: out of memory." << std::endl;
-					exit(1);    // quit.
-					break;
-				case Z_BUF_ERROR:
-					std::cerr << "Uncompress: output buffer wasn't large enough." << std::endl;
-					exit(1);    // quit.
-					break;
-				}
-				GRID.from_buffer(raw);
-				delete [] raw; raw=NULL;
-				#endif
-			} else GRID.from_buffer(buffer);
-			delete [] buffer; buffer=NULL;
 
 			// find overlapping region
 			int min[dim];
@@ -801,23 +779,62 @@ public:
 				if (min[j] >= max[j]) overlap = false;
 			}
 
-			// copy block data that overlaps
 			if (overlap) {
+				#ifdef DEBUG
+				++actual_read;
+				data_read+=size_on_disk;
+				#endif
+				char* buffer = new char[size_on_disk];
+				file.read(buffer, size_on_disk);
+				grid<dim, T> GRID(fields, lmin, lmax, 0, true);
+				if (size_in_mem!=size_on_disk) {
+					#ifdef RAW
+					std::cerr<<"Unable to uncompress data: compiled without zlib."<<std::endl;
+					exit(1);
+					#else
+					// Uncompress data
+					char* raw = new char[size_in_mem];
+					int status = uncompress(reinterpret_cast<Bytef*>(raw), &size_in_mem, reinterpret_cast<Bytef*>(buffer), size_on_disk);
+					switch( status ) {
+					case Z_OK:
+						break;
+					case Z_MEM_ERROR:
+						std::cerr << "Uncompress: out of memory." << std::endl;
+						exit(1);    // quit.
+						break;
+					case Z_BUF_ERROR:
+						std::cerr << "Uncompress: output buffer wasn't large enough." << std::endl;
+						exit(1);    // quit.
+						break;
+					}
+					GRID.from_buffer(raw);
+					delete [] raw; raw=NULL;
+					#endif
+				} else GRID.from_buffer(buffer);
+				delete [] buffer; buffer=NULL;
+
+				// copy block data that overlaps
 				unsigned long size = GRID.buffer_size(min, max);
-				char* buffer = new char[size];
+				buffer = new char[size];
 				GRID.to_buffer(buffer, min, max);
 				this->from_buffer(buffer, min, max);
 				delete [] buffer; buffer=NULL;
-			}
 
-			// set boundary conditions from file
-			for (int j=0; j<dim; j++) {
-				if (x0[j]==lmin[j]) b0[j]=blo[j];
-				if (x1[j]==lmax[j]) b1[j]=bhi[j];
+				// set boundary conditions from file
+				for (int j=0; j<dim; j++) {
+					if (x0[j]==lmin[j]) b0[j]=blo[j];
+					if (x1[j]==lmax[j]) b1[j]=bhi[j];
+				}
+			} else {
+				// No overlap.
+				file.seekg(size_on_disk, file.cur);
 			}
 		}
 
 		#ifdef MPI_VERSION
+		#ifdef DEBUG
+		std::cout<<"  Rank "<<MPI::COMM_WORLD.Get_rank()<<": "<<actual_read<<" overlapping of "<<blocks<<" blocks ("<<data_read<<" B)."<<std::endl;
+		#endif
 		MPI::COMM_WORLD.Barrier();
 		#endif
 	}
@@ -865,10 +882,13 @@ public:
 	}
 #else
 	void output(const char* filename) const {
+		MPI::COMM_WORLD.Barrier();
 		int id = MPI::COMM_WORLD.Get_rank();
 		int np = MPI::COMM_WORLD.Get_size();
+		MPI::Request request;
 
 		// Delete file before opening
+		MPI::COMM_WORLD.Barrier();
 		MPI::File::Delete(filename, MPI::INFO_NULL);
 		MPI::COMM_WORLD.Barrier();
 
@@ -895,66 +915,85 @@ public:
 
 			// Write MMSP header to file
 			header_offset=outstr.str().size();
-			MPI::Request requests[2];
-			requests[0] = output.Iwrite_at(0,outstr.str().c_str(), header_offset, MPI_CHAR);
+			request = output.Iwrite_at(0,outstr.str().c_str(), header_offset, MPI_CHAR);
+			request.Wait();
 			// Write number of blocks (processors) to file
-			requests[1] = output.Iwrite_at(header_offset,reinterpret_cast<const char*>(&np), sizeof(np), MPI_CHAR);
-			MPI::Request::Waitall(2,requests);
+			request = output.Iwrite_at(header_offset,reinterpret_cast<const char*>(&np), sizeof(np), MPI_CHAR);
+			request.Wait();
 			header_offset+=sizeof(np);
+			#ifdef DEBUG
+			std::cout<<"  Wrote header on Rank 0."<<std::flush;
+			#endif
 		}
 		MPI::COMM_WORLD.Barrier();
 		output.Sync();
-		MPI::COMM_WORLD.Bcast(&header_offset, 1, MPI_UNSIGNED_LONG, 0); // retrieve header size from rank 0
+		MPI::COMM_WORLD.Bcast(&header_offset, 1, MPI_UNSIGNED_LONG, 0); // broadcast header size from rank 0
+		#ifdef DEBUG
+		if (id==0) std::cout<<" Header size: "<<header_offset<<" B."<<std::endl;
+		#endif
 
 		// get grid data to write
-		MPI::COMM_WORLD.Barrier();
 		char* buffer=NULL;
 		unsigned long size=this->write_buffer(buffer);
+		assert(buffer!=NULL);
 
 		// Compute file offsets based on buffer sizes
     unsigned long *datasizes = new unsigned long[np];
     MPI::COMM_WORLD.Barrier();
     MPI::COMM_WORLD.Allgather(&size, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
 
+    // Pre-allocate disk space
+    unsigned long filesize=0;
+    for (int i=0; i<np; ++i) filesize+=datasizes[i];
+    MPI::COMM_WORLD.Barrier();
+    output.Preallocate(filesize);
+		#ifdef DEBUG
+		if (id==0) std::cout<<"  Pre-allocated "<<filesize<<" B (after "<<header_offset<<" B header)."<<std::endl;
+		#endif
 
-    unsigned long *offsets = new unsigned long[np];
-    offsets[0]=header_offset;
-    for (int r=1; r<np; ++r) {
-        assert(datasizes[r] < static_cast<unsigned long>(std::numeric_limits<int>::max()));
-    		offsets[r]=offsets[r-1]+datasizes[r-1];
-    }
+		unsigned long *offsets = new unsigned long[np];
+		offsets[0]=header_offset;
+		for (int n=1; n<np; ++n) {
+			assert(datasizes[n] < static_cast<unsigned long>(std::numeric_limits<int>::max()));
+			offsets[n]=offsets[n-1]+datasizes[n-1];
+		}
+		#ifdef DEBUG
+		assert(datasizes[id]==size);
+		if (id==0) std::cout<<"  Synchronized data offsets on "<<np<<" ranks. Total size: "<<offsets[np-1]+datasizes[np-1]<<" B."<<std::endl;
+		#endif
 
 		// Write buffer to disk
+    MPI::COMM_WORLD.Barrier();
 		output.Sync();
-		MPI::Request request;
 		MPI::Status stat;
-		MPI::COMM_WORLD.Barrier();
 
-		output.Write_at_all(offsets[id],buffer,datasizes[id],MPI_CHAR,stat);
+		MPI::COMM_WORLD.Barrier();
+		request = output.Iwrite_at(offsets[id],buffer,datasizes[id],MPI_CHAR);
+		//output.Write_at_all(offsets[id],buffer,datasizes[id],MPI_CHAR,stat);
 		request.Wait(stat);
 		#ifdef DEBUG
-		int error=1+stat.Get_error(), write_errors;
+		int error=1+stat.Get_error(), write_errors=0;
+		if (error!=1) std::cerr<<"  Error on Rank "<<id<<": "<<MPI::Get_error_class(error-1)<<std::endl;
 		MPI::COMM_WORLD.Allreduce(&error, &write_errors, 1, MPI_INT, MPI_SUM);
+		if (id==0) std::cout<<"  Write finished on "<<write_errors<<'/'<<np<<" ranks."<<std::endl;
 		assert(write_errors==np);
 		#endif
-		MPI::COMM_WORLD.Barrier();
 		delete [] buffer;	buffer=NULL;
 
+		MPI::COMM_WORLD.Barrier();
+		output.Sync();
 		// Make sure everything's written before closing the file.
-		output.Sync();
-		MPI::COMM_WORLD.Barrier();
-		output.Sync();
-		MPI::COMM_WORLD.Barrier();
 		if (id==0) {
 			#ifdef DEBUG
-			std::cout<<filename<<" should be "<<offsets[np-1]+datasizes[np-1]<<" B; wrote ";
-			std::cout<<output.Get_size()<<" B to disk."<<std::endl;
+			std::cout<<filename<<" should be "<<offsets[np-1]+datasizes[np-1]<<" B;";
+			std::cout<<" wrote "<<output.Get_size()<<" B to disk."<<std::endl;
 			#endif
 			assert(offsets[np-1]+datasizes[np-1] == static_cast<unsigned long>(output.Get_size()));
 		}
 		MPI::COMM_WORLD.Barrier();
 		output.Close();
-		MPI::COMM_WORLD.Barrier();
+		delete [] offsets; offsets=NULL;
+		delete [] datasizes; datasizes=NULL;
 	}
 #endif
 

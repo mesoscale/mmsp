@@ -36,11 +36,7 @@ void generate(int dim, const char* filename)
       if (r<=R) grid(i)[0]=1.;
       else grid(i)[0]=0.;
     }
-    #ifdef MPI_VERSION
-    output_mpi(grid,filename);
-    #else
     output(grid,filename);
-    #endif
   }
   else
   {

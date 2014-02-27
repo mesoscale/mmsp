@@ -56,18 +56,24 @@ public:
 	const bool isExcluded() const {
 		return excluded;
 	}
+	template <int dim>
 	const bool isPlateaunic() const {
+		if (dim==2) return (vertices.size()==edges.size());
 		return (edges.size() == (3 * faces.size() - 6));
 	}
+	template <int dim>
 	const vector<int>& getPvector() const {
 		return pvector;
 	}
 	const set<id_type>& getFaces() const {
 		return faces;
 	}
+	const map<set<id_type>, vector<Point<int> > >& getEdges() const {
+		return edges;
+	}
 
 	// MODIFIERS
-	int numVerts();
+	template <int dim> int numVerts();
 	void addMass(float v, const Point<float>& p) {
 		centroid += v * p;
 		volume += v;
@@ -81,18 +87,21 @@ public:
 	void updateEdges(const set<id_type>& e, const Point<int>& p) {
 		edges[e].push_back(p);
 	}
+	void updateVertices(const set<id_type>& v) {
+		vertices.insert(v);
+	}
 	void addNeighbor(const id_type& i) {
 		faces.insert(i);
 	}
-	void estimateCentroid();
-	vector<int> computeTopology();
-	float getPbar();
+	template <int dim> void estimateCentroid();
+	template <int dim> vector<int> computeTopology();
+	template <int dim> float getPbar();
 
 private:
 	// INTERNALS
-	int inferVertices();
-	int checkFaces();
-	int makePvector(vector<int>& pvec);
+	template <int dim> int inferVertices();
+	template <int dim> int checkFaces();
+	template <int dim> int makePvector(vector<int>& pvec);
 
 	//REPRESENTATION
 	id_type me;

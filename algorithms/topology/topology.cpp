@@ -14,23 +14,23 @@ Grain::Grain(const id_type& i) {
 	volume = 0.0;
 }
 
+template <int dim>
 void Grain::estimateCentroid() {
-	if (faces.size() == 0 || edges.size() == 0) return;
+	if (edges.size() == 0) return;
+	if (dim==3 && faces.size() == 0) return;
 	int count = 0;
-	Point<int> min(1000, 1000, 1000);
+	Point<int> min(1000, 1000);
+	if (dim==3) min.z=1000;
 	Point<int> max(0, 0, 0);
 	// The grain has no concept of the domain size. Sweep through once to bound the domain.
 	for (map<set<id_type>, vector<Point<int> > >::iterator itr = edges.begin(); itr != edges.end(); ++itr) {
 		count += itr->second.size();
 		for (int i = 0; i < itr->second.size(); ++i) {
 			Point<int> x = itr->second[i];
-			if (x.x < min.x) min.x = x.x;
-			else if (x.x > max.x) max.x = x.x;
-			else if (x.x < min.x) min.x = x.x;
-			else if (x.y > max.y) max.y = x.y;
-			else if (x.y < min.y) min.y = x.y;
-			else if (x.z < min.z) min.z = x.z;
-			else if (x.z > max.z) max.z = x.z;
+			for (int d=0; d<dim; ++d) {
+				if (x[d]<min[d]) min[d]=x[d];
+				if (x[d]>max[d]) max[d]=x[d];
+			}
 		}
 	}
 	float weight = volume / float(count); // Final volume should match initial volume.
@@ -40,63 +40,86 @@ void Grain::estimateCentroid() {
 	for (map<set<id_type>, vector<Point<int> > >::iterator itr = edges.begin(); itr != edges.end(); ++itr) {
 		for (int i = 0; i < itr->second.size(); ++i) {
 			Point<int> x = itr->second[i];
-			if (max.x - x.x < x.x - min.x) x.x = x.x - max.x; //point is closer to upper than lower boundary
-			if (max.y - x.y < x.y - min.y) x.y = x.y - max.y; //point is closer to upper than lower boundary
-			if (max.z - x.z < x.z - min.z) x.z = x.z - max.z; //point is closer to upper than lower boundary
+			for (int d=0; d<dim; ++d)
+				if (max[d] - x[d] < x[d] - min[d]) x[d] = x[d] - max[d]; //point is closer to upper than lower boundary
 			this->addMass(weight, x);
 		}
 	}
 }
 
+template <int dim>
 vector<int> Grain::computeTopology() {
 	vector<int> answer;
-	answer.push_back(this->checkFaces());
-	answer.push_back(this->inferVertices());
-	answer.push_back(this->makePvector(pvector));
-	answer.push_back(this->numFaces());
+	if (dim==2) {
+		answer.push_back(this->checkFaces<2>());
+		answer.push_back(this->inferVertices<2>());
+		answer.push_back(this->makePvector<2>(pvector));
+		answer.push_back(this->numFaces());
+	} else {
+		answer.push_back(this->checkFaces<3>());
+		answer.push_back(this->inferVertices<3>());
+		answer.push_back(this->makePvector<3>(pvector));
+		answer.push_back(this->numFaces());
+	}
 	return answer;
 }
 
+template <int dim>
 int Grain::numVerts() {
 	if (edges.size() == 0) return 0;
-	if (!vert_check) this->inferVertices();
+	if (dim==2) {
+		if (!vert_check) this->inferVertices<2>();
+	} else {
+		if (!vert_check) this->inferVertices<3>();
+	}
 	return vertices.size();
 }
 
+template <int dim>
 int Grain::inferVertices() {
 	vert_check = true;
-	vertices.clear();
-	if (this->numEdges() < 3) return -1;
-	if (this->numFaces() < 3) return 0;
-	for (map<set<id_type>, vector<Point<int> > >::iterator eitr = edges.begin(); eitr != edges.end(); ++eitr) {
-		id_type a = *(eitr->first.begin());
-		id_type b = *(++eitr->first.begin());
-		assert(a != b);
-		set<id_type> pair_a;
-		set<id_type> pair_b;
-		for (set<id_type>::iterator fitr = faces.begin(); fitr != faces.end(); ++fitr) {
-			id_type c = *fitr;
-			if ((c == a) || (c == b)) continue;
-			pair_a.clear();
-			pair_a.insert(a);
-			pair_a.insert(c);
-			pair_b.clear();
-			pair_b.insert(b);
-			pair_b.insert(c);
-			if ((edges.find(pair_a) != edges.end()) && (edges.find(pair_b) != edges.end())) {
-				id_type grains[] = {a, b, c};
-				std::sort(grains, grains + 3);
-				vertices.insert(set<id_type>(grains, grains + 3));
+	if (dim==2) {
+		if (this->numEdges() < 2) return -1;
+		return vertices.size();
+	} else {
+		if (this->numEdges() < 3) return -1;
+		if (this->numFaces() < 3) return 0;
+		vertices.clear();
+		for (map<set<id_type>, vector<Point<int> > >::iterator eitr = edges.begin(); eitr != edges.end(); ++eitr) {
+			id_type a = *(eitr->first.begin());
+			id_type b = *(++eitr->first.begin());
+			assert(a != b);
+			set<id_type> pair_a;
+			set<id_type> pair_b;
+			for (set<id_type>::iterator fitr = faces.begin(); fitr != faces.end(); ++fitr) {
+				id_type c = *fitr;
+				if ((c == a) || (c == b)) continue;
+				pair_a.clear();
+				pair_a.insert(a);
+				pair_a.insert(c);
+				pair_b.clear();
+				pair_b.insert(b);
+				pair_b.insert(c);
+				if ((edges.find(pair_a) != edges.end()) && (edges.find(pair_b) != edges.end())) {
+					id_type grains[] = {a, b, c};
+					std::sort(grains, grains + 3);
+					vertices.insert(set<id_type>(grains, grains + 3));
+				}
 			}
 		}
 	}
 	return vertices.size();
 }
 
+template <int dim>
 int Grain::checkFaces() {
+	int answer = 0;
+	face_check = true;
 	//if (!vert_check) this->inferVertices();
 	// Make sure that each neighbor shows up more than once in the map of edges
-	int answer = 0;
+	if (dim==2) {
+		return answer;
+	}
 	while (face_check == false) {
 		face_check = true;
 		for (set<id_type>::iterator fitr = faces.begin(); fitr != faces.end(); ++fitr) {
@@ -134,11 +157,19 @@ int Grain::checkFaces() {
 	return answer;
 }
 
+template <int dim>
 int Grain::makePvector(vector<int>& pvec) {
-	if (!face_check) this->checkFaces();
-	if (!vert_check) this->inferVertices();
 	pvec.clear();
 	pvec.push_back( 0 );
+	if (dim==2) {
+		pvec.push_back( 0 );
+		if (!face_check) this->checkFaces<2>();
+		if (!vert_check) this->inferVertices<2>();
+		pvec.push_back(edges.size());
+		return pvec.size();
+	}
+	if (!face_check) this->checkFaces<3>();
+	if (!vert_check) this->inferVertices<3>();
 	if (this->numEdges() == 0) return 0;
 	for (set<id_type>::iterator fitr = faces.begin(); fitr != faces.end(); ++fitr) {
 		int p = 0;
@@ -151,15 +182,18 @@ int Grain::makePvector(vector<int>& pvec) {
 		++pvec[p];
 	}
 	assert(pvec[1] == 0);
-	assert(pvec.size() < 2 * (this->numFaces()));
 	return pvec.size();
 }
 
+template <int dim>
 float Grain::getPbar() {
-	if (!face_check || !vert_check) {
-		this->checkFaces();
+	if (dim==2) {
+		if (!face_check || !vert_check)	this->checkFaces<2>();
+		if (pvector.size() == 0) this->makePvector<2>(pvector);
+		return 0.0f;
 	}
-	if (pvector.size() == 0) this->makePvector(pvector);
+	if (!face_check || !vert_check)	this->checkFaces<3>();
+	if (pvector.size() == 0) this->makePvector<3>(pvector);
 	int answer = 0, count = 0;
 	for (int i = 0; i < pvector.size(); ++i) {
 		count += pvector[i]; // number of faces
@@ -168,28 +202,63 @@ float Grain::getPbar() {
 	return float(answer) / count;
 }
 
+template <int dim>
 void printCSV(std::ofstream& o, const Grain& g, const int& p, const int& N) {
-	if ( g.isExcluded() && g.numFaces() > 0 ) {
-		Point<int> x = g.getCentroid();
-		o << g.getID() << ',' << x.x << ',' << x.y << ',' << x.z << ',' << g.getVolume() << ",0," << g.numFaces() << ",0,0";
-		const vector<int>& pvec = g.getPvector();
-		assert(pvec.size() != 0);
-		for (int i = 2; i < p; ++i) o << ",0";
-		const set<id_type>& faces = g.getFaces();
-		for (set<id_type>::iterator itr = faces.begin(); itr != faces.end(); ++itr) o << ',' << *itr;
-		for (int i = faces.size(); i < N; ++i) o << ',';
-		o << '\n';
-	} else if ( g.numVerts() < 2 || g.numEdges() < 3 || g.numFaces() < 3 ) return; // Fewer F, V, or E than a Brazil nut? Invalid.
-	else {
-		Point<int> x = g.getCentroid();
-		o << g.getID() << ',' << x.x << ',' << x.y << ',' << x.z << ',' << g.getVolume() << ',' << g.numVerts() << ',' << g.numFaces() << ',' << g.numEdges() << ',' << g.getEuler();
-		const vector<int>& pvec = g.getPvector();
-		assert(pvec.size() != 0);
-		for (int i = 2; i < pvec.size(); ++i) o << ',' << pvec[i];
-		for (int i = pvec.size(); i < p; ++i) o << ",0";
-		const set<id_type>& faces = g.getFaces();
-		for (set<id_type>::iterator itr = faces.begin(); itr != faces.end(); ++itr) o << ',' << *itr;
-		for (int i = faces.size(); i < N; ++i) o << ',';
-		o << '\n';
+	if (dim==2) {
+		if ( g.isExcluded() ) {
+			Point<int> x = g.getCentroid();
+			o << g.getID();
+			for (int d=0; d<dim; ++d) o << ',' << x[d];
+			o << ',' << g.getVolume() << ",0,1,0,0";
+			const vector<int>& pvec = g.getPvector<2>();
+			assert(pvec.size() > 1);
+			for (int i = 2; i < p; ++i) o << ",0";
+			const map<set<id_type>, vector<Point<int> > >& edges = g.getEdges();
+			for (map<set<id_type>, vector<Point<int> > >::const_iterator itr = edges.begin(); itr != edges.end(); ++itr) o << ',' << *(itr->first.begin());
+			for (int i = edges.size(); i < N; ++i) o << ',';
+			o << '\n';
+		} else if ( g.numVerts() < 1 || g.numEdges() < 2 ) return;
+		else {
+			Point<int> x = g.getCentroid();
+			o << g.getID();
+			for (int d=0; d<dim; ++d) o << ',' << x[d];
+			o << ",0," << g.getVolume() << ',' << g.numVerts() << ',' << g.numFaces() << ',' << g.numEdges() << ',' << g.getEuler();
+			const vector<int>& pvec = g.getPvector<2>();
+			assert(pvec.size() > 1);
+			for (int i = 2; i < pvec.size(); ++i) o << ',' << pvec[i];
+			for (int i = pvec.size(); i < p; ++i) o << ",0";
+			const map<set<id_type>, vector<Point<int> > >& edges = g.getEdges();
+			for (map<set<id_type>, vector<Point<int> > >::const_iterator itr = edges.begin(); itr != edges.end(); ++itr) o << ',' << *(itr->first.begin());
+			for (int i = edges.size(); i < N; ++i) o << ',';
+			o << '\n';
+		}
+	} else {
+		if ( g.isExcluded() && g.numFaces() > 0 ) {
+			Point<int> x = g.getCentroid();
+			o << g.getID();
+			for (int d=0; d<dim; ++d) o << ',' << x[d];
+			o << ',' << g.getVolume() << ",0," << g.numFaces() << ",0,0";
+			const vector<int>& pvec = g.getPvector<3>();
+			assert(pvec.size() > 1);
+			for (int i = 2; i < p; ++i) o << ",0";
+			const set<id_type>& faces = g.getFaces();
+			for (set<id_type>::iterator itr = faces.begin(); itr != faces.end(); ++itr) o << ',' << *itr;
+			for (int i = faces.size(); i < N; ++i) o << ',';
+			o << '\n';
+		} else if ( g.numVerts() < 2 || g.numEdges() < 3 || g.numFaces() < 3 ) return; // Fewer F, V, or E than a Brazil nut? Invalid.
+		else {
+			Point<int> x = g.getCentroid();
+			o << g.getID();
+			for (int d=0; d<dim; ++d) o << ',' << x[d];
+			o << ',' << g.getVolume() << ',' << g.numVerts() << ',' << g.numFaces() << ',' << g.numEdges() << ',' << g.getEuler();
+			const vector<int>& pvec = g.getPvector<3>();
+			assert(pvec.size() > 1);
+			for (int i = 2; i < pvec.size(); ++i) o << ',' << pvec[i];
+			for (int i = pvec.size(); i < p; ++i) o << ",0";
+			const set<id_type>& faces = g.getFaces();
+			for (set<id_type>::iterator itr = faces.begin(); itr != faces.end(); ++itr) o << ',' << *itr;
+			for (int i = faces.size(); i < N; ++i) o << ',';
+			o << '\n';
+		}
 	}
 }
