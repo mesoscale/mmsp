@@ -1,3 +1,10 @@
+# TeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+doc/MMSP.manual.pdf
+
 # Compiled Object files
 *.slo
 *.lo

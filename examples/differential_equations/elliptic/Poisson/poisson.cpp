@@ -1,0 +1,14 @@
+// poisson.cpp 
+// multigrid Poisson equation solver using MMSP
+// Questions/comments to gruberja@gmail.com (Jason Gruber)
+
+#include"poisson.hpp"
+
+std::string PROGRAM = "poisson";
+std::string MESSAGE = "multigrid Poisson solver using MMSP";
+
+typedef MMSP::grid<2,double> GRID2D;
+typedef MMSP::grid<3,double> GRID3D;
+
+#include"MMSP.main.hpp"
+
