@@ -7,22 +7,19 @@
 //
 //     #include"..."
 //
+//     void generate(int dim,
+//                   const char* filename);
+//		 template<int dim>
+//		 void update(GRID<dim>& grid, int steps);
+//
+//     #include"MMSP.main.hpp"
+//
+// The first include must provide the functions
+//
 //     std::string PROGRAM = "...";
 //     std::string MESSAGE = "...";
 //     typedef ... GRID2D;
 //     typedef ... GRID3D;
-//
-//     #include"MMSP.main.hpp"
-//
-//
-// The first include must provide the functions
-//
-//     void generate(int dim,
-//                   const char* filename);
-//
-//     void update(GRID2D& grid, int steps);
-//     void update(GRID3D& grid, int steps);
-//
 //
 // which the main() function calls to generate
 // example grids or to perform computations.

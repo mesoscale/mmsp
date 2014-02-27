@@ -17,10 +17,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.grid.hpp
 
 # the program
-model_A: model_A.cpp model_A.hpp $(core)
+model_A: model_A.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: model_A.cpp model_A.hpp $(core)
+parallel: model_A.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

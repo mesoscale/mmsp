@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.vector.hpp
 
 # the program
-heisenberg: heisenberg.cpp heisenberg.hpp $(core)
+heisenberg: heisenberg.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: heisenberg.cpp heisenberg.hpp $(core)
+parallel: heisenberg.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

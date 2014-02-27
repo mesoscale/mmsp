@@ -19,13 +19,13 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.sparse.hpp
 
 # the program
-dendritic.out: dendritic.cpp dendritic.hpp $(core)
+dendritic.out: dendritic.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
 mmsp2png: mmsp2png.cpp $(core) /usr/include/IL/devil_cpp_wrapper.hpp
 	$(compiler) $(flags) -I /usr/include/IL -include il.h $< -o $@ -lz -lIL -lILU -lILUT
 
-parallel: dendritic.cpp dendritic.hpp $(core)
+parallel: dendritic.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@_dendritic.out -lz
 
 clean:

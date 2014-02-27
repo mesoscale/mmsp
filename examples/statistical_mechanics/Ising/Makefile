@@ -17,10 +17,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.grid.hpp
 
 # the program
-ising: ising.cpp ising.hpp $(core)
+ising: ising.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: ising.cpp ising.hpp $(core)
+parallel: ising.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
