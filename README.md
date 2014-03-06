@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-Trying again.
+Version 1.0
 
-Hello, Pan!
 
-=======
->>>>>>> f55988ab7b5da61763c2a01ee9bbf650e6effb70
 Mesoscale Microstructure Simulation Project
 ====
 
