@@ -1,5 +1,3 @@
-Hello, Pan!
-
 Mesoscale Microstructure Simulation Project
 ====
 
