@@ -5,6 +5,20 @@
 *.toc
 doc/MMSP.manual.pdf
 
+# MMSP utility binaries
+MC2PF
+MC2sPF
+MC2vox
+mmsp2pvd
+mmsp2vti
+mmsp2xyz
+PF2MC
+PF2sPF
+sPF2MC
+sPF2PF
+TKmmsp2vti
+vox2MC
+
 # Compiled Object files
 *.slo
 *.lo
