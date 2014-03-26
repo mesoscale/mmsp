@@ -275,7 +275,7 @@ template <typename T, typename U> sparse<T> operator-(const sparse<T>& x, const 
 		z.set(y.index(i)) -= static_cast<T>(y.value(i));
 	return z;
 }
-template <typename T, typename U> sparse<T>& operator*=(vector<T>& x, const U& value) {
+template <typename T, typename U> sparse<T>& operator*=(sparse<T>& x, const U& value) {
 	int N = x.length();
 	for (int i = 0; i < N; i++)
 		x.set(x.index(i)) *= static_cast<T>(value);
