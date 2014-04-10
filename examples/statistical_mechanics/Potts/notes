@@ -1,0 +1,8 @@
+This directory contains MMSP code for the classical Potts model.
+
+Send questions or comments to gruberja@gmail.com (Jason Gruber)
+
+References:
+
+1. FY Wu, "The Potts model," Reviews in Modern Physics 54:1;235-268 (1982). 
+2. DP Landau and K Binder, "A Guide to Monte Carlo Simulations in Statistical Physics," Cambridge University Press, 2005.

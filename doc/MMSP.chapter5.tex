@@ -1,0 +1,156 @@
+% MMSP.chapter3.tex
+
+\chapter{The {\tt grid} class}
+
+The MMSP base class grid is defined in the header MMSP.grid.hpp. The derived template classes grid1D, grid2D, and grid3D provide the base for the high level grid objects associated with various simulation methods. The template parameters for each grid object are a point data structure and a fundamental numeric type. The grid objects contain a large number of inherited methods (member functions) that perform common tasks such as file I/O, data storage and retrieval, etc. Member data for the grid classes determine the grid size, boundary conditions and point spacing along each coordinate axis. 
+High level grid objects usually have a name that indicates both their intended use as well as their dimensionality, e.g. PFgrid3D and MCgrid2D. These are the grid objects that are used in performing simulations or other computations. Detailed information about each existing grid class is given in the reference section of this page. See also the source distribution. 
+MMSP grid classes are designed so that programming with them is as intuitive as possible. For example, data can be accessed by subscript operators in exactly the same way we would use data stored in a subscripted array 
+    // First create a grid object.
+    PFgrid2D grid(100,100,2);
+
+    // Assign a value to the phase field grid.
+    grid[10][20][1] = 1.0;
+
+    // Use a value from the grid in a computation.
+    float value = grid[10][20][1];
+Because of this, C/C++ code that performs computations using "hard-coded" arrays automatically works for the corresponding MMSP grid object. This makes it trivial to insert MMSP grid objects into existing grid generation, simulation, or analysis code. 
+Each grid object also provides a neighbor() function that returns a grid data structure using coordinates relative to a given position (x,y[,z]) 
+    // First create a grid object.
+    MCgrid2D grid(100,100);
+
+    // Assign a value to the Monte Carlo grid.
+    grid[10][20] = 5;
+
+    // Access the value using the neighbor() function.
+    int spin = grid.neighbor(9,22,1,-2);
+The neighbor function automatically accounts for the grid boundary conditions set by the user. See the next subsection for more details on programming with the grid classes. 
+Finally, let's consider using grid objects in a parallel computing setting. In single processor programs, we typically create a single grid object within the main() function. This grid object is considered to be the entire simulation domain. In parallel programs, however, the grid object declared within main() is a subgrid of a larger, global simulation domain. MMSP can automatically decompose (or recompose) a global grid object into local subgrid "slabs" with cuts perpendicular to the x axis, a method which has a consistent (and simple) implementation regardless of grid dimension. MMSP allows the user to chose the number of ghost cells retained in each subgrid, and the boundary conditions of the global grid object are satisfied when the neighbor() function is used. The implementation of parallel grid functionality is contained within a separate header MMSP.grid.parallel.hpp for the convenience of users without a local MPI distribution. 
+
+\section{Introduction}
+The {\tt grid} class is the base class for all higher level grid classes...
+
+A number of points about the grid class and its member functions are useful in the following.
+\begin{itemize}
+\item Most grid functions may be called in either of two ways: as a class member function or as a global friend function.  In the first case, calls to a grid member function {\tt f(...)} look like this:
+\begin{center}
+{\it grid\_object}{\tt .f(}{\it parameter\_list}{\tt );}
+\end{center}
+In the second case, the global friend function {\tt f} is called with a similar syntax:
+\begin{center}
+{\tt f(}{\it grid\_object}{\tt, }{\it parameter\_list}{\tt );}
+\end{center}
+Global friend functions have the same behavior as their associated grid member function.  The user is free to choose either based on convenience or aesthetics.  Note that the grid object now becomes the first argument to the function, while the remainder of the parameter list is unchanged.  The only functions that don't follow this convention are symbolic operators, e.g.\ the subscript operator: 
+\begin{center}
+{\it grid\_object}{\tt[x][y] = }{\it rvalue}{\tt;}\\
+{\it lvalue}{\tt { }= }{\it grid\_object}{\tt[x][y][z][index];}
+\end{center}
+Symbolic operators are grid member functions that do not have associated friend functions.
+\item 
+\item 
+\item 
+\end{itemize}
+
+
+
+\section{{\tt grid} class member functions}
+
+
+
+\subsection{Constructors}
+
+\noindent{\tt grid(int fields, int x0, int x1, ...);}
+
+{\tt grid(int fields, int min[dim], int max[dim]);}
+
+{\tt grid(const grid\& GRID);}
+
+{\tt grid(char* filename);}
+
+
+\subsection{Subscripting}
+
+
+\subsection{File I/O}
+
+\subsection{Buffer I/O}
+
+
+\subsection{Accessing grid parameters}
+
+\noindent{\tt int x0(const grid\& GRID, int i);}
+
+{\tt int x1(const grid\& GRID, int i);}
+
+{\tt int x0(const grid\& GRID);}
+
+{\tt int x1(const grid\& GRID);}
+
+{\tt int y0(const grid\& GRID);}
+
+{\tt int y1(const grid\& GRID);}
+
+{\tt int z0(const grid\& GRID);}
+
+{\tt int z1(const grid\& GRID);}
+
+
+\subsection{Setting grid parameters}
+
+
+\subsection{Utility functions}
+
+
+\subsection{Parallel communications}
+
+\subsection{Multigrid functionality}
+
+
+\section{{\tt grid} class examples}
+
+\subsection{Constructing a {\tt grid}}
+\begin{verbatim}
+#include"MMSP.grid.hpp"
+
+int main(int argc, char* argv[])
+{
+    MMSP::Init(argc,argv);
+
+	MMSP::grid<1,double> GRID(1,0,100);
+
+    MMSP::Finalize();
+}
+\end{verbatim}
+
+\begin{verbatim}
+#include"MMSP.grid.hpp"
+
+int main(int argc, char* argv[])
+{
+    MMSP::Init(argc,argv);
+
+    char* filename = argv[1];
+
+	MMSP::grid<2,double> GRID(filename);
+
+    MMSP::Finalize();
+}
+\end{verbatim}
+
+\begin{verbatim}
+#include"MMSP.grid.hpp"
+
+int main(int argc, char* argv[])
+{
+    MMSP::Init(argc,argv);
+
+	MMSP::grid<3,MMSP::vector<double> > GRID();
+
+    MMSP::Finalize();
+}
+\end{verbatim}
+\subsection{Initializing a {\tt grid}}
+\subsection{Setting up {\tt grid} parameters}
+\subsection{Accessing {\tt grid} parameters}
+\subsection{Reading to and writing from files}
+\subsection{Using {\tt grid} in a parallel program}
+
