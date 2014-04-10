@@ -1,0 +1,8 @@
+This directory contains MMSP code for the classical Ising model of ferromagnetism.  For simplicity sake, we don't bother with some simple but effective optimizations, such as precomputing exponential factors for all possible neighborhoods.
+
+Send questions or comments to gruberja@gmail.com (Jason Gruber)
+
+References:
+
+1. D Chandler, "Introduction to Modern Statistical Physics," Oxford University Press, 1987.
+2. DP Landau and K Binder, "A Guide to Monte Carlo Simulations in Statistical Physics," Cambridge University Press, 2005.

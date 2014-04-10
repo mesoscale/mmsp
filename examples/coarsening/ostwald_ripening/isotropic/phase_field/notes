@@ -1,0 +1,7 @@
+This directory contains MMSP code for phase field simulation of Ostwald ripening, i.e. particle coarsening.  The model and notation used here come from the paper by Fan et al. cited below.
+
+Send questions or comments to gruberja@gmail.com (Jason Gruber)
+
+References:
+
+1. D Fan, SP Chen, L-Q Chen, and PW Voorhees, "Phase-field simulation of 2-D Ostwald ripening in the high volume fraction regime," Acta Materialia 50:8;1895-1907 (2002).
