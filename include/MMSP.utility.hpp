@@ -250,10 +250,10 @@ template <typename T> T global(T& value, const char* operation) {
 	T global = value;
 
 #ifdef MPI_VERSION
-	int id = MPI::COMM_WORLD.Get_rank();
+	int rank = MPI::COMM_WORLD.Get_rank();
 	int np = MPI::COMM_WORLD.Get_size();
 
-	if (id == 0) {
+	if (rank == 0) {
 		// receive local values
 		for (int i = 1; i < np; i++) {
 			T temp;
