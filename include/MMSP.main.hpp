@@ -8,7 +8,7 @@
 //     #include"..."
 //
 //     void generate(int dim,
-//                   const char* filename);
+//                   char* filename);
 //		 template<int dim>
 //		 void update(GRID<dim>& grid, int steps);
 //
@@ -116,8 +116,12 @@ int main(int argc, char* argv[]) {
 		if (argc < 4) outfile = "example";
 		else outfile = argv[3];
 
+		char* filename = new char[outfile.length()];
+		for (unsigned int i=0; i<outfile.length(); i++)
+			filename[i] = outfile[i];
+
 		// generate test problem
-		MMSP::generate(dim, outfile.c_str());
+		MMSP::generate(dim, filename);
 	}
 
 	// run simulation
@@ -273,18 +277,22 @@ int main(int argc, char* argv[]) {
 				MMSP::update(grid, increment);
 
 				// generate output filename
-				std::stringstream filename;
-				int n = filename.str().length();
+				std::stringstream outstr;
+				int n = outstr.str().length();
 				for (int j = 0; n < length; j++) {
-					filename.str("");
-					filename << base;
-					for (int k = 0; k < j; k++) filename << 0;
-					filename << i + increment << suffix;
-					n = filename.str().length();
+					outstr.str("");
+					outstr << base;
+					for (int k = 0; k < j; k++) outstr << 0;
+					outstr << i + increment << suffix;
+					n = outstr.str().length();
 				}
+				char* filename = new char[outstr.str().length()];
+				for (unsigned int i=0; i<outstr.str().length(); i++)
+					filename[i]=outstr.str()[i];
 
 				// write grid output to file
-				MMSP::output(grid, filename.str().c_str());
+				MMSP::output(grid, filename);
+				delete [] filename;
 			}
 		}
 
@@ -297,18 +305,22 @@ int main(int argc, char* argv[]) {
 				MMSP::update(grid, increment);
 
 				// generate output filename
-				std::stringstream filename;
-				int n = filename.str().length();
+				std::stringstream outstr;
+				int n = outstr.str().length();
 				for (int j = 0; n < length; j++) {
-					filename.str("");
-					filename << base;
-					for (int k = 0; k < j; k++) filename << 0;
-					filename << i + increment << suffix;
-					n = filename.str().length();
+					outstr.str("");
+					outstr << base;
+					for (int k = 0; k < j; k++) outstr << 0;
+					outstr << i + increment << suffix;
+					n = outstr.str().length();
 				}
+				char* filename = new char[outstr.str().length()];
+				for (unsigned int i=0; i<outstr.str().length(); i++)
+					filename[i]=outstr.str()[i];
 
 				// write grid output to file
-				MMSP::output(grid, filename.str().c_str());
+				MMSP::output(grid, filename);
+				delete [] filename;
 			}
 		}
 	}
