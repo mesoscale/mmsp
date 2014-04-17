@@ -3,7 +3,7 @@
 *.dvi
 *.log
 *.out
-*.tex
+*.tex~
 *.toc
 doc/MMSP.manual.pdf
 
