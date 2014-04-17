@@ -1,7 +1,9 @@
 # TeX auxiliary files
 *.aux
+*.dvi
 *.log
 *.out
+*.tex
 *.toc
 doc/MMSP.manual.pdf
 
