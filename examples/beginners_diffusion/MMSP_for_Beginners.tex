@@ -9,7 +9,7 @@
 \definecolor{shadethmcolor}{rgb}{0.96,0.96,0.96}
 \usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
 
-\title{MMSP of for Beginners}
+\title{MMSP for Beginners}
 
 \author{Paul Detwiler and Andrew Lauer}
 
@@ -21,7 +21,7 @@
 The following sections present a few short tutorials on writing, compiling, and running simple \MMSP programs.  For those totally confused by the syntax of the examples presented here we suggest consulting an introductory {\tt c++} text first.
 
 \section{A quick tutorial}
-\subsection{The {\tt Hello MMSP!} program, as written in the MMSP main documentation}
+\subsection{The {\tt Hello MMSP!} program, as written in the MMSP main documentation (Credit: Jason Gruber)}
 Because every good programming language or interface tutorial starts with a ``Hello World!'' example program, we'll do the same.  For most \MMSP applications, we include a header file named {\tt MMSP.hpp}.  Then we need a {\tt main()} program and a few lines to print out our message.  Here it is:
 \begin{shadebox}
 \begin{verbatim}
@@ -124,9 +124,7 @@ The expression becomes complicated when adding dimensions as the laplacian requi
 
 \subsection{1D Diffusion couple, Cish}
 
-The first code is called 1stDiffusion.cpp.  Compile using the g++ to create an executable.
-
-\\	\textit{g++ -I “filepath/MMSP/include” “filename” -o “executable name”}
+The first code is called 1stDiffusion.cpp.  It is found in the examples directory under beginner_codes. Use the g++ or MPI commands outlined in the introduction to create an executable.
 
 \\The first thing to notice is that the include, using, and finalize commands are in the same place as in the “Hello World” script handled before.  These are standard for all MMSP codes.  The important MMSP commands are lines 22 and 23:
 \\ 	\textit{grid\textless 1,scalar\textless float\textgreater \textgreater GRID(1,0,length);}
@@ -230,7 +228,7 @@ Some other items of interest are:
 \end{shadebox}
 
 \subsection{1D Diffusion Couple, MMSPish}
-The second time through uses more MMSP functionality. Important changes:
+The second time through uses more MMSP functionality. The code for this example is called MMSPDiffusion.cpp in the beginners_codes directory. Important differences from the previous example:
 
 \begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
 \item line 19: instead of GRID2, the MMSP standard name “update” is used for the second grid.
@@ -311,7 +309,7 @@ The second time through uses more MMSP functionality. Important changes:
 \end{shadebox}
 
 \subsection{2D Diffusion}
-Now, we have a two dimensional diffusion situation (the upper left quadrant of a square is one species, the other three are another). MMSP makes adding dimensions easy, the only necessary changes are:
+Now, we have a two dimensional diffusion situation (the upper left quadrant of a square is one species, the other three are another). The code for this example is named MMSPDiffusion2d.cpp and is also located in the beginners_codes directory MMSP makes adding dimensions easy, the only necessary changes are:
 \begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
 \item line 19 \& 20: change 1 to 2 when setting the number of dimensions in the grid. 
 \item lines 38-45: boundary conditions in both dimensions must be specified
