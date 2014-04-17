@@ -1,0 +1,396 @@
+\documentclass{article}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{shadethm}
+\definecolor{shadethmcolor}{rgb}{0.96,0.96,0.96}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+
+\title{MMSP of for Beginners}
+
+\author{Paul Detwiler and Andrew Lauer}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+\chapter
+The following sections present a few short tutorials on writing, compiling, and running simple \MMSP programs.  For those totally confused by the syntax of the examples presented here we suggest consulting an introductory {\tt c++} text first.
+
+\section{A quick tutorial}
+\subsection{The {\tt Hello MMSP!} program}
+Because every good programming language or interface tutorial starts with a ``Hello World!'' example program, we'll do the same.  For most \MMSP applications, we include a header file named {\tt MMSP.hpp}.  Then we need a {\tt main()} program and a few lines to print out our message.  Here it is:
+\begin{shadebox}
+\begin{verbatim}
+    #include"MMSP.hpp"
+
+    int main(int argc, char* argv[])
+    {
+        MMSP::Init(argc,argv);
+
+        std::cout<<"Hello MMSP!"<<std::endl;
+
+        MMSP::Finalize();
+        
+        return 0;
+    }
+\end{verbatim}
+\end{shadebox}
+The only code here that should look out of the ordinary are the statements
+\begin{shadebox}
+\begin{verbatim}
+    MMSP::Init(argc,argv);
+\end{verbatim}
+\end{shadebox}
+and
+\begin{shadebox}
+\begin{verbatim}
+    MMSP::Finalize();
+\end{verbatim}
+\end{shadebox}
+What do these lines do?  For single processor programs, they do absolutely nothing -- they could actually be removed without any consequences.  However, for programs that use the message passing interface (MPI), they act as wrappers for the similarly named {\tt MPI::Init} and {\tt MPI::Finalize} commands.  It's useful to include them here because they'll allow us to write programs that may be compiled for both single or multiple processor environments.
+
+Programmers familiar with {\tt c++} will notice that there's obviously some \MMSP namespace being used here.  For those less familiar, namespaces are a somewhat recent addition to {\tt c++} that are used as a means of avoiding naming conflicts.  We can avoid using namespace resolution so frequently if we use an appropriate {\tt using} statement, i.e. 
+\begin{shadebox}
+\begin{verbatim}
+    #include"MMSP.hpp"
+    using namespace MMSP;
+
+    int main(int argc, char* argv[])
+    {
+        Init(argc,argv);
+\end{verbatim}
+\end{shadebox}
+Namespaces serve to prevent programming errors and to ensure code reusability, so naturally we should apply {\tt using} statements with care.  In the examples that follow, we'll sometimes assume a {\tt using} statement has been issued for the sake of brevity.
+
+The observant reader may notice that we've used some of the stream input/output functions of {\tt c++} without including the requisite {\tt <iostream>} header.  In fact, this header and many other standard {\tt c++} headers are included implicitly thorough the file {\tt MMSP.hpp}.  If you need a particular standard header for your application and aren't sure if it has been included by {\tt MMSP.hpp}, you can always just {\tt \#include} it in your source code without any ill effects.
+
+So that's it as far as the code goes.  This is a source file that may be compiled for both single and parallel simulations of... nothing.  In a moment we will move on to code that actually does something, but for now we should say a few words about compiling the code and running the executable.
+
+\subsection{Compiling and running {\tt Hello MMSP!}}
+Compiling code is a task that is, unfortunately, fairly platform dependent.  While \MMSP programs should compile easily on any platform, the required steps to do so may not look like the method shown here.  That said, let's look at how we would compile the previous example for a typical Linux or Unix setup.  Suppose the above code has been saved to a file named {\tt hello.cpp}, and that \MMSP has been extracted to the same directory.  A typical Linux machine will have at the least the GNU family of compilers installed, in which case we would type the command 
+\begin{shadebox}
+\begin{verbatim}
+    g++ -I MMSP/include hello.cpp -o hello
+\end{verbatim}
+\end{shadebox}
+which produces an executable file named {\tt hello}.  The compiler option {\tt -I ...} suggests a directory to search for non-standard headers; if your \MMSP headers reside somewhere else, you'll need to make the appropriate change.  To run the program, we type
+\begin{shadebox}
+\begin{verbatim}
+    ./hello
+\end{verbatim}
+\end{shadebox}
+which should produce our message.  Many other compilers on Linux and Unix machines use the same options as listed here, so this line may be very close to what you might use, even if you're not using {\tt g++}.
+
+Now let's move on to parallel compilation.  We assume that if you're not skipping over this part, you have the MPI libraries installed on your machine (as well as your cluster).  With a typical MPI installation, a number of programs are included which effectively wrap your usual {\tt c++} compiler with a script named something like {\tt mpic++}, {\tt mpicxx}, {\tt mpicc}, etc.  With this in mind, we issue a command which may look like
+\begin{shadebox}
+\begin{verbatim}
+    mpicxx -I MMSP/include -include mpi.h hello.cpp -o hello
+\end{verbatim}
+\end{shadebox}
+which again produces an executable named {\tt hello}.  This time, however, we need to run {\tt hello} using an MPI command such as {\tt mpirun} or {\tt mpiexec} (see the documentation for your MPI distribution),
+\begin{shadebox}
+\begin{verbatim}
+    mpirun -np 4 hello
+\end{verbatim}
+\end{shadebox}
+which in this case produces our message four times.  The author sincerely hopes that your experience is this straightforward, but don't count on it!
+
+
+
+MMSP is a powerful diffusion modeling tool capable of modeling complex, large, three-dimensional systems. However, its capabilities are useless if the user is unfamiliar with the functions and tools MMSP has to offer. This tutorial will introduce some of MMSP’s functions through step-by-step solutions of the one dimensional diffusion couple problem according to Fick’s Law.  The first solution demonstrates the usage of the grid class by using a c-esque analytics scheme.  In the second solution, other MMSP aspects - like the laplacian operator and boundary conditions - are introduced. Finally, the solution is expanded into two dimensions to illustrate how to use MMSP multidimensional functionality. 
+
+
+\section{Fick's Law Review}
+
+To start off, a quick review of Fick’s law:  Fick’s Law states the the change in concentration of a diffusive substance changes in time proportionally with the second derivative of change in space.
+
+$$\frac{\delta C}{\delta t}=D\nabla ^2C$$
+
+Additionally, it is possible to discretize the law in both space and time to obtain an explicit method to predict future time steps using the a map of the current concentrations in space. 
+
+$$C_{x,t+1} = D\Delta t\frac{C_{x-1,t} - 2C_{x,t} - C_{x+1},t }{ \Delta x^2} + C_x,t $$
+
+In the above expression, the n subscripts refer to a position in space and the m subscripts refer to a position in time.
+
+The expression becomes complicated when adding dimensions as the laplacian requires derivation in each dimension individually.   
+
+
+\section{Example Codes}
+\label{sec:examples}
+
+\subsection{1D Diffusion couple, Cish}
+
+The first code is called 1stDiffusion.cpp.  Compile using the g++ to create an executable.
+
+\\	\textit{g++ -I “filepath/MMSP/include” “filename” -o “executable name”}
+
+\\The first thing to notice is that the include, using, and finalize commands are in the same place as in the “Hello World” script handled before.  These are standard for all MMSP codes.  The important MMSP commands are lines 22 and 23:
+\\ 	\textit{grid\textless 1,scalar\textless float\textgreater \textgreater GRID(1,0,length);}
+\\A breakdown of what this line means is:
+\\ 	\textit{grid\textless \# of dimensions,data type\textgreater “GRID name”(Vector quantity, start position, number of terms in first dimension);}
+\\ \begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
+\item The vector quantity is 1 unless the vector data type is used.
+\begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
+\item vectors in MMSP are used to store multiple data values of interest in a single node on the grid
+\end{itemize}
+\item Start position is generally 0, but any number can be used
+\item When using multi-dimensions, the only required change is to add more upper and lower boundaries for each subsequent dimension
+\begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
+\item E.g. for 2 dimensions: \textit{grid\textless 2,scalar\textless float\textgreater \textgreater GRID(1,0,lengthx,0,lengthy)}
+\end{itemize}
+\end{itemize}
+Also, in line 28, the commands “x0(GRID)” and “x1(GRID)” are used. MMSP reads this as the initial and final nodes in the x direction, respectively. x, y, and z commands can be used for this, as well, if the number of dimensions agrees.
+Some other items of interest are:
+\begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
+\item line 43, which defines the steady state boundary conditions
+\item line 45, which refers to the “stability criterion.” This criterion is defined by $D\frac{\Delta t}{(\Delta x)^2}$
+\item line 48, which operates on each point in the GRID
+\item line 49, which defines when GRID gets updated.
+\item line 50, which uses the swap command. The swap command has the syntax:
+\begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
+\item swap(grid to be replaced, grid to use to replace)
+\item In this specific example, the swap command is used to swap all points in GRID1 with all corresponding points in GRID2
+\end{itemize}
+\end{itemize}
+\begin{shadebox}
+
+\begin{enumerate}  \itemsep1pt \parskip0pt \parsep0pt
+\item include"MMSP.hpp"
+\item using namespace MMSP;
+\item  
+\item int main()
+\item \{
+\item // Here is where all variables are called.  In c++ all variables must be defined before they can be used
+\item // The first word is the data type associated with the variable. “int”=integer type.
+\item int length;
+\item int offlength;
+\item int iterate;
+\item 
+\item // We make it so that the length of the diffusion couple and the number of iterations can be changed each time the code is run
+\item std::cout\textless \textless "input couple length"\textless \textless std::endl;
+\item std::cin\textgreater \textgreater length;
+\item std::cout\textless \textless ""\textless \textless std::endl;
+\item 
+\item std::cout\textless \textless "input number of iterations"\textless \textless std::endl;
+\item std::cin\textgreater \textgreater iterate;
+\item std::cout\textless \textless ""\textless \textless std::endl;
+\item 
+\item //here we define some 1 dimensional grids with float variable types
+\item grid\textless 1,scalar\textless float\textgreater  \textgreater  GRID(1,0,length);
+\item grid\textless 1,scalar\textless float\textgreater  \textgreater  GRID2(1,0,length);
+\item //this value is defined for looping control
+\item offlength=x1(GRID)-3;
+\item 
+\item //this creates two identical grids GRID and GRID2 that are 1 for the first half and 0 for the second.  These represent diffusion couples.
+\item for (int x=x0(GRID); x\textless x1(GRID); x++)
+\item \hspace{10pt}        if (x\textless length/2) \{
+\item \hspace{10pt} \hspace{10pt}                GRID[x]=1;
+\item \hspace{10pt} \hspace{10pt}                GRID2[x]=1;
+\item \hspace{10pt}        \}
+\item \hspace{10pt}        else \{
+\item \hspace{10pt} \hspace{10pt}               GRID[x]=0;
+\item \hspace{10pt} \hspace{10pt}                GRID2[x]=0;
+\item \hspace{10pt}        \}
+\item 
+\end{enumerate}
+\end{shadebox}
+
+\begin{shadebox}
+\begin{enumerate} \itemsep1pt \parskip0pt \parsep0pt
+\setcounter{enumi}{37}
+\item //This step controls the number of time steps based on the user input from before
+\item for (int i=0;i\textless iterate;i++) \{
+\item //Iterate through grid
+\item \hspace{10pt}        for (int x=x0(GRID); x\textless x1(GRID); x++) \{
+\item //Define fixed boundaries by preventing the first and last nodes of the grid from changing
+\item \hspace{10pt} \hspace{10pt}                if (x==0 \textbar \textbar x==length-1\{
+\item \hspace{10pt} \hspace{10pt}                 \}
+\item //Take one time step of the discrete Fick's Law with maximum stability criterion (.5)
+\item //to keep calculations from interfering with each other, the results of computations are stored in GRID2, then copied back to GRID after the last computation
+\item \hspace{10pt} \hspace{10pt}                 else \{
+\item \hspace{10pt} \hspace{10pt} \hspace{10pt}                         GRID2[x]=0.5*(GRID[x-1]-2*GRID[x]+GRID[x+1])+GRID[x];
+\item \hspace{10pt} \hspace{10pt} \hspace{10pt}                         if (x\textgreater offlength) \{
+\item \hspace{10pt} \hspace{10pt} \hspace{10pt} \hspace{10pt}                                 swap(GRID,GRID2);
+\item \hspace{10pt} \hspace{10pt} \hspace{10pt}                         \}
+\item \hspace{10pt} \hspace{10pt}                 \}
+\item \hspace{10pt}         \}
+\item \}
+\item //This prints the results of the grid to cout
+\item for (int x=x0(GRID); x\textless x1(GRID); x++) \{
+\item \hspace{10pt}         std::cout\textless \textless GRID[x]\textless \textless std::endl;
+\item \}
+\item Finalize();
+\item \}
+\end{enumerate}
+
+\end{shadebox}
+
+\subsection{1D Diffusion Couple, MMSPish}
+The second time through uses more MMSP functionality. Important changes:
+
+\begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
+\item line 19: instead of GRID2, the MMSP standard name “update” is used for the second grid.
+\item lines 33-36: define the boundary conditions (bulkier in this case, but using other MMSP standard boundaries makes this step very useful).
+\begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
+\item The syntax in line 33, b0(GRID,0), can be generalized to:
+\begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
+\item \textit{boundary condition side(grid to be applied to, dimension to apply the boundary to)}
+\item for this specific example, b0 corresponds to the left-hand boundary, GRID is the grid that the condition is applied to, and 0 corresponds to the 1st (or x) dimension.
+\end {itemize}
+\end {itemize}
+\item line 43: by using the MMSP standard loop, the grid is updated at the correct time without any commands from the operator
+\item line 44: ghostswap command is used in parallel processing - it has no effect when only one processor is used, but is vital when using more than one.
+\end {itemize}
+
+\begin{shadebox}
+\begin{enumerate} \itemsep1pt \parskip0pt \parsep0pt
+\item \#include"MMSP.hpp"
+\item using namespace MMSP; 
+\item 
+\item //we start the program off the same way as before, but this time we do not need the offset length variable
+\item int main() 
+\item \{ 
+\item int length;
+\item int iterate;
+\item 
+\item std::cout\textless \textless "input couple length"\textless \textless std::endl;
+\item std::cin\textgreater \textgreater length;
+\item std::cout\textless \textless ""\textless \textless std::endl;
+\item 
+\item std::cout\textless \textless "input number of iterations"\textless \textless std::endl;
+\item std::cin\textgreater \textgreater iterate;
+\item std::cout\textless \textless ""\textless \textless std::endl;
+\item 
+\item grid\textless 1,scalar\textless float\textgreater  \textgreater  GRID(1,0,length);
+\item grid\textless 1,scalar\textless float\textgreater  \textgreater  update(1,0,length); 
+\item 
+\item for (int x=x0(GRID); x\textless x1(GRID); x++)
+\item \hspace{10pt}         if (x\textless length/2) \{ 
+\item \hspace{10pt} \hspace{10pt}                 GRID[x]=1;
+\item \hspace{10pt} \hspace{10pt}                 update[x]=1;  
+\item \hspace{10pt}         \}           
+\item \hspace{10pt}         else \{
+\item \hspace{10pt} \hspace{10pt}                 GRID[x]=0;
+\item \hspace{10pt} \hspace{10pt}                 update[x]=1;
+\item         \}
+\item 
+\end{enumerate}
+\end{shadebox}
+
+\begin{shadebox}
+\begin{enumerate} \itemsep1pt \parskip0pt \parsep0pt
+\setcounter{enumi}{30}
+\item //now we set the boundary conditions of both grids.  By choosing the Dirichlet conditions, it is nearly identical to the manually set boundaries.  
+\item //the difference is that the first and last nodes of the grid can change, and the theoretical points outside the grid are fixed.
+\item b0(GRID,0) = Dirichlet;
+\item b1(GRID,0) = Dirichlet;
+\item b0(update,0) = Dirichlet;
+\item b1(update,0) = Dirichlet;
+\item 
+
+\item for (int k=0; k\textless iterate; k++) \{
+\item \hspace{10pt}         for (int i=0; i\textless nodes(GRID); i++) \{
+\item //we can use MMSP's definition for laplacian instead of hardcoding it.
+\item \hspace{10pt} \hspace{10pt}              update(i)=0.5*laplacian(GRID,i)+GRID[i];
+\item \hspace{10pt}         \}
+\item \hspace{10pt}         swap(GRID,update);
+\item \hspace{10pt}         ghostswap(GRID);
+\item \};
+\item 
+\item 
+\item for (int x=x0(GRID); x\textless x1(GRID); x++)
+\item \hspace{10pt}         std::cout\textless \textless GRID[x]\textless \textless std::endl;
+\item 
+\item Finalize();
+\item \}
+\end{enumerate}
+\end{shadebox}
+
+\subsection{2D Diffusion}
+Now, we have a two dimensional diffusion situation (the upper left quadrant of a square is one species, the other three are another). MMSP makes adding dimensions easy, the only necessary changes are:
+\begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
+\item line 19 \& 20: change 1 to 2 when setting the number of dimensions in the grid. 
+\item lines 38-45: boundary conditions in both dimensions must be specified
+\end{itemize}
+Thats it.  Those are the only changes that MMSP requires to operate in multiple dimensions.  Other changes include redefining how the grid is set up, but generally the grid comes from a data set, so you will not have to worry about that, and the coefficient representing the diffusion was changed to reflect how the stability criterion changes in multiple dimensions.
+\begin{shadebox}
+\begin{enumerate} \itemsep1pt \parskip0pt \parsep0pt
+\item \#include"MMSP.hpp"
+\item using namespace MMSP; 
+\item 
+\item //we start the program off the same way as before, but this time we do not need the 
+\item offset length variable. Also, this creates a square grid.
+\item int main()
+\item \{ 
+\item int length;
+\item int iterate;
+\item 
+\item std::cout\textless \textless "input couple length"\textless \textless std::endl;
+\item std::cin\textgreater \textgreater length;
+\item std::cout\textless \textless ""\textless \textless std::endl;
+\item 
+\item std::cout\textless \textless "input number of iterations"\textless \textless std::endl;
+\item std::cin\textgreater \textgreater iterate;
+\item std::cout\textless \textless ""\textless \textless std::endl;
+\item 
+\item grid\textless 2,scalar\textless float\textgreater  \textgreater  GRID(1,0,length,0,length); 
+\item grid\textless 2,scalar\textless float\textgreater  \textgreater  update(1,0,length,0,length);
+\item 
+\item //This creates a grid with 1’s in the upper left quadrant, and zeroes in the remaining 3
+\item 
+\item for (int x=x0(GRID); x\textless x1(GRID); x++) \{
+\item \hspace{10pt}         for (int y=y0(GRID); y\textless y1(GRID); y++) \{ 
+\item \hspace{10pt} \hspace{10pt}                 if ((x\textless length/2)\& \&(y\textless length/2)) \{
+\item \hspace{10pt} \hspace{10pt} \hspace{10pt}                         GRID[x][y]=1;
+\item \hspace{10pt} \hspace{10pt} \hspace{10pt}                         update[x][y]=1;
+\item \hspace{10pt} \hspace{10pt}                 \} 
+\item \hspace{10pt} \hspace{10pt}                 else \{
+\item \hspace{10pt} \hspace{10pt} \hspace{10pt}                         GRID[x][y]=0;
+\item \hspace{10pt} \hspace{10pt} \hspace{10pt}                         update[x][y]=1;
+\item \hspace{10pt} \hspace{10pt}                 \}
+\item \hspace{10pt}         \}
+\item \}
+\end{enumerate}
+\end{shadebox}
+
+\begin{shadebox}
+\begin{enumerate} \itemsep1pt \parskip0pt \parsep0pt
+\setcounter{enumi}{35}
+\item //now we set the boundary conditions of both grids.  By choosing the Dirichlet conditions, it is nearly identical to the manually set boudaries.  
+\item //the difference is that the first and last nodes of the grid can change, and the theoretical points outside the grid are fixed.
+\item b0(GRID,0) = Dirichlet;
+\item b1(GRID,0) = Dirichlet;
+\item b0(GRID,1) = Dirichlet;
+\item b1(GRID,1) = Dirichlet;
+\item b0(update,0) = Dirichlet;
+\item b1(update,0) = Dirichlet;
+\item b0(update,1) = Dirichlet;
+\item b1(update,1) = Dirichlet;
+\item 
+\item 
+\item for (int k=0; k\textless iterate; k++) \{
+\item \hspace{10pt}         for (int i=0; i\textless nodes(GRID); i++) \{
+\item //we can use MMSP's definition for laplacian instead of hardcoding it.
+\item \hspace{10pt} \hspace{10pt}                 update(i)=0.2*laplacian(GRID,i)+GRID(i);
+\item \hspace{10pt}         \}
+\item \hspace{10pt}         swap(GRID,update);
+\item \hspace{10pt}         ghostswap(GRID);
+\item \} ;
+\item 
+\item 
+\item for (int x=x0(GRID); x\textless x1(GRID); x++) \{
+\item \hspace{10pt}         for (int y=y0(GRID); y\textless y1(GRID); y++) \{
+\item \hspace{10pt} \hspace{10pt}         std::cout\textless \textless GRID[x][y];
+\item \hspace{10pt} \hspace{10pt}         std::cout\textless \textless "    ";
+\item \hspace{10pt}         \}
+\item \hspace{10pt}         std::cout\textless \textless std::endl;
+\item \}
+\item Finalize();
+\item \}
+\end{enumerate}
+\end{shadebox}
+\end{document}
