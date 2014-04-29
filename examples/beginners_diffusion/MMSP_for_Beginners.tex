@@ -19,103 +19,19 @@
 \begin{document}
 \maketitle
 \section{Introduction}
-The following sections present a few short tutorials on writing, compiling, and running simple \MMSP programs.  For those totally confused by the syntax of the examples presented here we suggest consulting an introductory {\tt c++} text first.
-
-\section{A quick tutorial}
-\subsection{The {\tt Hello MMSP!} program, as written in the MMSP main documentation (Credit: Jason Gruber)}
-Because every good programming language or interface tutorial starts with a ``Hello World!'' example program, we'll do the same.  For most \MMSP applications, we include a header file named {\tt MMSP.hpp}.  Then we need a {\tt main()} program and a few lines to print out our message.  Here it is:
-\begin{shadebox}
-\begin{verbatim}
-    #include"MMSP.hpp"
-
-    int main(int argc, char* argv[])
-    {
-        MMSP::Init(argc,argv);
-
-        std::cout<<"Hello MMSP!"<<std::endl;
-
-        MMSP::Finalize();
-        
-        return 0;
-    }
-\end{verbatim}
-\end{shadebox}
-The only code here that should look out of the ordinary are the statements
-\begin{shadebox}
-\begin{verbatim}
-    MMSP::Init(argc,argv);
-\end{verbatim}
-\end{shadebox}
-and
-\begin{shadebox}
-\begin{verbatim}
-    MMSP::Finalize();
-\end{verbatim}
-\end{shadebox}
-What do these lines do?  For single processor programs, they do absolutely nothing -- they could actually be removed without any consequences.  However, for programs that use the message passing interface (MPI), they act as wrappers for the similarly named {\tt MPI::Init} and {\tt MPI::Finalize} commands.  It's useful to include them here because they'll allow us to write programs that may be compiled for both single or multiple processor environments.
-
-Programmers familiar with {\tt c++} will notice that there's obviously some \MMSP namespace being used here.  For those less familiar, namespaces are a somewhat recent addition to {\tt c++} that are used as a means of avoiding naming conflicts.  We can avoid using namespace resolution so frequently if we use an appropriate {\tt using} statement, i.e. 
-\begin{shadebox}
-\begin{verbatim}
-    #include"MMSP.hpp"
-    using namespace MMSP;
-
-    int main(int argc, char* argv[])
-    {
-        Init(argc,argv);
-\end{verbatim}
-\end{shadebox}
-Namespaces serve to prevent programming errors and to ensure code reusability, so naturally we should apply {\tt using} statements with care.  In the examples that follow, we'll sometimes assume a {\tt using} statement has been issued for the sake of brevity.
-
-The observant reader may notice that we've used some of the stream input/output functions of {\tt c++} without including the requisite {\tt <iostream>} header.  In fact, this header and many other standard {\tt c++} headers are included implicitly thorough the file {\tt MMSP.hpp}.  If you need a particular standard header for your application and aren't sure if it has been included by {\tt MMSP.hpp}, you can always just {\tt \#include} it in your source code without any ill effects.
-
-So that's it as far as the code goes.  This is a source file that may be compiled for both single and parallel simulations of... nothing.  In a moment we will move on to code that actually does something, but for now we should say a few words about compiling the code and running the executable.
-
-\subsection{Compiling and running {\tt Hello MMSP!}}
-Compiling code is a task that is, unfortunately, fairly platform dependent.  While \MMSP programs should compile easily on any platform, the required steps to do so may not look like the method shown here.  That said, let's look at how we would compile the previous example for a typical Linux or Unix setup.  Suppose the above code has been saved to a file named {\tt hello.cpp}, and that \MMSP has been extracted to the same directory.  A typical Linux machine will have at the least the GNU family of compilers installed, in which case we would type the command 
-\begin{shadebox}
-\begin{verbatim}
-    g++ -I MMSP/include hello.cpp -o hello
-\end{verbatim}
-\end{shadebox}
-which produces an executable file named {\tt hello}.  The compiler option {\tt -I ...} suggests a directory to search for non-standard headers; if your \MMSP headers reside somewhere else, you'll need to make the appropriate change.  To run the program, we type
-\begin{shadebox}
-\begin{verbatim}
-    ./hello
-\end{verbatim}
-\end{shadebox}
-which should produce our message.  Many other compilers on Linux and Unix machines use the same options as listed here, so this line may be very close to what you might use, even if you're not using {\tt g++}.
-
-Now let's move on to parallel compilation.  We assume that if you're not skipping over this part, you have the MPI libraries installed on your machine (as well as your cluster).  With a typical MPI installation, a number of programs are included which effectively wrap your usual {\tt c++} compiler with a script named something like {\tt mpic++}, {\tt mpicxx}, {\tt mpicc}, etc.  With this in mind, we issue a command which may look like
-\begin{shadebox}
-\begin{verbatim}
-    mpicxx -I MMSP/include -include mpi.h hello.cpp -o hello
-\end{verbatim}
-\end{shadebox}
-which again produces an executable named {\tt hello}.  This time, however, we need to run {\tt hello} using an MPI command such as {\tt mpirun} or {\tt mpiexec} (see the documentation for your MPI distribution),
-\begin{shadebox}
-\begin{verbatim}
-    mpirun -np 4 hello
-\end{verbatim}
-\end{shadebox}
-which in this case produces our message four times.  The author sincerely hopes that your experience is this straightforward, but don't count on it!
-
-
-
-MMSP is a powerful diffusion modeling tool capable of modeling complex, large, three-dimensional systems. However, its capabilities are useless if the user is unfamiliar with the functions and tools MMSP has to offer. This tutorial will introduce some of MMSP’s functions through step-by-step solutions of the one dimensional diffusion couple problem according to Fick’s Law.  The first solution demonstrates the usage of the grid class by using a c-esque analytics scheme.  In the second solution, other MMSP aspects - like the laplacian operator and boundary conditions - are introduced. Finally, the solution is expanded into two dimensions to illustrate how to use MMSP multidimensional functionality. 
-
+The following is a brief tutorial on how to use \MMSP and some of it's basic functions. If you are unfamiliar with the basics of c++ or how to compile and run programs, please refer to the main \MMSP documentation.
 
 \section{Fick's Law Review}
 
 To start off, a quick review of Fick’s law:  Fick’s Law states the the change in concentration of a diffusive substance changes in time proportionally with the second derivative of change in space.
 
-$$\frac{\delta C}{\delta t}=D\nabla ^2C$$
+$$\frac{\partial C}{\partial t}=D\nabla ^2C$$
 
 Additionally, it is possible to discretize the law in both space and time to obtain an explicit method to predict future time steps using the a map of the current concentrations in space. 
 
 $$C_{x,t+1} = D\Delta t\frac{C_{x-1,t} - 2C_{x,t} - C_{x+1},t }{ \Delta x^2} + C_x,t $$
 
-In the above expression, the n subscripts refer to a position in space and the m subscripts refer to a position in time.
+In the above expression, the $n$ subscripts refer to a position in space and the $m$ subscripts refer to a position in time.
 
 The expression becomes complicated when adding dimensions as the laplacian requires derivation in each dimension individually.   
 
