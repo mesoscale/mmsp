@@ -5,6 +5,9 @@
 #include"MMSP.hpp"
 #include<zlib.h>
 #include<sstream>
+#include<cmath>
+#include<vector>
+#include<map>
 
 bool fexists(const char *filename) {
 	std::ifstream ifile(filename);
@@ -98,10 +101,10 @@ int main(int argc, char* argv[]) {
 	input >> fields;
 
 	// read grid sizes
-	int x0[3] = {0, 0, 0};
-	int x1[3] = {0, 0, 0};
+	int g0[3] = {0, 0, 0};
+	int g1[3] = {0, 0, 0};
 	for (int i = 0; i < dim; i++)
-		input >> x0[i] >> x1[i];
+		input >> g0[i] >> g1[i];
 
 	// read cell spacing
 	float dx[3] = {1.0, 1.0, 1.0};
@@ -122,17 +125,26 @@ int main(int argc, char* argv[]) {
 	output << "<VTKFile type=\"ImageData\" version=\"0.1\" byte_order=\"" << byte_order << "\">\n";
 
 	if (dim == 1) {
-		output << "  <ImageData WholeExtent=\"" << x0[0] << " " << x1[0] << " 0 0 0 0\"";
+		output << "  <ImageData WholeExtent=\"" << g0[0] << " " << g1[0] << " 0 0 0 0\"";
 		output << "   Origin=\"0 0 0\" Spacing=\"" << dx[0] << " 1 1\">\n";
 	}
 	if (dim == 2) {
-		output << "  <ImageData WholeExtent=\"" << x0[1] << " " << x1[1] << " " << x0[0] << " " << x1[0] << " 0 0\"";
+		output << "  <ImageData WholeExtent=\"" << g0[1] << " " << g1[1] << " " << g0[0] << " " << g1[0] << " 0 0\"";
 		output << "   Origin=\"0 0 0\" Spacing=\"" << dx[1] << " " << dx[0] << " 1\">\n";
 	}
 	if (dim == 3) {
-		output << "  <ImageData WholeExtent=\"" << x0[2] << " " << x1[2] << " " << x0[1] << " " << x1[1] << " " << x0[0] << " " << x1[0] << "\"";
+		output << "  <ImageData WholeExtent=\"" << g0[2] << " " << g1[2] << " " << g0[1] << " " << g1[1] << " " << g0[0] << " " << g1[0] << "\"";
 		output << "   Origin=\"0 0 0\" Spacing=\"" << dx[2] << " " << dx[1] << " " << dx[0] << "\">\n";
 	}
+
+
+	// Estimate number of grains, for color randomization
+	int est_grains = 10000;
+	if (dim==2) est_grains=static_cast<int>(1.5*float((g1[0]-g0[0])*(g1[1]-g0[1]))/(M_PI*10.*10.)); // average grain is a disk of radius 10
+	else if (dim==3) est_grains=static_cast<int>(1.5*float((g1[0]-g0[0])*(g1[1]-g0[1])*(g1[2]-g0[2]))/(4./3*M_PI*10.*10.*10.)); // Average grain is a sphere of radius 10 voxels
+	std::vector<int> colors;
+	for (unsigned int i=0; i<est_grains; i++)
+		colors.push_back(rand() % est_grains);
 
 	// read number of blocks
 	int blocks;
@@ -547,12 +559,12 @@ int main(int argc, char* argv[]) {
 					MMSP::grid<2, MMSP::sparse<float> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					for (int k = 0; k < MMSP::nodes(GRID); k++)
-						output << GRID(k).grain_id() << " ";
+						output << colors[GRID(k).grain_id()%est_grains] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<float> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					for (int k = 0; k < MMSP::nodes(GRID); k++)
-						output << GRID(k).grain_id() << " ";
+						output << colors[GRID(k).grain_id()%est_grains] << " ";
 				}
 			}
 			// === DOUBLE ===
@@ -561,17 +573,17 @@ int main(int argc, char* argv[]) {
 					MMSP::grid<1, MMSP::sparse<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					for (int k = 0; k < MMSP::nodes(GRID); k++)
-						output << GRID(k).grain_id() << " ";
+						output << colors[GRID(k).grain_id()%est_grains] << " ";
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					for (int k = 0; k < MMSP::nodes(GRID); k++)
-						output << GRID(k).grain_id() << " ";
+						output << colors[GRID(k).grain_id()%est_grains] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					for (int k = 0; k < MMSP::nodes(GRID); k++)
-						output << GRID(k).grain_id() << " ";
+						output << colors[GRID(k).grain_id()%est_grains] << " ";
 				}
 			}
 			if (long_double_type) {
