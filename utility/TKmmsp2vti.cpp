@@ -662,6 +662,25 @@ int main(int argc, char* argv[]) {
 					}
 				}
 			}
+		} else if (not scalar_type and not vector_type) {
+			if (int_type) {
+				if (dim == 1) {
+					MMSP::grid<1,MMSP::scalar<int> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					for (int k = 0; k < MMSP::nodes(GRID); k++)
+						output << colors[GRID(k)%est_grains] << " ";
+				} else if (dim == 2) {
+					MMSP::grid<2,MMSP::scalar<int> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					for (int k = 0; k < MMSP::nodes(GRID); k++)
+						output << colors[GRID(k)%est_grains] << " ";
+				} else if (dim == 3) {
+					MMSP::grid<3,MMSP::scalar<int> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					for (int k = 0; k < MMSP::nodes(GRID); k++)
+						output << colors[GRID(k)%est_grains] << " ";
+				}
+			}
 		}
 
 		// clean up
