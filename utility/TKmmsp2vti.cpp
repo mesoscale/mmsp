@@ -5,6 +5,9 @@
 #include"MMSP.hpp"
 #include<zlib.h>
 #include<sstream>
+#include<cmath>
+#include<vector>
+#include<map>
 
 bool fexists(const char *filename) {
 	std::ifstream ifile(filename);
@@ -32,6 +35,9 @@ int main(int argc, char* argv[]) {
 		std::cerr << "File input error: could not open " << argv[1] << ".\n\n";
 		exit(-1);
 	}
+	#ifdef DEBUG
+	std::cout<<"Reading "<<argv[1]<<std::endl;
+	#endif
 
 	// generate output file name
 	std::stringstream filename;
@@ -50,6 +56,9 @@ int main(int argc, char* argv[]) {
 	// read data type
 	std::string type;
 	getline(input, type, '\n');
+	#ifdef DEBUG
+	std::cout<<"Grid type is "<<type<<std::endl;
+	#endif
 
 	// grid type error check
 	if (type.substr(0, 4) != "grid") {
@@ -92,21 +101,33 @@ int main(int argc, char* argv[]) {
 	// read grid dimension
 	int dim;
 	input >> dim;
+	#ifdef DEBUG
+	std::cout<<"Grid is "<<dim<<"-dimensional."<<std::endl;
+	#endif
 
 	// read number of fields
 	int fields;
 	input >> fields;
+	#ifdef DEBUG
+	std::cout<<"Grid has "<<fields<<" fields."<<std::endl;
+	#endif
 
 	// read grid sizes
-	int x0[3] = {0, 0, 0};
-	int x1[3] = {0, 0, 0};
+	int g0[3] = {0, 0, 0};
+	int g1[3] = {0, 0, 0};
 	for (int i = 0; i < dim; i++)
-		input >> x0[i] >> x1[i];
+		input >> g0[i] >> g1[i];
+	#ifdef DEBUG
+	std::cout<<"Grid edge is "<<g1[0] - g0[0]<<std::endl;
+	#endif
 
 	// read cell spacing
 	float dx[3] = {1.0, 1.0, 1.0};
 	for (int i = 0; i < dim; i++)
 		input >> dx[i];
+	#ifdef DEBUG
+	std::cout<<"Grid spacing is "<<dx[0]<<std::endl;
+	#endif
 
 	// ignore trailing endlines
 	input.ignore(10, '\n');
@@ -116,29 +137,47 @@ int main(int argc, char* argv[]) {
 	std::string byte_order;
 	if (0x01 & static_cast<int>(1)) byte_order = "LittleEndian";
 	else byte_order = "BigEndian";
+	#ifdef DEBUG
+	std::cout<<"Grid is "<<byte_order<<std::endl;
+	#endif
 
 	// output header markup
 	output << "<?xml version=\"1.0\"?>\n";
 	output << "<VTKFile type=\"ImageData\" version=\"0.1\" byte_order=\"" << byte_order << "\">\n";
 
 	if (dim == 1) {
-		output << "  <ImageData WholeExtent=\"" << x0[0] << " " << x1[0] << " 0 0 0 0\"";
+		output << "  <ImageData WholeExtent=\"" << g0[0] << " " << g1[0] << " 0 0 0 0\"";
 		output << "   Origin=\"0 0 0\" Spacing=\"" << dx[0] << " 1 1\">\n";
 	}
 	if (dim == 2) {
-		output << "  <ImageData WholeExtent=\"" << x0[1] << " " << x1[1] << " " << x0[0] << " " << x1[0] << " 0 0\"";
+		output << "  <ImageData WholeExtent=\"" << g0[1] << " " << g1[1] << " " << g0[0] << " " << g1[0] << " 0 0\"";
 		output << "   Origin=\"0 0 0\" Spacing=\"" << dx[1] << " " << dx[0] << " 1\">\n";
 	}
 	if (dim == 3) {
-		output << "  <ImageData WholeExtent=\"" << x0[2] << " " << x1[2] << " " << x0[1] << " " << x1[1] << " " << x0[0] << " " << x1[0] << "\"";
+		output << "  <ImageData WholeExtent=\"" << g0[2] << " " << g1[2] << " " << g0[1] << " " << g1[1] << " " << g0[0] << " " << g1[0] << "\"";
 		output << "   Origin=\"0 0 0\" Spacing=\"" << dx[2] << " " << dx[1] << " " << dx[0] << "\">\n";
 	}
+
+
+	// Estimate number of grains, for color randomization
+	int est_grains = 10000;
+	if (dim==2) est_grains=static_cast<int>(1.5*float((g1[0]-g0[0])*(g1[1]-g0[1]))/(M_PI*10.*10.)); // average grain is a disk of radius 10
+	else if (dim==3) est_grains=static_cast<int>(1.5*float((g1[0]-g0[0])*(g1[1]-g0[1])*(g1[2]-g0[2]))/(4./3*M_PI*10.*10.*10.)); // Average grain is a sphere of radius 10 voxels
+	#ifdef DEBUG
+	std::cout<<"Grid contains approx. "<<est_grains<<" grains."<<std::endl;
+	#endif
+	std::vector<int> colors;
+	for (unsigned int i=0; i<est_grains; i++)
+		colors.push_back(rand() % est_grains);
 
 	// read number of blocks
 	int blocks;
 	input.read(reinterpret_cast<char*>(&blocks), sizeof(blocks));
 
 	for (int i = 0; i < blocks; i++) {
+		#ifdef DEBUG
+		std::cout<<"  Reading block "<<i+1<<" of "<<blocks<<std::endl;
+		#endif
 		// read block limits
 		int lmin[3] = {0, 0, 0};
 		int lmax[3] = {0, 0, 0};
@@ -146,6 +185,9 @@ int main(int argc, char* argv[]) {
 			input.read(reinterpret_cast<char*>(&lmin[j]), sizeof(lmin[j]));
 			input.read(reinterpret_cast<char*>(&lmax[j]), sizeof(lmax[j]));
 		}
+		#ifdef DEBUG
+		std::cout<<"  Block edge is "<<lmax[0] - lmin[0]<<std::endl;
+		#endif
 		int blo[dim];
     int bhi[dim];
     // read boundary conditions
@@ -213,6 +255,9 @@ int main(int argc, char* argv[]) {
 		input.read(reinterpret_cast<char*>(&size), sizeof(size)); // read compressed size
 		char* compressed_buffer = new char[size];
 		input.read(compressed_buffer, size);
+		#ifdef DEBUG
+		std::cout<<"  Read "<<size<<" B, compressed data."<<std::endl;
+		#endif
 		char* buffer;
 		if (size!=rawSize) {
 			// Decompress data
@@ -538,6 +583,9 @@ int main(int argc, char* argv[]) {
 			}
 			// === FLOAT ===
 			if (float_type) {
+				#ifdef DEBUG
+				std::cout<<"  Writing grain IDs from sparse floats."<<std::endl;
+				#endif
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<float> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -547,12 +595,19 @@ int main(int argc, char* argv[]) {
 					MMSP::grid<2, MMSP::sparse<float> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					for (int k = 0; k < MMSP::nodes(GRID); k++)
-						output << GRID(k).grain_id() << " ";
+						output << colors[GRID(k).grain_id()%est_grains] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<float> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++)
-						output << GRID(k).grain_id() << " ";
+					#ifdef DEBUG
+					std::cout<<"  Opened 3D grid from buffer."<<std::endl;
+					#endif
+					for (int k = 0; k < MMSP::nodes(GRID); k++) {
+						#ifdef DEBUG
+						assert(GRID(k).grain_id()%est_grains < est_grains);
+						#endif
+						output << colors[GRID(k).grain_id()%est_grains] << " ";
+					}
 				}
 			}
 			// === DOUBLE ===
@@ -561,17 +616,17 @@ int main(int argc, char* argv[]) {
 					MMSP::grid<1, MMSP::sparse<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					for (int k = 0; k < MMSP::nodes(GRID); k++)
-						output << GRID(k).grain_id() << " ";
+						output << colors[GRID(k).grain_id()%est_grains] << " ";
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					for (int k = 0; k < MMSP::nodes(GRID); k++)
-						output << GRID(k).grain_id() << " ";
+						output << colors[GRID(k).grain_id()%est_grains] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					for (int k = 0; k < MMSP::nodes(GRID); k++)
-						output << GRID(k).grain_id() << " ";
+						output << colors[GRID(k).grain_id()%est_grains] << " ";
 				}
 			}
 			if (long_double_type) {
@@ -605,6 +660,25 @@ int main(int argc, char* argv[]) {
 							sum += static_cast<long double>(GRID(k).value(h) * GRID(k).value(h));
 						output << sum << " ";
 					}
+				}
+			}
+		} else if (not scalar_type and not vector_type) {
+			if (int_type) {
+				if (dim == 1) {
+					MMSP::grid<1,MMSP::scalar<int> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					for (int k = 0; k < MMSP::nodes(GRID); k++)
+						output << colors[GRID(k)%est_grains] << " ";
+				} else if (dim == 2) {
+					MMSP::grid<2,MMSP::scalar<int> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					for (int k = 0; k < MMSP::nodes(GRID); k++)
+						output << colors[GRID(k)%est_grains] << " ";
+				} else if (dim == 3) {
+					MMSP::grid<3,MMSP::scalar<int> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					for (int k = 0; k < MMSP::nodes(GRID); k++)
+						output << colors[GRID(k)%est_grains] << " ";
 				}
 			}
 		}
