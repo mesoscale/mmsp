@@ -880,7 +880,8 @@ public:
 
 
 		// # elif (defined MPI_VERSION) && !(defined BGQ)
-		#elif (defined MPI_VERSION) && (defined CCNI)
+		//#elif (defined MPI_VERSION) && (defined CCNI)
+		#else
 		/* MPI-IO write to disk */
 
 
@@ -984,10 +985,10 @@ public:
 		MPI::COMM_WORLD.Barrier();
 		MPI_File_sync(output);
 		// Make sure everything's written before closing the file.
+		MPI_Offset actual_size;
+		MPI_File_get_size(output,&actual_size);
 		if (rank==0) {
 			#ifdef DEBUG
-			MPI_Offset actual_size;
-			MPI_File_get_size(output,&actual_size);
 			std::cout<<filename<<" should be "<<offsets[np-1]+datasizes[np-1]<<" B;";
 			std::cout<<" wrote "<<actual_size<<" B to disk."<<std::endl;
 			#endif
@@ -998,9 +999,10 @@ public:
 		delete [] offsets; offsets=NULL;
 		delete [] datasizes; datasizes=NULL;
 
-
-		#else
-		/* MPI-IO to the filesystem with writes aligned to blocks */
+		#endif
+	}
+/*		#else
+		// MPI-IO to the filesystem with writes aligned to blocks
 
 
 		MPI::COMM_WORLD.Barrier();
@@ -1134,21 +1136,6 @@ public:
 		if (rank>=writeranks[nwriters-1])
 			ws=filesize-aoffsets[nwriters-1]; // last block may be only partially-filled
 
-		/*#ifdef DEBUG
-		if (rank==0)
-			std::cout<<"Filesize is "<<filesize<<" B, or "<<blocks<<" blocks with "<<excessblocks<<" extra."<<std::endl;
-		for (unsigned int r=0; r<np; r++) {
-			MPI::COMM_WORLD.Barrier();
-			if (rank==r) {
-				for (unsigned int w=0; w<nwriters; w++)
-					if (writeranks[w]==rank)
-						printf("Rank %2u is a writer. Offset: %6lu B. Writesize: %6lu B. Datasize: %6lu B.\n", rank, aoffsets[w], ws, datasizes[rank]);
-			}
-			MPI::COMM_WORLD.Barrier();
-		}
-		if (rank==0) std::cout<<std::endl;
-		MPI::COMM_WORLD.Barrier();
-		#endif*/
 
 		unsigned long deficiency=0;
 		if (rank>0) {
@@ -1166,16 +1153,6 @@ public:
 		if (datasizes[rank]-deficiency>ws)
 			std::fprintf(stderr, "Error on Rank %u, alignment: buffered %lu B > writesize %lu B.\n", rank, datasizes[rank]-deficiency, ws);
 		#endif
-		/*#ifdef DEBUG
-		for (unsigned int r=0; r<np; ++r) {
-			MPI::COMM_WORLD.Barrier();
-			if (r==rank) {
-				std::fprintf(stderr, "Rank %2u: lower=%2u, defect=%6lu B, upper=%2u\n", rank, writeranks[prevwriter], misalignments[rank], writeranks[nextwriter]);
-			}
-			MPI::COMM_WORLD.Barrier();
-		}
-		if (rank==0) std::cout<<std::endl;
-		#endif*/
 
 		// Accumulate data
 		const unsigned int silentranks=writeranks[nextwriter]-rank; // number of MPI ranks between this rank and the next writer
@@ -1280,6 +1257,7 @@ public:
 		}
 		#endif
 	}
+*/
 
 	unsigned long write_buffer(char* &buf) const {
 		// Find out how big the dataset is
