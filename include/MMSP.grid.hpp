@@ -22,6 +22,7 @@
 #include"MMSP.vector.hpp"
 #include"MMSP.sparse.hpp"
 
+#ifndef RAW
 struct z_thread_para{
 	Bytef* src_start;
 	Bytef* dst_start;
@@ -50,7 +51,7 @@ void* threaded_compress( void * s )
 
 	return NULL;
 }
-
+#endif
 
 namespace MMSP {
 
@@ -1032,6 +1033,7 @@ public:
 		#endif
 	}
 
+	#ifndef RAW
 	unsigned long write_buffer_bgq(char*& buf, int nthreads=1)
 	{
 		assert(nthreads>0);
@@ -1167,6 +1169,7 @@ public:
 		return header_size + static_cast<unsigned long>(sizeof(size_in_mem))
 		                   + static_cast<unsigned long>(sizeof(size_on_disk)) + size_on_disk;
 	}
+	#endif
 
 	unsigned long write_buffer(char* &buf) const {
 		// Find out how big the dataset is
