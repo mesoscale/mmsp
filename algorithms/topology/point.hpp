@@ -14,14 +14,14 @@ public:
 	Point<T>(const Point<U>& old): x(old.x), y(old.y), z(old.z) {}
 	//Accessors
 	T& operator [](int i) {
-		if (i==0) return this->x;
-		else if (i==1) return this->y;
+		if (i==1) return this->y;
 		else if (i==2) return this->z;
+		return this->x;
 	}
 	const T& operator [](int i) const {
-		if (i==0) return this->x;
-		else if (i==1) return this->y;
+		if (i==1) return this->y;
 		else if (i==2) return this->z;
+		return this->x;
 	}
 	// Modifiers
 	Point& operator+=(const Point<T>& rhs) {

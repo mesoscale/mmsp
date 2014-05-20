@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.vector.hpp
 
 # the program
-graingrowth: graingrowth.cpp graingrowth.hpp $(core)
+graingrowth: graingrowth.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: graingrowth.cpp graingrowth.hpp $(core)
+parallel: graingrowth.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

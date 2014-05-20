@@ -5,6 +5,7 @@
 #include"MMSP.hpp"
 #include<zlib.h>
 #include<sstream>
+#include<vector>
 
 int main(int argc, char* argv[]) {
 	// command line error check
@@ -198,6 +199,12 @@ int main(int argc, char* argv[]) {
 		else if (long_double_type)
 			output << " type=\"Float128\" format=\"ascii\">\n";
 
+		const unsigned int max_id = 10000;
+		std::vector<int> colors;
+		for (unsigned int i=0; i<max_id; i++)
+			colors.push_back(rand()%max_id);
+
+
 		// read grid data
 		unsigned long size, rawSize;
 		input.read(reinterpret_cast<char*>(&rawSize), sizeof(rawSize)); // read raw size
@@ -235,135 +242,135 @@ int main(int argc, char* argv[]) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<bool> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<bool> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<bool> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				}
 			}
 			if (char_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				}
 			}
 			if (unsigned_char_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<unsigned char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<unsigned char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<unsigned char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				}
 			}
 			if (int_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				}
 			}
 			if (unsigned_int_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<unsigned int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<unsigned int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<unsigned int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				}
 			}
 			if (long_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				}
 			}
 			if (unsigned_long_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<unsigned long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (long k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (long k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<unsigned long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (long k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (long k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<unsigned long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (long k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (long k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				}
 			}
 			if (short_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				}
 			}
 			if (unsigned_short_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<unsigned short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<unsigned short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<unsigned short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
-					for (int k = 0; k < MMSP::nodes(GRID); k++) output << GRID(k) << " ";
+					for (int k = 0; k < MMSP::nodes(GRID); k++) output << colors[GRID(k)%max_id] << " ";
 				}
 			}
 			if (float_type) {

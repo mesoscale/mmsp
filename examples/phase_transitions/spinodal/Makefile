@@ -17,10 +17,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.grid.hpp
 
 # the program
-spinodal: spinodal.cpp spinodal.hpp $(core)
+spinodal: spinodal.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: spinodal.cpp spinodal.hpp $(core)
+parallel: spinodal.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

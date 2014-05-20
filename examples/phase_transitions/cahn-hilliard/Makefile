@@ -17,10 +17,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.grid.hpp
 
 # the program
-cahn-hilliard: cahn-hilliard.cpp cahn-hilliard.hpp $(core)
+cahn-hilliard: cahn-hilliard.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: cahn-hilliard.cpp cahn-hilliard.hpp $(core)
+parallel: cahn-hilliard.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

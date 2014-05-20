@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.sparse.hpp
 
 # the program
-graingrowth: graingrowth.cpp graingrowth.hpp anisotropy.hpp $(core)
+graingrowth: graingrowth.cpp anisotropy.hpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: graingrowth.cpp graingrowth.hpp anisotropy.hpp $(core)
+parallel: graingrowth.cpp anisotropy.hpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

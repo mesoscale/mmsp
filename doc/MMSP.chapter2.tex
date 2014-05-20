@@ -1,15 +1,13 @@
 % MMSP.chapter2.tex
 
 \chapter{Getting started with \MMSP}
-The following sections provide the necessary information for new users to obtain and set up \MMSP.  Typically, this involves downloading a source code archive, unpacking it, and running a few tests.  Developers or those interested in maintaining an up-to-date version of the code should consider checking out a copy from the {\tt subversion} repository.
+The following sections provide the necessary information for new users to obtain and set up \MMSP.  Typically, this involves downloading a source code archive, unpacking it, and running a few tests.  Developers or those interested in maintaining an up-to-date version of the code should consider checking out a copy from the {\tt git} repository.
 
 \section{Download}
-The \MMSP source code is hosted online at \href{https://matforge.org}{MatForge}.  From the main MatForge site, users should navigate to the \MMSP home page and choose the appropriate links under the section {\em Download}, as these links are set up to point to the latest \MMSP release.  Archives containing the \MMSP source code are provided in the usual Linux tarball convention (with filename extension~{\tt .tar.gz}), and as a zip file (with extension~{\tt .zip}).  Users should download an archive that can be unpacked by existing utilities on their platform; if you are unsure which archive to download, read the following section titled ``Installing \MMSP'' before making your choice.
-
-Alternatively, a user may choose to check out a copy from the {\tt subversion} repository.  This requires the \href{http://www.subversion.com}{\tt subversion} version control software to be installed on the target machine, as well as a working internet connection.  From the command line, type
+The source code for \MMSP is available through a {\tt git} repository, hosted on \href{https://github.com/mesoscale/mmsp}{GitHub}.  This requires the \href{http://www.git-scm.com}{\tt git} version control software to be installed on the target machine, as well as a working internet connection.  From the command line, type
 \begin{shadebox}
 \begin{verbatim}
-    svn checkout https://matforge.org/svn/cmu/MMSP
+    git clone https://github.org/mesoscale/mmsp.git MMSP
 \end{verbatim}
 \end{shadebox}
 If the checkout is successful, then there is no need to perform the steps for intstallation described below, and the user should move on to setup.
@@ -17,10 +15,10 @@ If the checkout is successful, then there is no need to perform the steps for in
 Having a local copy of \MMSP makes it simple to keep your code up-to-date.  From the root folder, simply type
 \begin{shadebox}
 \begin{verbatim}
-    svn update
+    git pull
 \end{verbatim}
 \end{shadebox}
-to update a working copy with the latest version of the \MMSP source code.  See the {\tt subversion} documentation for more details on version control.
+to update a working copy with the latest version of the \MMSP source code.  See the {\tt git} documentation for more details on version control.
 
 \section{Installation}
 After an appropriate source code archive is obtained as described above, the next step is to install \MMSP.  This should be as simple as unpacking the archive.  Users with administrator priveledges may choose to install the \MMSP header files in a location that will be searched by their compiler's preprocessor, but we do not describe how to do this here.  The following paragraphs provide platform-specific instructions for a local installation.
@@ -113,5 +111,5 @@ which, if successful, produces a parallel version of the test program.  Once the
 Note that for successful compilation, the MPI distribution is expected to provide a compilation script named {\tt mpic++} and a the header file named {\tt mpi.h}.  If the program fails to compile, it may be that the user's MPI distribution provides {\tt mpicxx}, {\tt mpiCC}, or the like instead of {\tt mpic++}, or that it provides {\tt mpicxx.h} or something similar instead of {\tt mpi.h}.  In this case, the user should edit the {\tt Makefile} accordingly.  Likewise, the appropriate command to run the compiled program may differ depending on the MPI distribution.  This may take the form of, e.g.\ {\tt mpiexec}, instead of {\tt mpirun}.  Unfortunately, MPI distributions do not adhere to a single standard with respect to compiling and running parallel programs, and so it is largely left to the user to determine what must be done for their particular system.
 
 \section{Support}
-\MMSP is not commercial code and there are no guarantees or claims, stated or implied, pertaining to its fitness for any purpose.  \MMSP is intended soley for use in non-profit scientific research.  In spite of this, the \MMSP team is devoted to producing a quality product that addresses the needs of the scientific community.  Please do not hesitate to contact our development team with any questions or suggestions.  Contact information can be found on the \MMSP page at \href{https://matforge.org}{MatForge}.
+\MMSP is not commercial code and there are no guarantees or claims, stated or implied, pertaining to its fitness for any purpose.  \MMSP is intended soley for use in non-profit scientific research.  In spite of this, the \MMSP team is devoted to producing a quality product that addresses the needs of the scientific community.  Please do not hesitate to contact our development team with any questions or suggestions.  Contact information can be found on the \MMSP page at \href{https://github.com/mesoscale}{GitHub}.
 

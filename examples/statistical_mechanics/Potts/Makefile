@@ -17,10 +17,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.grid.hpp
 
 # the program
-potts: potts.cpp potts.hpp $(core)
+potts: potts.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: potts.cpp potts.hpp $(core)
+parallel: potts.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

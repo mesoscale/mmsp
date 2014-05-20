@@ -17,10 +17,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.grid.hpp
 
 # the program
-allen-cahn: allen-cahn.cpp allen-cahn.hpp $(core)
+allen-cahn: allen-cahn.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: allen-cahn.cpp allen-cahn.hpp $(core)
+parallel: allen-cahn.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

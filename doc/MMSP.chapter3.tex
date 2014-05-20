@@ -17,6 +17,8 @@ Because every good programming language or interface tutorial starts with a ``He
         std::cout<<"Hello MMSP!"<<std::endl;
 
         MMSP::Finalize();
+        
+        return 0;
     }
 \end{verbatim}
 \end{shadebox}
@@ -223,7 +225,8 @@ This example shows the declaration of an {\tt MMSP::vector} object, and its assi
         MMSP::vector<int> x = MMSP::position(GRID,i);
 
         for (int j=0; j<dim; j++) {
-            MMSP::vector<int> dx(dim); dx[j] =  1;
+            MMSP::vector<int> dx(dim,0);
+            dx[j] =  1;
 
             GRID(x+dx) = ... ;
             GRID(x-dx) = ... ;
@@ -321,7 +324,7 @@ This example demonstrates that the boundary conditions may not only be set indep
 
         grid<2,double> GRID(argv[1]);
 
-        update(grid,atoi(argv[3]);
+        update(GRID,atoi(argv[3]);
 
         output(GRID,argv[2]);
 
