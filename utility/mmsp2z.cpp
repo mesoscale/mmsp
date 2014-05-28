@@ -1,6 +1,6 @@
 // mmsp2z.cpp
 // Compress MMSP grid data using zlib
-// Questions/comments to gruberja@gmail.com (Jason Gruber)
+// Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
 #include"MMSP.hpp"
 #include<zlib.h>
@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
 	if (std::string(argv[1]) == "--help") {
 		std::cout << argv[0] << ": compress MMSP grid data using zlib.\n";
 		std::cout << "Usage: " << argv[0] << " [--help] infile outfile\n\n";
-		std::cout << "Questions/comments to kellet@rpi.edu (Trevor Keller).\n\n";
+		std::cout << "Questions/comments to trevor.keller@gmail.com (Trevor Keller).\n\n";
 		exit(0);
 	}
 
