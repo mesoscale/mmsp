@@ -15,37 +15,42 @@ entirely in ISO compliant c++). For more details, see the documentation.
 MMSP is nothing more than a collection of c++ header files that declare a number of grid objects
 (classes) and define how most of their methods (member functions) are implemented.
 
-* Some things MMSP provides include:
- **  A simple, extensible programming interface
- **  Computational grids of arbitrary dimension
- **  Parallel implementations using MPI
- **  Automatic, optimal parallel mesh topologies
- **  Utility programs for grid visualization
- **  Monte Carlo methods
- **  Cellular automata methods
- **  Phase field methods (conventional)
- **  Phase field methods (sparsePF)
- **  General finite difference PDE solvers
- **  22+ example problems that run in 2D and 3D, single and parallel
+*Some things MMSP provides include:*
 
-*Typical MMSP applications include:
- **  Grain growth and coarsening
- **  Precipitation reactions
- **  Crystal growth and solidification
- **  Lattice based kinetic Monte Carlo
- **  Statistical mechanics: Ising model, classical Heisenberg model, etc.
- **  Spinodal decomposition and other second order transformations
+ * A simple, extensible programming interface
+ * Computational grids of arbitrary dimension
+ * Parallel implementations using MPI
+ * Automatic, optimal parallel mesh topologies
+ * Utility programs for grid visualization
+ * Monte Carlo methods
+ * Cellular automata methods
+ * Phase field methods (conventional)
+ * Phase field methods (sparsePF)
+ * General finite difference PDE solvers
+ * 22+ example problems that run in 2D and 3D, single and parallel
 
-*MMSP requires:
- **  Minimal programming experience
- **  An ISO compliant c++ compiler (e.g. GCC 2.95 or later)
- **  zlib libraries for data compression (e.g. zlib 1.2.7)
- **  MPI libraries are required if compiling parallel programs (e.g. Open MPI )
+*Typical MMSP applications include:*
 
-*Documentation
+ * Grain growth and coarsening
+ * Precipitation reactions
+ * Crystal growth and solidification
+ * Lattice based kinetic Monte Carlo
+ * Statistical mechanics: Ising model, classical Heisenberg model, etc.
+ * Spinodal decomposition and other second order transformations
+
+*MMSP requires:*
+
+ * Minimal programming experience
+ * An ISO compliant c++ compiler (e.g. GCC 2.95 or later)
+ * zlib libraries for data compression (e.g. zlib 1.2.7)
+ * MPI libraries are required if compiling parallel programs (e.g. Open MPI )
+
+*Documentation*
+
 The MMSP manual is a work in progress. It is currently the only source for detailed documentation about MMSP.
 
-*Contact us
+*Contact us*
+
 The administrators for the MMSP source code are Jason Gruber (gruberja@gmail.com) and Trevor Keller (trevor.keller@gmail.com). Please do not hesitate to send questions or comments.
 
 
