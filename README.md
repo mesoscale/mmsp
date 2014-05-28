@@ -44,3 +44,14 @@ MMSP requires:
  *  An ISO compliant c++ compiler (e.g. GCC 2.95 or later)
  *  zlib libraries for data compression (e.g. zlib 1.2.7)
  *  MPI libraries are required if compiling parallel programs (e.g. Open MPI )
+
+
+Documentation
+
+The MMSP manual is a work in progress. It is currently the only source for detailed documentation about MMSP.
+
+Contact us
+
+The administrators for the MMSP source code are Jason Gruber (gruberja@gmail.com) and Trevor Keller (trevor.keller@gmail.com). Please do not hesitate to send questions or comments.
+
+This work is supported in part by the US NSF under award #1056704 through the Metals and Metallic Nanostructures Program, Division of Materials Research. 
