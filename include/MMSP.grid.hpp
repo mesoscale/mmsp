@@ -574,6 +574,7 @@ public:
 				recv_min[i] = x0[i] - ghosts;
 				recv_max[i] = x0[i];
 
+
 				unsigned long send_size = this->buffer_size(send_min, send_max);
 				unsigned long recv_size = 0;
 
@@ -585,6 +586,7 @@ public:
 				MPI::COMM_WORLD.Barrier();
 				char* send_buffer = new char[send_size];
 				char* recv_buffer = new char[recv_size];
+
 				send_size = this->to_buffer(send_buffer, send_min, send_max);
 
 				// Large data transfer requires non-blocking communication
@@ -592,7 +594,9 @@ public:
 				requests[1] = MPI::COMM_WORLD.Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 200); // receive ghosts
 				MPI::Request::Waitall(2, requests);
 				MPI::COMM_WORLD.Barrier();
+
 				this->from_buffer(recv_buffer, recv_min, recv_max); // populate ghost cell data from buffer
+
 				delete [] send_buffer; send_buffer=NULL;
 				delete [] recv_buffer; recv_buffer=NULL;
 			}
@@ -616,6 +620,7 @@ public:
 				recv_min[i] = x1[i];
 				recv_max[i] = x1[i] + ghosts;
 
+
 				unsigned long send_size = this->buffer_size(send_min, send_max);
 				unsigned long recv_size = 0;
 
@@ -627,6 +632,7 @@ public:
 				MPI::COMM_WORLD.Barrier();
 				char* send_buffer = new char[send_size];
 				char* recv_buffer = new char[recv_size];
+
 				send_size = this->to_buffer(send_buffer, send_min, send_max);
 
 				// Large data transfer requires non-blocking communication
@@ -634,7 +640,107 @@ public:
 				requests[1] = MPI::COMM_WORLD.Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 400); // receive ghosts
 				MPI::Request::Waitall(2, requests);
 				MPI::COMM_WORLD.Barrier();
+
 				this->from_buffer(recv_buffer, recv_min, recv_max); // populate ghost cell data from buffer
+
+				delete [] send_buffer; send_buffer=NULL;
+				delete [] recv_buffer; recv_buffer=NULL;
+			}
+		}
+		MPI::COMM_WORLD.Barrier();
+		#endif
+	}
+
+	void ghostswap(const int sublattice) {
+		#ifdef MPI_VERSION
+		MPI::COMM_WORLD.Barrier();
+		for (int i=0; i<dim; i++) {
+			if (1) {
+				// send to processor above and receive from processor below
+				int send_proc = n1[i];
+				int recv_proc = n0[i];
+
+				int send_min[dim], send_max[dim];
+				int recv_min[dim], recv_max[dim];
+				for (int j=0; j<dim; j++) {
+					send_min[j] = x0[j] - ghosts;
+					send_max[j] = x1[j] + ghosts;
+					recv_min[j] = x0[j] - ghosts;
+					recv_max[j] = x1[j] + ghosts;
+				}
+
+				send_min[i] = x1[i] - ghosts;
+				send_max[i] = x1[i];
+				recv_min[i] = x0[i] - ghosts;
+				recv_max[i] = x0[i];
+
+				unsigned long send_size = this->buffer_size(send_min, send_max, sublattice);
+				unsigned long recv_size = 0;
+
+				// Small data transfer: blocking Sendrecv should scale -- but don't plan on it.
+				MPI::Request requests[2];
+				requests[0] = MPI::COMM_WORLD.Isend(&send_size, 1, MPI_UNSIGNED_LONG, send_proc, 100); // send number of ghosts
+				requests[1] = MPI::COMM_WORLD.Irecv(&recv_size, 1, MPI_UNSIGNED_LONG, recv_proc, 100); // receive number of ghosts
+				MPI::Request::Waitall(2, requests);
+				MPI::COMM_WORLD.Barrier();
+				char* send_buffer = new char[send_size];
+				char* recv_buffer = new char[recv_size];
+
+				send_size = this->to_buffer(send_buffer, send_min, send_max, sublattice);
+
+				// Large data transfer requires non-blocking communication
+				requests[0] = MPI::COMM_WORLD.Isend(send_buffer, send_size, MPI_CHAR, send_proc, 200); // send ghosts
+				requests[1] = MPI::COMM_WORLD.Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 200); // receive ghosts
+				MPI::Request::Waitall(2, requests);
+				MPI::COMM_WORLD.Barrier();
+
+				this->from_buffer(recv_buffer, recv_min, recv_max, sublattice); // populate ghost cell data from buffer
+
+				delete [] send_buffer; send_buffer=NULL;
+				delete [] recv_buffer; recv_buffer=NULL;
+			}
+
+			if (1) {
+				// send to processor below and receive from processor above
+				int send_proc = n0[i];
+				int recv_proc = n1[i];
+
+				int send_min[dim], send_max[dim];
+				int recv_min[dim], recv_max[dim];
+				for (int j=0; j<dim; j++) {
+					send_min[j] = x0[j] - ghosts;
+					send_max[j] = x1[j] + ghosts;
+					recv_min[j] = x0[j] - ghosts;
+					recv_max[j] = x1[j] + ghosts;
+				}
+
+				send_min[i] = x0[i];
+				send_max[i] = x0[i] + ghosts;
+				recv_min[i] = x1[i];
+				recv_max[i] = x1[i] + ghosts;
+
+				unsigned long send_size = this->buffer_size(send_min, send_max, sublattice);
+				unsigned long recv_size = 0;
+
+				// Small data transfer: blocking Sendrecv should scale -- but don't plan on it.
+				MPI::Request requests[2];
+				requests[0] = MPI::COMM_WORLD.Isend(&send_size, 1, MPI_UNSIGNED_LONG, send_proc, 300); // send number of ghosts
+				requests[1] = MPI::COMM_WORLD.Irecv(&recv_size, 1, MPI_UNSIGNED_LONG, recv_proc, 300); // receive number of incoming ghosts
+				MPI::Request::Waitall(2, requests);
+				MPI::COMM_WORLD.Barrier();
+				char* send_buffer = new char[send_size];
+				char* recv_buffer = new char[recv_size];
+
+				send_size = this->to_buffer(send_buffer, send_min, send_max, sublattice);
+
+				// Large data transfer requires non-blocking communication
+				requests[0] = MPI::COMM_WORLD.Isend(send_buffer, send_size, MPI_CHAR, send_proc, 400); // send ghosts
+				requests[1] = MPI::COMM_WORLD.Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 400); // receive ghosts
+				MPI::Request::Waitall(2, requests);
+				MPI::COMM_WORLD.Barrier();
+
+				this->from_buffer(recv_buffer, recv_min, recv_max, sublattice); // populate ghost cell data from buffer
+
 				delete [] send_buffer; send_buffer=NULL;
 				delete [] recv_buffer; recv_buffer=NULL;
 			}
@@ -649,8 +755,16 @@ public:
 		return buffer_size(x0, x1);
 	}
 
+	unsigned long buffer_size(const int sublattice) const {
+		return buffer_size(x0, x1, sublattice);
+	}
+
 	unsigned long buffer_size(const int min[dim], const int max[dim]) const {
 		return buffer_size(data, 0, min, max);
+	}
+
+	unsigned long buffer_size(const int min[dim], const int max[dim], const int sublattice) const {
+		return buffer_size(data, 0, min, max, sublattice);
 	}
 
 	unsigned long buffer_size(T* p, int i, const int min[dim], const int max[dim]) const {
@@ -664,12 +778,71 @@ public:
 		return size;
 	}
 
+	unsigned long buffer_size(T* p, int i, const int min[dim], const int max[dim], const int sublattice) const {
+		unsigned long size = 0;
+		if (i == dim - 1){
+//--------------for Monte Carlo reduce communication bandwidth--------------below
+        if(dim==2){
+          if(sublattice==1 || sublattice==3){// odd x[1] should be chosen 
+            if(min[i]%2==0){//min[i] is even
+			        for (int x = min[i]+1; x < max[i]; x += 2)
+           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+            }else{//min[i] is odd
+			        for (int x = min[i]; x < max[i]; x += 2)
+           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+            }
+          }else if(sublattice==0 || sublattice==2){// even x[1] should be chosen
+            if(min[i]%2==0){//min[i] is even
+			        for (int x = min[i]; x < max[i]; x += 2)
+           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+            }else{//min[i] is odd
+			        for (int x = min[i]+1; x < max[i]; x += 2)
+           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+            }
+          }
+        }else if(dim==3){
+          if(sublattice==1 || sublattice==3 || sublattice==5 || sublattice==7){// odd x[2] should be chosen 
+            if(min[i]%2==0){//min[i] is even
+			        for (int x = min[i]+1; x < max[i]; x += 2)
+           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+            }else{//min[i] is odd
+			        for (int x = min[i]; x < max[i]; x += 2)
+           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+            }
+          }else if(sublattice==0 || sublattice==2 || sublattice==4 || sublattice==6){// even x[2] should be chosen
+            if(min[i]%2==0){//min[i] is even
+			        for (int x = min[i]; x < max[i]; x += 2)
+           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+            }else{//min[i] is odd
+			        for (int x = min[i]+1; x < max[i]; x += 2)
+           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+            }
+          }
+        }
+    }
+
+//--------------for Monte Carlo reduce communication bandwidth--------------above
+
+		else
+			for (int x = min[i]; x < max[i]; x++)
+				size += buffer_size(p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+		return size;
+	}
+
 	unsigned long to_buffer(char* buffer) const {
 		return to_buffer(buffer, x0, x1);
 	}
 
+	unsigned long to_buffer(char* buffer, const int sublattice) const {
+		return to_buffer(buffer, x0, x1, sublattice);
+	}
+
 	unsigned long to_buffer(char* buffer, const int min[dim], const int max[dim]) const {
 		return to_buffer(buffer, data, 0, min, max);
+	}
+
+	unsigned long to_buffer(char* buffer, const int min[dim], const int max[dim], const int sublattice) const {
+		return to_buffer(buffer, data, 0, min, max, sublattice);
 	}
 
 	unsigned long to_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim]) const {
@@ -683,12 +856,67 @@ public:
 		return size;
 	}
 
+	unsigned long to_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim], const int sublattice) const {
+		unsigned long size = 0;
+		if (i == dim - 1){
+        if(dim==2){
+          if(sublattice==1 || sublattice==3){// odd x[1] should be chosen 
+            if(min[i]%2==0){//min[i] is even
+			        for (int x = min[i]+1; x < max[i]; x += 2)
+				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }else{//min[i] is odd
+			        for (int x = min[i]; x < max[i]; x += 2)
+				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }
+          }else if(sublattice==0 || sublattice==2){// even x[1] should be chosen
+            if(min[i]%2==0){//min[i] is even
+			        for (int x = min[i]; x < max[i]; x += 2)
+				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }else{//min[i] is odd
+			        for (int x = min[i]+1; x < max[i]; x += 2)
+				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }
+          }
+        }else if(dim==3){
+          if(sublattice==1 || sublattice==3 || sublattice==5 || sublattice==7){// odd x[2] should be chosen 
+            if(min[i]%2==0){//min[i] is even
+			        for (int x = min[i]+1; x < max[i]; x += 2)
+				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }else{//min[i] is odd
+			        for (int x = min[i]; x < max[i]; x += 2)
+				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }
+          }else if(sublattice==0 || sublattice==2 || sublattice==4 || sublattice==6){// even x[2] should be chosen
+            if(min[i]%2==0){//min[i] is even
+			        for (int x = min[i]; x < max[i]; x += 2)
+				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }else{//min[i] is odd
+			        for (int x = min[i]+1; x < max[i]; x += 2)
+				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }
+          }
+        }
+    }
+		else
+			for (int x = min[i]; x < max[i]; x++)
+				size += to_buffer(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+		return size;
+	}
+
 	unsigned long from_buffer(char* buffer) {
 		return from_buffer(buffer, x0, x1);
 	}
 
+	unsigned long from_buffer(char* buffer, const int sublattice) {
+		return from_buffer(buffer, x0, x1, sublattice);
+	}
+
 	unsigned long from_buffer(char* buffer, const int min[dim], const int max[dim]) {
 		return from_buffer(buffer, data, 0, min, max);
+	}
+
+	unsigned long from_buffer(char* buffer, const int min[dim], const int max[dim], const int sublattice) {
+		return from_buffer(buffer, data, 0, min, max, sublattice);
 	}
 
 	unsigned long from_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim]) {
@@ -699,6 +927,53 @@ public:
 		} else {
 			for (int x = min[i]; x < max[i]; x++)
 				size += from_buffer(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max);
+		}
+		return size;
+	}
+
+	unsigned long from_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim], const int sublattice) {
+		unsigned long size = 0;
+		if (i == dim - 1) {
+        if(dim==2){
+          if(sublattice==1 || sublattice==3){// odd x[1] should be chosen 
+            if(min[i]%2==0){//min[i] is even
+			        for (int x = min[i]+1; x < max[i]; x += 2)
+				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }else{//min[i] is odd
+			        for (int x = min[i]; x < max[i]; x += 2)
+				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }
+          }else if(sublattice==0 || sublattice==2){// even x[1] should be chosen
+            if(min[i]%2==0){//min[i] is even
+			        for (int x = min[i]; x < max[i]; x += 2)
+				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }else{//min[i] is odd
+			        for (int x = min[i]+1; x < max[i]; x += 2)
+				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }
+          }
+        }else if(dim==3){
+          if(sublattice==1 || sublattice==3 || sublattice==5 || sublattice==7){// odd x[2] should be chosen 
+            if(min[i]%2==0){//min[i] is even
+			        for (int x = min[i]+1; x < max[i]; x += 2)
+				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }else{//min[i] is odd
+			        for (int x = min[i]; x < max[i]; x += 2)
+				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }
+          }else if(sublattice==0 || sublattice==2 || sublattice==4 || sublattice==6){// even x[2] should be chosen
+            if(min[i]%2==0){//min[i] is even
+			        for (int x = min[i]; x < max[i]; x += 2)
+				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }else{//min[i] is odd
+			        for (int x = min[i]+1; x < max[i]; x += 2)
+				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+            }
+          }
+        }
+		} else {
+			for (int x = min[i]; x < max[i]; x++)
+				size += from_buffer(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
 		}
 		return size;
 	}
@@ -1714,6 +1989,10 @@ template <int dim, typename T> MMSP::vector<int> position(const grid<dim, T>& GR
 // parallelization
 template <int dim, typename T> void ghostswap(grid<dim, T>& GRID) {
 	GRID.ghostswap();
+}
+
+template <int dim, typename T> void ghostswap(grid<dim, T>& GRID, const int sublattice) {
+	GRID.ghostswap(sublattice);
 }
 
 // buffer I/O functions
