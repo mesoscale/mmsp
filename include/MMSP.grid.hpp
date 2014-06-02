@@ -797,10 +797,10 @@ public:
       if(dim==2){
         if(sublattice==1 || sublattice==3){// odd x[1] should be chosen 
           size += buffer_size_odd(p, i, min, max, sublattice);
-        }else{// if(sublattice==0 || sublattice==2)   even x[1] should be chosen
+        }else{// else if(sublattice==0 || sublattice==2)   even x[1] should be chosen
           size += buffer_size_even(p, i, min, max, sublattice);
         }
-      }else {//if(dim==3)
+      }else if(dim==3){
         if(sublattice==1 || sublattice==3 || sublattice==5 || sublattice==7){// odd x[2] should be chosen 
           size += buffer_size_odd(p, i, min, max, sublattice);
         }else {// if(sublattice==0 || sublattice==2 || sublattice==4 || sublattice==6) even x[2] should be chosen
@@ -814,14 +814,14 @@ public:
         }else {//if(sublattice==0 || sublattice==1) x[0] should be even
           size += buffer_size_even(p, i, min, max, sublattice);
         }
-      }else {//if(dim==3)
+      }else if(dim==3){
         if(i==1){
           if(sublattice==2 || sublattice==3 || sublattice==6 || sublattice==7){//x[1] should be odd
             size += buffer_size_odd(p, i, min, max, sublattice);
           }else {//if(sublattice==0 || sublattice==1 || sublattice==4 || sublattice==5) x[1] should be even
             size += buffer_size_even(p, i, min, max, sublattice);
           }
-        }else //{if(i==0)
+        }else if(i==0){
           if(sublattice==4 || sublattice==5 || sublattice==6 || sublattice==7){//x[0] should be odd
             size += buffer_size_odd(p, i, min, max, sublattice);
           }else {//if(sublattice==0 || sublattice==1 || sublattice==2 || sublattice==3) x[0] should be even
@@ -913,7 +913,7 @@ public:
         }else {//if(sublattice==0 || sublattice==2) even x[1] should be chosen
           size += to_buffer_even(buffer, p, i, min, max, sublattice);
         }
-      }else {//if(dim==3)
+      }else if(dim==3){
         if(sublattice==1 || sublattice==3 || sublattice==5 || sublattice==7){// odd x[2] should be chosen 
           size += to_buffer_odd(buffer, p, i, min, max, sublattice);
         }else {//if(sublattice==0 || sublattice==2 || sublattice==4 || sublattice==6) even x[2] should be chosen
@@ -927,14 +927,14 @@ public:
         }else{// if(sublattice==0 || sublattice==1) x[0] should be even
           size += to_buffer_even(buffer, p, i, min, max, sublattice);
         }
-      }else {//if(dim==3)
+      }else if(dim==3){
         if(i==1){
           if(sublattice==2 || sublattice==3 || sublattice==6 || sublattice==7){//x[1] should be odd
             size += to_buffer_odd(buffer, p, i, min, max, sublattice);
           }else{// if(sublattice==0 || sublattice==1 || sublattice==4 || sublattice==5) x[1] should be even
             size += to_buffer_even(buffer, p, i, min, max, sublattice);
           }
-        }else {//if(i==0)
+        }else if(i==0){
           if(sublattice==4 || sublattice==5 || sublattice==6 || sublattice==7){//x[0] should be odd
             size += to_buffer_odd(buffer, p, i, min, max, sublattice);
           }else {//if(sublattice==0 || sublattice==1 || sublattice==2 || sublattice==3) x[0] should be even
@@ -1027,7 +1027,7 @@ public:
         }else{// if(sublattice==0 || sublattice==2) even x[1] should be chosen
           size += from_buffer_even(buffer, p, i, min, max, sublattice);
         }
-      }else {//if(dim==3)
+      }else if(dim==3){
         if(sublattice==1 || sublattice==3 || sublattice==5 || sublattice==7){// odd x[2] should be chosen 
           size += from_buffer_odd(buffer, p, i, min, max, sublattice);
         }else{// if(sublattice==0 || sublattice==2 || sublattice==4 || sublattice==6) even x[2] should be chosen
@@ -1041,14 +1041,14 @@ public:
         }else{// if(sublattice==0 || sublattice==1)  x[0] should be even
           size += from_buffer_even(buffer, p, i, min, max, sublattice);
         }
-      }else {//if(dim==3)
+      }else if(dim==3){
         if(i==1){
           if(sublattice==2 || sublattice==3 || sublattice==6 || sublattice==7){//x[1] should be odd
             size += from_buffer_odd(buffer, p, i, min, max, sublattice);
           }else{// if(sublattice==0 || sublattice==1 || sublattice==4 || sublattice==5)x[1] should be even
             size += from_buffer_even(buffer, p, i, min, max, sublattice);
           }
-        }else {//if(i==0)
+        }else if(i==0){
           if(sublattice==4 || sublattice==5 || sublattice==6 || sublattice==7){//x[0] should be odd
             size += from_buffer_odd(buffer, p, i, min, max, sublattice);
           }else {//if(sublattice==0 || sublattice==1 || sublattice==2 || sublattice==3)x[0] should be even
