@@ -778,54 +778,89 @@ public:
 		return size;
 	}
 
+  unsigned long buffer_size_odd(T* p, int i, const int min[dim], const int max[dim], const int sublattice) const{
+    unsigned long size_odd=0;
+		if (i == dim - 1){
+      if(min[i]%2==0){//min[i] is even
+			  for (int x = min[i]+1; x < max[i]; x += 2)
+          size_odd += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+      }else{//min[i] is odd
+			  for (int x = min[i]; x < max[i]; x += 2)
+          size_odd += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+      }
+    }else{
+      if(min[i]%2==0){//min[i] is even
+    	  for(int x = min[i]+1; x < max[i]; x+=2)
+	    	  size_odd += buffer_size(p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+      }else{//min[i] is odd
+        for(int x = min[i]; x < max[i]; x+=2)
+	    	  size_odd += buffer_size(p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+      } 
+    }
+    return size_odd;       
+  }
+
+  unsigned long buffer_size_even(T* p, int i, const int min[dim], const int max[dim], const int sublattice) const {
+    unsigned long size_even=0;
+    if(i==dim-1){
+      if(min[i]%2==0){//min[i] is even
+			  for (int x = min[i]; x < max[i]; x += 2)
+          size_even += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+      }else{//min[i] is odd
+			  for (int x = min[i]+1; x < max[i]; x += 2)
+          size_even += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+      }
+    }else{
+      if(min[i]%2==0){//min[i] is even
+    	  for(int x = min[i]; x < max[i]; x+=2)
+	    	  size_even += buffer_size(p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+      }else{//min[i] is odd
+    	  for(int x = min[i]+1; x < max[i]; x+=2)
+	        size_even += buffer_size(p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+      }  
+    }      
+    return size_even;       
+  }
+
 	unsigned long buffer_size(T* p, int i, const int min[dim], const int max[dim], const int sublattice) const {
 		unsigned long size = 0;
-		if (i == dim - 1){
-//--------------for Monte Carlo reduce communication bandwidth--------------below
-        if(dim==2){
-          if(sublattice==1 || sublattice==3){// odd x[1] should be chosen 
-            if(min[i]%2==0){//min[i] is even
-			        for (int x = min[i]+1; x < max[i]; x += 2)
-           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
-            }else{//min[i] is odd
-			        for (int x = min[i]; x < max[i]; x += 2)
-           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
-            }
-          }else if(sublattice==0 || sublattice==2){// even x[1] should be chosen
-            if(min[i]%2==0){//min[i] is even
-			        for (int x = min[i]; x < max[i]; x += 2)
-           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
-            }else{//min[i] is odd
-			        for (int x = min[i]+1; x < max[i]; x += 2)
-           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
-            }
+		if(i == dim - 1){
+      if(dim==2){
+        if(sublattice==1 || sublattice==3){// odd x[1] should be chosen 
+          size += buffer_size_odd(p, i, min, max, sublattice);
+        }else if(sublattice==0 || sublattice==2){// even x[1] should be chosen
+          size += buffer_size_even(p, i, min, max, sublattice);
+        }
+      }else if(dim==3){
+        if(sublattice==1 || sublattice==3 || sublattice==5 || sublattice==7){// odd x[2] should be chosen 
+          size += buffer_size_odd(p, i, min, max, sublattice);
+        }else if(sublattice==0 || sublattice==2 || sublattice==4 || sublattice==6){// even x[2] should be chosen
+          size += buffer_size_even(p, i, min, max, sublattice);
+        }
+      }
+    }else{//if i<dim-1
+      if(dim==2){
+        if(sublattice==2 || sublattice==3){//x[0] should be odd
+          size += buffer_size_odd(p, i, min, max, sublattice);
+        }else if(sublattice==0 || sublattice==1){//x[0] should be even
+          size += buffer_size_even(p, i, min, max, sublattice);
+        }
+      }else if(dim==3){
+        if(i==1){
+          if(sublattice==2 || sublattice==3 || sublattice==6 || sublattice==7){//x[1] should be odd
+            size += buffer_size_odd(p, i, min, max, sublattice);
+          }else if(sublattice==0 || sublattice==1 || sublattice==4 || sublattice==5){//x[1] should be even
+            size += buffer_size_even(p, i, min, max, sublattice);
           }
-        }else if(dim==3){
-          if(sublattice==1 || sublattice==3 || sublattice==5 || sublattice==7){// odd x[2] should be chosen 
-            if(min[i]%2==0){//min[i] is even
-			        for (int x = min[i]+1; x < max[i]; x += 2)
-           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
-            }else{//min[i] is odd
-			        for (int x = min[i]; x < max[i]; x += 2)
-           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
-            }
-          }else if(sublattice==0 || sublattice==2 || sublattice==4 || sublattice==6){// even x[2] should be chosen
-            if(min[i]%2==0){//min[i] is even
-			        for (int x = min[i]; x < max[i]; x += 2)
-           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
-            }else{//min[i] is odd
-			        for (int x = min[i]+1; x < max[i]; x += 2)
-           		  size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
-            }
+        }else if(i==0){
+          if(sublattice==4 || sublattice==5 || sublattice==6 || sublattice==7){//x[0] should be odd
+            size += buffer_size_odd(p, i, min, max, sublattice);
+          }else if(sublattice==0 || sublattice==1 || sublattice==2 || sublattice==3){//x[0] should be even
+            size += buffer_size_even(p, i, min, max, sublattice);
           }
         }
+      }
     }
-
-//--------------for Monte Carlo reduce communication bandwidth--------------above
-
-		else
-			for (int x = min[i]; x < max[i]; x++)
-				size += buffer_size(p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
 		return size;
 	}
 
@@ -856,50 +891,89 @@ public:
 		return size;
 	}
 
+  unsigned long to_buffer_odd(char* buffer, T* p, int i, const int min[dim], const int max[dim], const int sublattice) const{
+    unsigned long size_odd=0;
+		if (i == dim - 1){
+      if(min[i]%2==0){//min[i] is even
+			  for (int x = min[i]+1; x < max[i]; x += 2)
+          size_odd += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size_odd);
+      }else{//min[i] is odd
+			  for (int x = min[i]; x < max[i]; x += 2)
+          size_odd += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size_odd);
+      }
+    }else{
+      if(min[i]%2==0){//min[i] is even
+    	  for(int x = min[i]+1; x < max[i]; x+=2)
+	    	  size_odd += to_buffer(buffer + size_odd, p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+      }else{//min[i] is odd
+        for(int x = min[i]; x < max[i]; x+=2)
+	    	  size_odd += to_buffer(buffer + size_odd, p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+      } 
+    }
+    return size_odd;       
+  }
+
+  unsigned long to_buffer_even(char* buffer, T* p, int i, const int min[dim], const int max[dim], const int sublattice) const{
+    unsigned long size_even=0;
+    if(i==dim-1){
+      if(min[i]%2==0){//min[i] is even
+			  for (int x = min[i]; x < max[i]; x += 2)
+          size_even += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size_even);
+      }else{//min[i] is odd
+			  for (int x = min[i]+1; x < max[i]; x += 2)
+          size_even += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size_even);
+      }
+    }else{
+      if(min[i]%2==0){//min[i] is even
+    	  for(int x = min[i]; x < max[i]; x+=2)
+	    	  size_even += to_buffer(buffer + size_even, p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+      }else{//min[i] is odd
+    	  for(int x = min[i]+1; x < max[i]; x+=2)
+	        size_even += to_buffer(buffer + size_even, p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+      }  
+    }      
+    return size_even;       
+  }
+
 	unsigned long to_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim], const int sublattice) const {
 		unsigned long size = 0;
-		if (i == dim - 1){
-        if(dim==2){
-          if(sublattice==1 || sublattice==3){// odd x[1] should be chosen 
-            if(min[i]%2==0){//min[i] is even
-			        for (int x = min[i]+1; x < max[i]; x += 2)
-				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }else{//min[i] is odd
-			        for (int x = min[i]; x < max[i]; x += 2)
-				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }
-          }else if(sublattice==0 || sublattice==2){// even x[1] should be chosen
-            if(min[i]%2==0){//min[i] is even
-			        for (int x = min[i]; x < max[i]; x += 2)
-				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }else{//min[i] is odd
-			        for (int x = min[i]+1; x < max[i]; x += 2)
-				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }
+		if(i == dim - 1){
+      if(dim==2){
+        if(sublattice==1 || sublattice==3){// odd x[1] should be chosen 
+          size += to_buffer_odd(buffer, p, i, min, max, sublattice);
+        }else if(sublattice==0 || sublattice==2){// even x[1] should be chosen
+          size += to_buffer_even(buffer, p, i, min, max, sublattice);
+        }
+      }else if(dim==3){
+        if(sublattice==1 || sublattice==3 || sublattice==5 || sublattice==7){// odd x[2] should be chosen 
+          size += to_buffer_odd(buffer, p, i, min, max, sublattice);
+        }else if(sublattice==0 || sublattice==2 || sublattice==4 || sublattice==6){// even x[2] should be chosen
+          size += to_buffer_even(buffer, p, i, min, max, sublattice);
+        }
+      }
+    }else{//if i<dim-1
+      if(dim==2){
+        if(sublattice==2 || sublattice==3){//x[0] should be odd
+          size += to_buffer_odd(buffer, p, i, min, max, sublattice);
+        }else if(sublattice==0 || sublattice==1){//x[0] should be even
+          size += to_buffer_even(buffer, p, i, min, max, sublattice);
+        }
+      }else if(dim==3){
+        if(i==1){
+          if(sublattice==2 || sublattice==3 || sublattice==6 || sublattice==7){//x[1] should be odd
+            size += to_buffer_odd(buffer, p, i, min, max, sublattice);
+          }else if(sublattice==0 || sublattice==1 || sublattice==4 || sublattice==5){//x[1] should be even
+            size += to_buffer_even(buffer, p, i, min, max, sublattice);
           }
-        }else if(dim==3){
-          if(sublattice==1 || sublattice==3 || sublattice==5 || sublattice==7){// odd x[2] should be chosen 
-            if(min[i]%2==0){//min[i] is even
-			        for (int x = min[i]+1; x < max[i]; x += 2)
-				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }else{//min[i] is odd
-			        for (int x = min[i]; x < max[i]; x += 2)
-				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }
-          }else if(sublattice==0 || sublattice==2 || sublattice==4 || sublattice==6){// even x[2] should be chosen
-            if(min[i]%2==0){//min[i] is even
-			        for (int x = min[i]; x < max[i]; x += 2)
-				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }else{//min[i] is odd
-			        for (int x = min[i]+1; x < max[i]; x += 2)
-				        size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }
+        }else if(i==0){
+          if(sublattice==4 || sublattice==5 || sublattice==6 || sublattice==7){//x[0] should be odd
+            size += to_buffer_odd(buffer, p, i, min, max, sublattice);
+          }else if(sublattice==0 || sublattice==1 || sublattice==2 || sublattice==3){//x[0] should be even
+            size += to_buffer_even(buffer, p, i, min, max, sublattice);
           }
         }
+      }
     }
-		else
-			for (int x = min[i]; x < max[i]; x++)
-				size += to_buffer(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
 		return size;
 	}
 
@@ -931,53 +1005,91 @@ public:
 		return size;
 	}
 
+  unsigned long from_buffer_odd(char* buffer, T* p, int i, const int min[dim], const int max[dim], const int sublattice){
+    unsigned long size_odd=0;
+		if (i == dim - 1){
+      if(min[i]%2==0){//min[i] is even
+			  for (int x = min[i]+1; x < max[i]; x += 2)
+        size_odd += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size_odd);
+      }else{//min[i] is odd
+			  for (int x = min[i]; x < max[i]; x += 2)
+          size_odd += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size_odd);
+      }
+    }else{
+      if(min[i]%2==0){//min[i] is even
+    	  for(int x = min[i]+1; x < max[i]; x+=2)
+	    	  size_odd += from_buffer(buffer + size_odd, p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+      }else{//min[i] is odd
+        for(int x = min[i]; x < max[i]; x+=2)
+	    	  size_odd += from_buffer(buffer + size_odd, p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+      } 
+    }
+    return size_odd;       
+  }
+
+  unsigned long from_buffer_even(char* buffer, T* p, int i, const int min[dim], const int max[dim], const int sublattice){
+    unsigned long size_even=0;
+    if(i==dim-1){
+      if(min[i]%2==0){//min[i] is even
+			  for (int x = min[i]; x < max[i]; x += 2)
+          size_even += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size_even);
+      }else{//min[i] is odd
+			  for (int x = min[i]+1; x < max[i]; x += 2)
+          size_even += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size_even);
+      }
+    }else{
+      if(min[i]%2==0){//min[i] is even
+    	  for(int x = min[i]; x < max[i]; x+=2)
+	    	  size_even += from_buffer(buffer + size_even, p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+      }else{//min[i] is odd
+    	  for(int x = min[i]+1; x < max[i]; x+=2)
+	        size_even += from_buffer(buffer + size_even, p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
+      }  
+    }      
+    return size_even;       
+  }
+
 	unsigned long from_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim], const int sublattice) {
 		unsigned long size = 0;
-		if (i == dim - 1) {
-        if(dim==2){
-          if(sublattice==1 || sublattice==3){// odd x[1] should be chosen 
-            if(min[i]%2==0){//min[i] is even
-			        for (int x = min[i]+1; x < max[i]; x += 2)
-				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }else{//min[i] is odd
-			        for (int x = min[i]; x < max[i]; x += 2)
-				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }
-          }else if(sublattice==0 || sublattice==2){// even x[1] should be chosen
-            if(min[i]%2==0){//min[i] is even
-			        for (int x = min[i]; x < max[i]; x += 2)
-				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }else{//min[i] is odd
-			        for (int x = min[i]+1; x < max[i]; x += 2)
-				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }
+		if(i == dim - 1){
+      if(dim==2){
+        if(sublattice==1 || sublattice==3){// odd x[1] should be chosen 
+          size += from_buffer_odd(buffer, p, i, min, max, sublattice);
+        }else if(sublattice==0 || sublattice==2){// even x[1] should be chosen
+          size += from_buffer_even(buffer, p, i, min, max, sublattice);
+        }
+      }else if(dim==3){
+        if(sublattice==1 || sublattice==3 || sublattice==5 || sublattice==7){// odd x[2] should be chosen 
+          size += from_buffer_odd(buffer, p, i, min, max, sublattice);
+        }else if(sublattice==0 || sublattice==2 || sublattice==4 || sublattice==6){// even x[2] should be chosen
+          size += from_buffer_even(buffer, p, i, min, max, sublattice);
+        }
+      }
+    }else{//if i<dim-1
+      if(dim==2){
+        if(sublattice==2 || sublattice==3){//x[0] should be odd
+          size += from_buffer_odd(buffer, p, i, min, max, sublattice);
+        }else if(sublattice==0 || sublattice==1){//x[0] should be even
+          size += from_buffer_even(buffer, p, i, min, max, sublattice);
+        }
+      }else if(dim==3){
+        if(i==1){
+          if(sublattice==2 || sublattice==3 || sublattice==6 || sublattice==7){//x[1] should be odd
+            size += from_buffer_odd(buffer, p, i, min, max, sublattice);
+          }else if(sublattice==0 || sublattice==1 || sublattice==4 || sublattice==5){//x[1] should be even
+            size += from_buffer_even(buffer, p, i, min, max, sublattice);
           }
-        }else if(dim==3){
-          if(sublattice==1 || sublattice==3 || sublattice==5 || sublattice==7){// odd x[2] should be chosen 
-            if(min[i]%2==0){//min[i] is even
-			        for (int x = min[i]+1; x < max[i]; x += 2)
-				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }else{//min[i] is odd
-			        for (int x = min[i]; x < max[i]; x += 2)
-				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }
-          }else if(sublattice==0 || sublattice==2 || sublattice==4 || sublattice==6){// even x[2] should be chosen
-            if(min[i]%2==0){//min[i] is even
-			        for (int x = min[i]; x < max[i]; x += 2)
-				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }else{//min[i] is odd
-			        for (int x = min[i]+1; x < max[i]; x += 2)
-				        size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-            }
+        }else if(i==0){
+          if(sublattice==4 || sublattice==5 || sublattice==6 || sublattice==7){//x[0] should be odd
+            size += from_buffer_odd(buffer, p, i, min, max, sublattice);
+          }else if(sublattice==0 || sublattice==1 || sublattice==2 || sublattice==3){//x[0] should be even
+            size += from_buffer_even(buffer, p, i, min, max, sublattice);
           }
         }
-		} else {
-			for (int x = min[i]; x < max[i]; x++)
-				size += from_buffer(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max, sublattice);
-		}
+      }
+    }
 		return size;
 	}
-
 
 	// file I/O
 	void input(const char* filename, int GHOSTS = 1, int SINGLE = false) {
