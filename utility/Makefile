@@ -33,9 +33,6 @@ mmsp2z: mmsp2z.cpp $(core)
 mmsp2xyz: mmsp2xyz.cpp $(core)
 	$(compiler) $< -o $@ $(flags)
 
-mmsp2xyzscalar: mmsp2xyz_scalar.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
-
 slicer: mmspslicer.cpp $(core) /usr/include/IL/devil_cpp_wrapper.hpp
 	$(compiler) $(flags) -I /usr/include/IL -include il.h $< -o $@ -lz -lIL -lILU -lILUT
 
