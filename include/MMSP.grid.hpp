@@ -286,20 +286,20 @@ public:
 
 		#ifdef MPI_VERSION
 		// get global grid data, set neighbor processors
-		int rank = MPI::COMM_WORLD.Get_rank();
-		int np = MPI::COMM_WORLD.Get_size();
+		unsigned int rank = MPI::COMM_WORLD.Get_rank();
+		unsigned int np = MPI::COMM_WORLD.Get_size();
 
 		// if bool SINGLE is set to true,
 		// we generate grid data only on proc 0
 		if (not SINGLE) {
 			// compute integral factors of "np"
 			int nfac = 0;
-			for (int i=1; i<=np; i++)
+			for (unsigned int i=1; i<=np; i++)
 				if ((np / i)*i == np) nfac += 1;
 
 			int* factors = new int[nfac];
 			nfac = 0;
-			for (int i=1; i<=np; i++)
+			for (unsigned int i=1; i<=np; i++)
 				if ((np / i)*i == np) {
 					factors[nfac] = i;
 					nfac += 1;
@@ -333,7 +333,7 @@ public:
 				}
 
 				// compute the product of "dim" factors
-				int product = 1;
+				unsigned int product = 1;
 				for (int j=0; j<dim; j++)
 					product *= factors[combo[j]];
 
@@ -839,7 +839,7 @@ public:
 
 	void output(const char* filename) const {
 		#ifndef MPI_VERSION
-		int np=1;
+		unsigned int np=1;
 		// file open error check
 		std::ofstream output(filename);
 		if (!output) {
@@ -888,8 +888,8 @@ public:
 		for (unsigned int i=0; filename[i]>char(31) && i<FILENAME_MAX; i++)
 			fname[i]=filename[i];
 		MPI::COMM_WORLD.Barrier();
-		int rank = MPI::COMM_WORLD.Get_rank();
-		int np = MPI::COMM_WORLD.Get_size();
+		unsigned int rank = MPI::COMM_WORLD.Get_rank();
+		unsigned int np = MPI::COMM_WORLD.Get_size();
 		MPI_Request request;
 		MPI_Status status;
 
@@ -899,6 +899,9 @@ public:
 
 		if (blocksize<=4096) {
 			// Standard MPI-IO: every rank writes to disk
+			#ifdef BGQ
+			if (rank==0) std::cout<<"Bug: using normal IO, instead of BGQ IO!"<<std::endl;
+			#endif
 			MPI_File output;
 			MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_CREATE, MPI::INFO_NULL, &output);
 			if (!output) {
@@ -956,13 +959,13 @@ public:
 
 			// Pre-allocate disk space
 			unsigned long filesize=0;
-			for (int i=0; i<np; ++i) filesize+=datasizes[i];
+			for (unsigned int i=0; i<np; ++i) filesize+=datasizes[i];
 			MPI::COMM_WORLD.Barrier();
 			MPI_File_preallocate(output, filesize);
 
 			unsigned long *offsets = new unsigned long[np];
 			offsets[0]=header_offset;
-			for (int n=1; n<np; ++n) {
+			for (unsigned int n=1; n<np; ++n) {
 				assert(datasizes[n] < static_cast<unsigned long>(std::numeric_limits<int>::max()));
 				offsets[n]=offsets[n-1]+datasizes[n-1];
 			}

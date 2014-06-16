@@ -1,9 +1,9 @@
-// snowflake.hpp
+// dendritic.hpp
 // Anisotropic solidification by 2D phase field method
 // Questions/comments to kellet@rpi.edu (Trevor Keller)
 
-#ifndef SNOWFLAKE_UPDATE
-#define SNOWFLAKE_UPDATE
+#ifndef DENDRITIC_UPDATE
+#define DENDRITIC_UPDATE
 #include<iomanip>
 #include<cmath>
 #include<ctime>
