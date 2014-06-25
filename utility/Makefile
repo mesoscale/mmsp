@@ -4,7 +4,7 @@
 
 # compilers/flags
 compiler = g++
-flags = -O3 -I ../include/ -lz
+flags = -O3 -Wall -I ../include/ -lz
 
 # dependencies
 core = ../include/MMSP.hpp \
@@ -70,7 +70,7 @@ MC2vox: MC2vox.cpp $(core)
 	$(compiler) $< -o $@ $(flags)
 
 wrongendian: wrongendian.cpp
-	$(compiler) $< -o $@ -lz -pthread
+	$(compiler) $(flags) $< -o $@ -lz -pthread
 
 clean :
 	rm -f TKmmsp2vti slicer mmsp2xyz mmsp2topo mmsp2z mmsp2vti mmsp2pvd MC2PF MC2sPF PF2MC PF2sPF sPF2MC sPF2PF vox2MC MC2vox wrongendian

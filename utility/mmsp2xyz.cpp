@@ -3,7 +3,7 @@
 // Output:  CSV file specifying XYZ+phase
 // Depends: MMSP, zlib
 
-// Questions/Comments to kellet@rpi.edu (Trevor Keller)
+// Questions/Comments to trevor.keller@gmail.com (Trevor Keller)
 
 #include <iostream>
 #include <fstream>
