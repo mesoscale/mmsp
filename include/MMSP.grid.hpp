@@ -1216,15 +1216,8 @@ public:
 			#ifdef DEBUG
 			if (rank==0) std::cout<<"  Opening "<<std::string(fname)<<" for output."<<std::endl;
 			#endif
-			MPI_Info info = MPI::INFO_NULL;
-			#ifdef BGQ
-			MPI_Info_create(&info);
-			MPI_Info_set(info, "IBM_largeblock_io", "true");
-			#else
-			info = MPI::INFO_NULL;
-			#endif
 			MPI_File output;
-			mpi_err = MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_CREATE, info, &output);
+			mpi_err = MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_CREATE, MPI::INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
 				char error_string[256];
 				int length_of_error_string=256;
@@ -1265,7 +1258,6 @@ public:
 
 			MPI::COMM_WORLD.Barrier();
 			MPI_File_close(&output);
-			MPI_Info_free(&info);
 			if (recvrequests!=NULL) {
 				delete [] recvrequests;
 				recvrequests=NULL;
