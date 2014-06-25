@@ -48,7 +48,6 @@ void swap_buffer(T* buffer, const unsigned long& size)
 		swap_endian<T>(*p);
 }
 
-template <typename T>
 void* swap_block_kernel(void* x);
 
 pthread_mutex_t write_lock;
@@ -195,13 +194,29 @@ int main(int argc, char* argv[])
 				swap_threads[i].offset = pos;
 				swap_threads[i].ofile = &output;
 
-				pthread_create(&p_threads[i], &attr, swap_block_kernel<float>, (void *) &swap_threads[i] );
+				/*
+				if      (bool_type)           pthread_create(&p_threads[i], &attr, swap_block_kernel<bool>, (void *) &swap_threads[i] );
+				else if (char_type)           pthread_create(&p_threads[i], &attr, swap_block_kernel<char>, (void *) &swap_threads[i] );
+				else if (unsigned_char_type)  pthread_create(&p_threads[i], &attr, swap_block_kernel<unsigned char>, (void *) &swap_threads[i] );
+				else if (int_type)            pthread_create(&p_threads[i], &attr, swap_block_kernel<int>, (void *) &swap_threads[i] );
+				else if (unsigned_int_type)   pthread_create(&p_threads[i], &attr, swap_block_kernel<unsigned int>, (void *) &swap_threads[i] );
+				else if (short_type)          pthread_create(&p_threads[i], &attr, swap_block_kernel<short>, (void *) &swap_threads[i] );
+				else if (unsigned_short_type) pthread_create(&p_threads[i], &attr, swap_block_kernel<unsigned short>, (void *) &swap_threads[i] );
+				else if (long_type)           pthread_create(&p_threads[i], &attr, swap_block_kernel<long>, (void *) &swap_threads[i] );
+				else if (unsigned_long_type)  pthread_create(&p_threads[i], &attr, swap_block_kernel<unsigned long>, (void *) &swap_threads[i] );
+				else if (float_type)          pthread_create(&p_threads[i], &attr, swap_block_kernel<float>, (void *) &swap_threads[i] );
+				else if (double_type)         pthread_create(&p_threads[i], &attr, swap_block_kernel<double>, (void *) &swap_threads[i] );
+				else if (long_double_type)    pthread_create(&p_threads[i], &attr, swap_block_kernel<long double>, (void *) &swap_threads[i] );
+				*/
+				pthread_create(&p_threads[i], &attr, swap_block_kernel, (void *) &swap_threads[i] );
 				spawned++;
 
 				b++;
 
 				if (b<blocks) {
+					// Skip the last thread's dimension and BC specs
 					pos+=4*dim*sizeof(int)+sizeof(unsigned long);
+					// Skip the last thread's data block
 					unsigned long datasize;
 					input.seekg(pos);
 					input.read(reinterpret_cast<char*>(&datasize), sizeof(unsigned long));
@@ -213,13 +228,13 @@ int main(int argc, char* argv[])
 		// Wait for pthreads to exit
 		for (int i=0; i<spawned; i++)
 			pthread_join(p_threads[i], NULL);
-		#ifdef DEBUG
-		std::cout<<std::endl;
-		#endif
 
 		pthread_attr_destroy(&attr);
 		delete [] p_threads;
 		delete [] swap_threads;
+		#ifdef DEBUG
+		if (nthreads>1) std::cout<<std::endl;
+		#endif
 	}
 	#ifdef DEBUG
 	std::cout<<"Finished loop."<<std::endl;
@@ -232,7 +247,6 @@ int main(int argc, char* argv[])
 
 }
 
-template <typename T>
 void* swap_block_kernel(void* x)
 {
 	swap_thread* st = static_cast<swap_thread*>(x);
@@ -248,8 +262,8 @@ void* swap_block_kernel(void* x)
 	}
 
 	// copy boundary conditions
-	int blo[dim];
-	int bhi[dim];
+	int blo[3];
+	int bhi[3];
 	for (int j = 0; j < dim; j++) {
 		st->ifile.read(reinterpret_cast<char*>(&blo[j]), sizeof(blo[j]));
 		st->ifile.read(reinterpret_cast<char*>(&bhi[j]), sizeof(bhi[j]));
@@ -345,8 +359,8 @@ void* swap_block_kernel(void* x)
 		}
 	} else if (vector_type) {
 		// MMSP::vector<T>::to_buffer() copies n * T
-		char* q=raw;
 		if (bool_type) {
+			char* q=raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -356,6 +370,7 @@ void* swap_block_kernel(void* x)
 				q+=n*sizeof(bool);
 			}
 		} else if (char_type or unsigned_char_type) {
+			char* q=raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -365,6 +380,7 @@ void* swap_block_kernel(void* x)
 				q+=n*sizeof(char);
 			}
 		} else if (int_type or unsigned_int_type) {
+			char* q=raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -374,6 +390,7 @@ void* swap_block_kernel(void* x)
 				q+=n*sizeof(int);
 			}
 		} else if (long_type or unsigned_long_type) {
+			char* q=raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -383,6 +400,7 @@ void* swap_block_kernel(void* x)
 				q+=n*sizeof(long);
 			}
 		} else if (short_type or unsigned_short_type) {
+			char* q=raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -392,6 +410,7 @@ void* swap_block_kernel(void* x)
 				q+=n*sizeof(short);
 			}
 		} else if (float_type) {
+			char* q=raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -401,6 +420,7 @@ void* swap_block_kernel(void* x)
 				q+=n*sizeof(float);
 			}
 		} else if (double_type) {
+			char* q=raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -410,6 +430,7 @@ void* swap_block_kernel(void* x)
 				q+=n*sizeof(double);
 			}
 		} else if (long_double_type) {
+			char* q=raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -427,8 +448,8 @@ void* swap_block_kernel(void* x)
 	} else if (sparse_type) {
 		// MMSP::sparse<T>::to_buffer() copies n * item<T>;
 		// each "item" object contains one int and one T
-		char* q = raw;
 		if (bool_type) {
+			char* q = raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -442,6 +463,7 @@ void* swap_block_kernel(void* x)
 				}
 			}
 		} else if (char_type or unsigned_char_type) {
+			char* q = raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -455,6 +477,7 @@ void* swap_block_kernel(void* x)
 				}
 			}
 		} else if (int_type or unsigned_int_type) {
+			char* q = raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -468,6 +491,7 @@ void* swap_block_kernel(void* x)
 				}
 			}
 		} else if (long_type or unsigned_long_type) {
+			char* q = raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -481,6 +505,7 @@ void* swap_block_kernel(void* x)
 				}
 			}
 		} else if (short_type or unsigned_short_type) {
+			char* q = raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -494,7 +519,7 @@ void* swap_block_kernel(void* x)
 				}
 			}
 		}	else if (float_type) {
-			char* q=raw;
+			char* q = raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -508,7 +533,7 @@ void* swap_block_kernel(void* x)
 				}
 			}
 		}	else if (double_type) {
-			char* q=raw;
+			char* q = raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
@@ -522,7 +547,7 @@ void* swap_block_kernel(void* x)
 				}
 			}
 		}	else if (long_double_type) {
-			char* q=raw;
+			char* q = raw;
 			while (q<raw+size_in_mem) {
 				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(q));
