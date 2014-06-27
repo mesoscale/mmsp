@@ -1,5 +1,9 @@
-\documentclass{article}
-
+\documentclass[10pt]{article} 
+\topmargin=-.5in % topmargin is 1/2 inch (note negative value)
+\oddsidemargin=0in
+\textwidth=6.5in % leaves 1 inch for the right margin 
+\textheight=9in % 9 inches reserved for the text 
+\usepackage{listings}
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
@@ -12,36 +16,42 @@
 
 \title{MMSP for Beginners}
 
-\author{Paul Detwiler and Andrew Lauer}
+\author{Paul Detwiler, Andrew Lauer, Daniel Lewis}
 
 \date{\today}
 
 \begin{document}
 \maketitle
 \section{Introduction}
-The following is a brief tutorial on how to use \MMSP and some of it's basic functions. If you are unfamiliar with the basics of c++ or how to compile and run programs, please refer to the main \MMSP documentation.
+The following is a brief tutorial on how to use \MMSP and some of it's
+basic functions. If you are unfamiliar with the basics of c++ or how
+to compile and run programs, please refer to the main \MMSP
+documentation or an online C/C++ tutorial.  Some basic help will be
+found in the Makefiles and README files.
 
-\section{Fick's Law Review}
+\section{The Diffusion Equation}
 
-To start off, a quick review of Fick’s law:  Fick’s Law states the the change in concentration of a diffusive substance changes in time proportionally with the second derivative of change in space.
+The diffusion equation relates the time rate of change of a diffusing
+species to the divergence of the gradients in the concentration of the
+diffusing species.
 
-$$\frac{\partial C}{\partial t}=D\nabla ^2C$$
+\begin{eqnarray}
+\texttt{c[x,t] = (dt*D/dx**2)*(c[x-1,t-1]-2c[x,t-1]+c[x-1,t-1])+c[x,t-1]}
+\end{eqnarray}
 
-Additionally, it is possible to discretize the law in both space and time to obtain an explicit method to predict future time steps using the a map of the current concentrations in space. 
-
-$$C_{x,t+1} = D\Delta t\frac{C_{x-1,t} - 2C_{x,t} - C_{x+1},t }{ \Delta x^2} + C_x,t $$
-
-In the above expression, the $n$ subscripts refer to a position in space and the $m$ subscripts refer to a position in time.
-
-The expression becomes complicated when adding dimensions as the laplacian requires derivation in each dimension individually.   
-
+This discrete equation will be used in our example calculation.
 
 \section{Example Codes}
 \label{sec:examples}
 
+\begin{listings}
+\end{listings}
+
 \subsection{1D Diffusion couple, Cish}
 
-The first code is called 1stDiffusion.cpp.  It is found in the examples directory under {\tt beginners\_diffusion}. Use the {\tt g++} or MPI commands outlined in the introduction to create an executable.
+The first code is called 1stDiffusion.cpp.  It is found in the
+examples directory under {\tt beginners\_diffusion}. Use the {\tt g++}
+or MPI commands outlined in the introduction to create an executable.
 
 The first thing to notice is that the include, using, and finalize commands are in the same place as in the “Hello World” script handled before.  These are standard for all MMSP codes.  The important MMSP commands are lines 22 and 23:
 \\ 	\textit{grid\textless 1,scalar\textless float\textgreater \textgreater GRID(1,0,length);}
