@@ -95,11 +95,9 @@ private:
 template <typename T> int buffer_size(const scalar<T>& s) {
 	return s.buffer_size();
 }
-
 template <typename T> int to_buffer(const scalar<T>& s, char* buffer) {
 	return s.to_buffer(buffer);
 }
-
 template <typename T> int from_buffer(scalar<T>& s, const char* buffer) {
 	return s.from_buffer(buffer);
 }

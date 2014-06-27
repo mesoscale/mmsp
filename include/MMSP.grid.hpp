@@ -543,7 +543,6 @@ public:
 				recv_min[i] = x0[i] - ghosts;
 				recv_max[i] = x0[i];
 
-
 				unsigned long send_size = this->buffer_size(send_min, send_max);
 				unsigned long recv_size = 0;
 
@@ -555,7 +554,6 @@ public:
 				MPI::COMM_WORLD.Barrier();
 				char* send_buffer = new char[send_size];
 				char* recv_buffer = new char[recv_size];
-
 				send_size = this->to_buffer(send_buffer, send_min, send_max);
 
 				// Large data transfer requires non-blocking communication
@@ -563,9 +561,7 @@ public:
 				requests[1] = MPI::COMM_WORLD.Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 200); // receive ghosts
 				MPI::Request::Waitall(2, requests);
 				MPI::COMM_WORLD.Barrier();
-
 				this->from_buffer(recv_buffer, recv_min, recv_max); // populate ghost cell data from buffer
-
 				delete [] send_buffer; send_buffer=NULL;
 				delete [] recv_buffer; recv_buffer=NULL;
 			}
@@ -589,7 +585,6 @@ public:
 				recv_min[i] = x1[i];
 				recv_max[i] = x1[i] + ghosts;
 
-
 				unsigned long send_size = this->buffer_size(send_min, send_max);
 				unsigned long recv_size = 0;
 
@@ -601,7 +596,6 @@ public:
 				MPI::COMM_WORLD.Barrier();
 				char* send_buffer = new char[send_size];
 				char* recv_buffer = new char[recv_size];
-
 				send_size = this->to_buffer(send_buffer, send_min, send_max);
 
 				// Large data transfer requires non-blocking communication
@@ -718,22 +712,13 @@ public:
 		#endif
 	}
 
-
 	// buffer I/O
 	unsigned long buffer_size() const {
 		return buffer_size(x0, x1);
 	}
 
-	unsigned long buffer_size(const int sublattice) const {
-		return buffer_size(x0, x1, sublattice);
-	}
-
 	unsigned long buffer_size(const int min[dim], const int max[dim]) const {
 		return buffer_size(data, 0, min, max);
-	}
-
-	unsigned long buffer_size(const int min[dim], const int max[dim], const int sublattice) const {
-		return buffer_size(data, 0, min, max, sublattice);
 	}
 
 	unsigned long buffer_size(T* p, int i, const int min[dim], const int max[dim]) const {
@@ -745,6 +730,18 @@ public:
 			for (int x = min[i]; x < max[i]; x++)
 				size += buffer_size(p + (x - s0[i]) * sx[i], i + 1, min, max);
 		return size;
+	}
+
+  /*buffer_size(const int sublattice), buffer_size(..., const int sublattice), buffer_size_odd() and buffer_size_even() are specified for usage in Monte Carlo simulation for scalar datatype with the 
+  checkboarding routine implemented as in the following work: 
+  Wright, Steven A., et al. "Potts-model grain growth simulations: Parallel algorithms and applications." SAND Report (1997): 1925. APA	
+  sublattice represents "color" of the checkboarding and takes values from 0 to 7 */
+	unsigned long buffer_size(const int sublattice) const {
+		return buffer_size(x0, x1, sublattice);
+	}
+
+	unsigned long buffer_size(const int min[dim], const int max[dim], const int sublattice) const {
+		return buffer_size(data, 0, min, max, sublattice);
 	}
 
   unsigned long buffer_size_odd(T* p, int i, const int min[dim], const int max[dim], const int sublattice) const{
@@ -837,16 +834,8 @@ public:
 		return to_buffer(buffer, x0, x1);
 	}
 
-	unsigned long to_buffer(char* buffer, const int sublattice) const {
-		return to_buffer(buffer, x0, x1, sublattice);
-	}
-
 	unsigned long to_buffer(char* buffer, const int min[dim], const int max[dim]) const {
 		return to_buffer(buffer, data, 0, min, max);
-	}
-
-	unsigned long to_buffer(char* buffer, const int min[dim], const int max[dim], const int sublattice) const {
-		return to_buffer(buffer, data, 0, min, max, sublattice);
 	}
 
 	unsigned long to_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim]) const {
@@ -859,6 +848,19 @@ public:
 				size += to_buffer(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max);
 		return size;
 	}
+
+  /*to_buffer(const int sublattice), to_buffer(..., const int sublattice), to_buffer_odd() and to_buffer_even() are specified for usage in Monte Carlo simulation for scalar datatype with the 
+  checkboarding routine implemented as in the following work: 
+  Wright, Steven A., et al. "Potts-model grain growth simulations: Parallel algorithms and applications." SAND Report (1997): 1925. APA	
+  sublattice represents "color" of the checkboarding and takes values from 0 to 7 */
+	unsigned long to_buffer(char* buffer, const int sublattice) const {
+		return to_buffer(buffer, x0, x1, sublattice);
+	}
+
+	unsigned long to_buffer(char* buffer, const int min[dim], const int max[dim], const int sublattice) const {
+		return to_buffer(buffer, data, 0, min, max, sublattice);
+	}
+
 
   unsigned long to_buffer_odd(char* buffer, T* p, int i, const int min[dim], const int max[dim], const int sublattice) const{
     unsigned long size_odd=0;
@@ -950,16 +952,8 @@ public:
 		return from_buffer(buffer, x0, x1);
 	}
 
-	unsigned long from_buffer(char* buffer, const int sublattice) {
-		return from_buffer(buffer, x0, x1, sublattice);
-	}
-
 	unsigned long from_buffer(char* buffer, const int min[dim], const int max[dim]) {
 		return from_buffer(buffer, data, 0, min, max);
-	}
-
-	unsigned long from_buffer(char* buffer, const int min[dim], const int max[dim], const int sublattice) {
-		return from_buffer(buffer, data, 0, min, max, sublattice);
 	}
 
 	unsigned long from_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim]) {
@@ -972,6 +966,18 @@ public:
 				size += from_buffer(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max);
 		}
 		return size;
+	}
+
+  /*from_buffer(const int sublattice), from_buffer(..., const int sublattice), from_buffer_odd() and from_buffer_even() are specified for usage in Monte Carlo simulation for scalar datatype with the 
+  checkboarding routine implemented as in the following work: 
+  Wright, Steven A., et al. "Potts-model grain growth simulations: Parallel algorithms and applications." SAND Report (1997): 1925. APA	
+  sublattice represents "color" of the checkboarding and takes values from 0 to 7 */
+	unsigned long from_buffer(char* buffer, const int sublattice) {
+		return from_buffer(buffer, x0, x1, sublattice);
+	}
+
+	unsigned long from_buffer(char* buffer, const int min[dim], const int max[dim], const int sublattice) {
+		return from_buffer(buffer, data, 0, min, max, sublattice);
 	}
 
   unsigned long from_buffer_odd(char* buffer, T* p, int i, const int min[dim], const int max[dim], const int sublattice){
