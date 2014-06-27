@@ -9,7 +9,7 @@
 // folks can, in general, compile code.
 //
 
-#define GNUPLOT_I
+// #define GNUPLOT_I
 
 // On systems where you can apt-get packages (or similar) make sure that
 // your installation of gnuplot is the x11 compatible version.  On a debian
