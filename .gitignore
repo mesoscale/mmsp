@@ -6,7 +6,6 @@
 *.tex~
 *.toc
 doc/MMSP.manual.pdf
-examples/beginners_diffusion/MMSP_for_Beginners.pdf
 
 # MMSP utility binaries
 MC2PF
