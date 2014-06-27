@@ -5,6 +5,11 @@ CCOPTS = -g
 PGOPTS = 
 LIBS = -lm
 
+# If you have gnuplot pipes on your system, change this
+# value to 'yes' and change the options in the source
+# code to get graphical output.
+GNUPLOT_I = no
+
 # If different compilers have different options, then
 # those can be handled here.
 ifeq ($(CC),gcc)
@@ -19,11 +24,17 @@ ifeq ($(CC),g++)
 	CCOPTIONS = 
 endif
 
+ifeq ($(GNUPLOT_I),yes)
+	OBJECTS = 1stDiffusion.o gnuplot_i.hpp.gch
+else
+	OBJECTS = 1stDiffusion.o
+endif
+
 #Program dependencies below here.
 all : go 
 .PHONY : all
 
-go : 1stDiffusion.o gnuplot_i.hpp.gch
+go : $(OBJECTS)
 	$(CC) $(CCOPTIONS) -o go 1stDiffusion.o $(LIBS)
 
 # Object defs below here.
@@ -33,7 +44,7 @@ go : 1stDiffusion.o gnuplot_i.hpp.gch
 gnuplot_i.hpp.gch : gnuplot_i.hpp
 	$(CC) $(CCOPTIONS) -c gnuplot_i.hpp
 
+
 clean :
-	rm *.o
-	rm *~
-	rm *.gch
+	rm *.o *~ *.gch
+
