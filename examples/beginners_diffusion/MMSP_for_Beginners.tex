@@ -23,11 +23,17 @@
 \begin{document}
 \maketitle
 \section{Introduction}
-The following is a brief tutorial on how to use \MMSP and some of it's basic functions. If you are unfamiliar with the basics of c++ or how to compile and run programs, please refer to the main \MMSP documentation or an online C/C++ tutorial.  Some basic help will be found in the Makefiles and README files.
+The following is a brief tutorial on how to use \MMSP and some of it's
+basic functions. If you are unfamiliar with the basics of c++ or how
+to compile and run programs, please refer to the main \MMSP
+documentation or an online C/C++ tutorial.  Some basic help will be
+found in the Makefiles and README files.
 
 \section{The Diffusion Equation}
 
-The diffusion equation relates the time rate of change of a diffusing species to the divergence of the gradients in the concentration of the diffusing species.
+The diffusion equation relates the time rate of change of a diffusing
+species to the divergence of the gradients in the concentration of the
+diffusing species.
 
 \begin{eqnarray}
 \texttt{c[x,t] = (dt*D/dx**2)*(c[x-1,t-1]-2c[x,t-1]+c[x-1,t-1])+c[x,t-1]}
@@ -43,7 +49,9 @@ This discrete equation will be used in our example calculation.
 
 \subsection{1D Diffusion couple, Cish}
 
-The first code is called 1stDiffusion.cpp.  It is found in the examples directory under {\tt beginners\_diffusion}. Use the {\tt g++} or MPI commands outlined in the introduction to create an executable.
+The first code is called 1stDiffusion.cpp.  It is found in the
+examples directory under {\tt beginners\_diffusion}. Use the {\tt g++}
+or MPI commands outlined in the introduction to create an executable.
 
 The first thing to notice is that the include, using, and finalize commands are in the same place as in the “Hello World” script handled before.  These are standard for all MMSP codes.  The important MMSP commands are lines 22 and 23:
 \\ 	\textit{grid\textless 1,scalar\textless float\textgreater \textgreater GRID(1,0,length);}
