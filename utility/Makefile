@@ -4,7 +4,7 @@
 
 # compilers/flags
 compiler = g++
-flags = -O3 -Wall -I ../include/ -lz
+flags = -O3 -Wall -I ../include/
 
 # dependencies
 core = ../include/MMSP.hpp \
@@ -25,49 +25,49 @@ utility : mmsp2vti mmsp2pvd \
           TKmmsp2vti mmsp2xyz
 
 mmsp2vti: mmsp2vti.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
+	$(compiler) $(flags) $< -o $@ -lz
 
 mmsp2z: mmsp2z.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
+	$(compiler) $(flags) $< -o $@ -lz
 
 mmsp2xyz: mmsp2xyz.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
+	$(compiler) $(flags) $< -o $@ -lz
 
 slicer: mmspslicer.cpp $(core) /usr/include/IL/devil_cpp_wrapper.hpp
-	$(compiler) $(flags) -I /usr/include/IL -include il.h $< -o $@ -lz -lIL -lILU -lILUT
+	$(compiler) $(flags) -I /usr/include/IL -include il.h $< -o $@ -lz-lIL -lILU -lILUT
 
 TKmmsp2vti: TKmmsp2vti.cpp $(core)
-	$(compiler) -I $(topo)/../ $< -o $@ $(flags)
+	$(compiler) $(flags) -I $(topo)/../ $< -o $@ -lz
 
 mmsp2topo: mmsp2topo.cpp $(core)
-	$(compiler) -I $(topo) $< -o $@ $(flags)
+	$(compiler) $(flags) -I $(topo) $< -o $@ -lz
 
 mmsp2pvd: mmsp2pvd.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
+	$(compiler) $(flags) $< -o $@ -lz
 
 MC2PF: MC2PF.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
+	$(compiler) $(flags) $< -o $@ -lz
 
 MC2sPF: MC2sPF.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
+	$(compiler) $(flags) $< -o $@ -lz
 
 PF2MC: PF2MC.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
+	$(compiler) $(flags) $< -o $@ -lz
 
 PF2sPF: PF2sPF.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
+	$(compiler) $(flags) $< -o $@ -lz
 
 sPF2MC: sPF2MC.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
+	$(compiler) $(flags) $< -o $@ -lz
 
 sPF2PF: sPF2PF.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
+	$(compiler) $(flags) $< -o $@ -lz
 
 vox2MC: vox2MC.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
+	$(compiler) $(flags) $< -o $@ -lz
 
 MC2vox: MC2vox.cpp $(core)
-	$(compiler) $< -o $@ $(flags)
+	$(compiler) $(flags) $< -o $@ -lz
 
 wrongendian: wrongendian.cpp
 	$(compiler) $(flags) $< -o $@ -lz -pthread
