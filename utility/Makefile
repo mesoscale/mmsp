@@ -22,15 +22,12 @@ utility : mmsp2vti mmsp2pvd \
           PF2MC PF2sPF \
           sPF2MC sPF2PF \
           vox2MC MC2vox \
-          TKmmsp2vti mmsp2xyz
+          TKmmsp2vti
 
 mmsp2vti: mmsp2vti.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
 mmsp2z: mmsp2z.cpp $(core)
-	$(compiler) $(flags) $< -o $@ -lz
-
-mmsp2xyz: mmsp2xyz.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
 slicer: mmspslicer.cpp $(core) /usr/include/IL/devil_cpp_wrapper.hpp

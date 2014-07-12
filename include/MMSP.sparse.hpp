@@ -27,6 +27,11 @@ public:
 		size = 0;
 		data = NULL;
 	}
+	sparse(const sparse& x) {
+		size = x.length();
+		data = new item<T>[size];
+		memcpy(data, x.data, size * sizeof(item<T>));
+	}
 	~sparse() {
 		delete [] data;
 	}
@@ -36,7 +41,11 @@ public:
 		delete [] data;
 		size = x.length();
 		data = new item<T>[size];
-		memcpy(data, x.data, size * sizeof(item<T>));
+		//memcpy(data, x.data, size * sizeof(item<T>));
+		for (int i = 0; i < size; i++) {
+			data[i].index = x.index(i);
+			data[i].value = x.value(i);
+		}
 		return *this;
 	}
 	template <typename U> sparse& operator=(const sparse<U>& x) {
@@ -44,8 +53,8 @@ public:
 		size = x.length();
 		data = new item<T>[size];
 		for (int i = 0; i < size; i++) {
-			data[i].index = x.data[i].index;
-			data[i].value = static_cast<T>(x.data[i].value);
+			data[i].index = x.index(i);
+			data[i].value = static_cast<T>(x.value(i));
 		}
 		return *this;
 	}
@@ -451,6 +460,24 @@ sparse<T>& operator*=(target<0, ind, sparse<T> > x, const U& value) {
 template <int ind, typename T, typename U>
 sparse<T> operator*(const U& value, const target<0, ind, sparse<T> >& x) {
 	return operator*(value, *(x.data));
+}
+template <typename T> bool operator==(const sparse<T>& a, const sparse<T>& b) {
+  int N=a.length();
+  if (N != b.length()) return false;
+  for (int i=0; i<N; ++i) {
+  	int indexA = a.index(i);
+  	bool found=false;
+  	bool match=false;
+  	for (int j=0; j<N && !found; ++j) {
+  		int indexB = b.index(j);
+  		if (indexA==indexB) {
+  			found=true;
+  			match = (a.value(i) == b.value(j));
+  		}
+  	}
+  	if (!found || (found && !match)) return false;
+	}
+  return true;
 }
 
 } // namespace MMSP
