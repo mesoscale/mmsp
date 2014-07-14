@@ -116,9 +116,10 @@ int main(int argc, char* argv[]) {
 		if (argc < 4) outfile = "example";
 		else outfile = argv[3];
 
-		char* filename = new char[outfile.length()];
+		char* filename = new char[outfile.length()+1];
 		for (unsigned int i=0; i<outfile.length(); i++)
 			filename[i] = outfile[i];
+		filename[outfile.length()]='\0';
 
 		// generate test problem
 		MMSP::generate(dim, filename);
@@ -225,7 +226,7 @@ int main(int argc, char* argv[]) {
 		// grid type error check
 		if (type.substr(0, 4) != "grid") {
 			std::cerr << "File input error: file does not contain grid data." << std::endl;
-			exit(-1);
+			//exit(-1);
 		}
 
 		// read grid dimension
@@ -286,13 +287,13 @@ int main(int argc, char* argv[]) {
 					outstr << i + increment << suffix;
 					n = outstr.str().length();
 				}
-				char* filename = new char[outstr.str().length()];
+
+				char filename[FILENAME_MAX] = {}; // initialize null characters
 				for (unsigned int i=0; i<outstr.str().length(); i++)
 					filename[i]=outstr.str()[i];
 
 				// write grid output to file
 				MMSP::output(grid, filename);
-				delete [] filename;
 			}
 		}
 
@@ -314,13 +315,12 @@ int main(int argc, char* argv[]) {
 					outstr << i + increment << suffix;
 					n = outstr.str().length();
 				}
-				char* filename = new char[outstr.str().length()];
+				char filename[FILENAME_MAX] = {}; // initialize null characters
 				for (unsigned int i=0; i<outstr.str().length(); i++)
 					filename[i]=outstr.str()[i];
 
 				// write grid output to file
 				MMSP::output(grid, filename);
-				delete [] filename;
 			}
 		}
 	}
