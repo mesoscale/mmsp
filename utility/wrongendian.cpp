@@ -17,6 +17,8 @@ typedef struct {
 	std::ofstream* ofile;
 	unsigned long offset;
 	int block;
+	int n;
+	int j;
 	Bytef* compressed_buf;
 	char*  uncompress_buf;
 	char*  q;
@@ -46,8 +48,7 @@ template <typename T>
 void swap_buffer(T* buffer, const unsigned long& size)
 {
 	// Swap endianness of buffer in-place
-	T value;
-	for (T* p=buffer; p<buffer+size; p+=sizeof(value))
+	for (T* p=buffer; p<buffer+size; p++)
 		swap_endian<T>(*p);
 }
 
@@ -199,6 +200,7 @@ int main(int argc, char* argv[])
 				swap_threads[i].compressed_buf = NULL;
 				swap_threads[i].uncompress_buf = NULL;
 				swap_threads[i].q = NULL;
+				swap_threads[i].n = 0;
 
 				pthread_create(&p_threads[i], &attr, swap_block_kernel, (void *) &swap_threads[i] );
 				spawned++;
@@ -246,21 +248,21 @@ void* swap_block_kernel(void* x)
 	// copy block limits
 	int lmin[3] = {0, 0, 0};
 	int lmax[3] = {0, 0, 0};
-	for (int j = 0; j < dim; j++) {
-		st->ifile.read(reinterpret_cast<char*>(&lmin[j]), sizeof(lmin[j]));
-		st->ifile.read(reinterpret_cast<char*>(&lmax[j]), sizeof(lmax[j]));
-		swap_endian<int>(lmin[j]);
-		swap_endian<int>(lmax[j]);
+	for (st->j = 0; st->j < dim; st->j++) {
+		st->ifile.read(reinterpret_cast<char*>(&lmin[st->j]), sizeof(lmin[st->j]));
+		st->ifile.read(reinterpret_cast<char*>(&lmax[st->j]), sizeof(lmax[st->j]));
+		swap_endian<int>(lmin[st->j]);
+		swap_endian<int>(lmax[st->j]);
 	}
 
 	// copy boundary conditions
 	int blo[3];
 	int bhi[3];
-	for (int j = 0; j < dim; j++) {
-		st->ifile.read(reinterpret_cast<char*>(&blo[j]), sizeof(blo[j]));
-		st->ifile.read(reinterpret_cast<char*>(&bhi[j]), sizeof(bhi[j]));
-		swap_endian<int>(blo[j]);
-		swap_endian<int>(bhi[j]);
+	for (st->j = 0; st->j < dim; st->j++) {
+		st->ifile.read(reinterpret_cast<char*>(&blo[st->j]), sizeof(blo[st->j]));
+		st->ifile.read(reinterpret_cast<char*>(&bhi[st->j]), sizeof(bhi[st->j]));
+		swap_endian<int>(blo[st->j]);
+		swap_endian<int>(bhi[st->j]);
 	}
 
 	// copy grid data
@@ -307,7 +309,7 @@ void* swap_block_kernel(void* x)
 	// Invert raw data
 	if (scalar_type) {
 		// MMSP::scalar<T>::to_buffer() copies one T
-		st->q=st->uncompress_buf;
+		st->q = st->uncompress_buf;
 		if (bool_type or char_type or unsigned_char_type) {
 			std::cout<<"Grid type ("<<type<<") does not need byte-swapping."<<std::endl;
 			if (st->uncompress_buf!=NULL) delete [] st->uncompress_buf; st->uncompress_buf=NULL;
@@ -352,84 +354,82 @@ void* swap_block_kernel(void* x)
 	} else if (vector_type) {
 		// MMSP::vector<T>::to_buffer() copies n * T
 		if (bool_type) {
-			st->q=st->uncompress_buf;
+			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
 				// sizeof(bool) <= 1B: nothing to swap
-				st->q += n*sizeof(bool);
+				st->q += st->n * sizeof(bool);
 			}
 		} else if (char_type or unsigned_char_type) {
-			st->q=st->uncompress_buf;
+			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
 				// sizeof(char) = 1B: nothing to swap
-				st->q += n*sizeof(char);
+				st->q += st->n * sizeof(char);
 			}
 		} else if (int_type or unsigned_int_type) {
-			st->q=st->uncompress_buf;
+			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				swap_buffer<int>(reinterpret_cast<int*>(st->q), n);
-				st->q += n*sizeof(int);
+				swap_buffer<int>(reinterpret_cast<int*>(st->q), st->n);
+				st->q += st->n * sizeof(int);
 			}
 		} else if (long_type or unsigned_long_type) {
-			st->q=st->uncompress_buf;
+			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				swap_buffer<long>(reinterpret_cast<long*>(st->q), n);
-				st->q += n*sizeof(long);
+				swap_buffer<long>(reinterpret_cast<long*>(st->q), st->n);
+				st->q += st->n * sizeof(long);
 			}
 		} else if (short_type or unsigned_short_type) {
-			st->q=st->uncompress_buf;
+			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				swap_buffer<short>(reinterpret_cast<short*>(st->q), n);
-				st->q += n*sizeof(short);
+				swap_buffer<short>(reinterpret_cast<short*>(st->q), st->n);
+				st->q += st->n * sizeof(short);
 			}
 		} else if (float_type) {
-			st->q=st->uncompress_buf;
+			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				swap_buffer<float>(reinterpret_cast<float*>(st->q), n);
-				st->q += n*sizeof(float);
+				swap_buffer<float>(reinterpret_cast<float*>(st->q), st->n);
+				st->q += st->n * sizeof(float);
 			}
 		} else if (double_type) {
-			st->q=st->uncompress_buf;
+			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				swap_buffer<double>(reinterpret_cast<double*>(st->q), n);
-				st->q += n*sizeof(double);
+				swap_buffer<double>(reinterpret_cast<double*>(st->q), st->n);
+				st->q += st->n * sizeof(double);
+				/*
+				for (st->j = 0; st->j < st->n; st->j++) {
+					swap_endian<double>(reinterpret_cast<double*>(st->q));
+					st->q += sizeof(double);
+				}
+				*/
 			}
 		} else if (long_double_type) {
-			st->q=st->uncompress_buf;
+			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				swap_buffer<long double>(reinterpret_cast<long double*>(st->q), n);
-				st->q += n*sizeof(long double);
+				swap_buffer<long double>(reinterpret_cast<long double*>(st->q), st->n);
+				st->q += st->n * sizeof(long double);
 			}
 		} else {
 			std::cerr<<"ERROR: Grid type ("<<type<<") is not implemented.\n"<<std::endl;
@@ -443,11 +443,10 @@ void* swap_block_kernel(void* x)
 		if (bool_type) {
 			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				for (int j=0; j<n; j++) {
+				for (st->j = 0; st->j < st->n; st->j++) {
 					swap_endian<int>(reinterpret_cast<int*>(st->q));
 					st->q += sizeof(int);
 					// sizeof(bool) <= 1B: nothing to swap
@@ -457,11 +456,10 @@ void* swap_block_kernel(void* x)
 		} else if (char_type or unsigned_char_type) {
 			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				for (int j=0; j<n; j++) {
+				for (st->j = 0; st->j < st->n; st->j++) {
 					swap_endian<int>(reinterpret_cast<int*>(st->q));
 					st->q += sizeof(int);
 					// sizeof(char) = 1B: nothing to swap
@@ -471,11 +469,10 @@ void* swap_block_kernel(void* x)
 		} else if (int_type or unsigned_int_type) {
 			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				for (int j=0; j<n; j++) {
+				for (st->j = 0; st->j < st->n; st->j++) {
 					swap_endian<int>(reinterpret_cast<int*>(st->q));
 					st->q += sizeof(int);
 					swap_endian<int>(reinterpret_cast<int*>(st->q));
@@ -485,11 +482,10 @@ void* swap_block_kernel(void* x)
 		} else if (long_type or unsigned_long_type) {
 			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				for (int j=0; j<n; j++) {
+				for (st->j = 0; st->j < st->n; st->j++) {
 					swap_endian<int>(reinterpret_cast<int*>(st->q));
 					st->q += sizeof(int);
 					swap_endian<long>(reinterpret_cast<long*>(st->q));
@@ -499,11 +495,10 @@ void* swap_block_kernel(void* x)
 		} else if (short_type or unsigned_short_type) {
 			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				for (int j=0; j<n; j++) {
+				for (st->j = 0; st->j < st->n; st->j++) {
 					swap_endian<int>(reinterpret_cast<int*>(st->q));
 					st->q += sizeof(int);
 					swap_endian<short>(reinterpret_cast<short*>(st->q));
@@ -513,11 +508,10 @@ void* swap_block_kernel(void* x)
 		}	else if (float_type) {
 			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				for (int j=0; j<n; j++) {
+				for (st->j = 0; st->j < st->n; st->j++) {
 					swap_endian<int>(reinterpret_cast<int*>(st->q));
 					st->q += sizeof(int);
 					swap_endian<float>(reinterpret_cast<float*>(st->q));
@@ -527,11 +521,10 @@ void* swap_block_kernel(void* x)
 		}	else if (double_type) {
 			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				for (int j=0; j<n; j++) {
+				for (st->j = 0; st->j < st->n; st->j++) {
 					swap_endian<int>(reinterpret_cast<int*>(st->q));
 					st->q += sizeof(int);
 					swap_endian<double>(reinterpret_cast<double*>(st->q));
@@ -541,11 +534,10 @@ void* swap_block_kernel(void* x)
 		}	else if (long_double_type) {
 			st->q = st->uncompress_buf;
 			while (st->q < st->uncompress_buf+size_in_mem) {
-				int n=0;
 				swap_endian<int>(reinterpret_cast<int*>(st->q));
-				memcpy(&n, reinterpret_cast<int*>(st->q), 1);
+				memcpy(&(st->n), reinterpret_cast<int*>(st->q), 1);
 				st->q += sizeof(int);
-				for (int j=0; j<n; j++) {
+				for (st->j = 0; st->j < st->n; st->j++) {
 					swap_endian<int>(reinterpret_cast<int*>(st->q));
 					st->q += sizeof(int);
 					swap_endian<long double>(reinterpret_cast<long double*>(st->q));
@@ -588,13 +580,13 @@ void* swap_block_kernel(void* x)
 	if (st->uncompress_buf!=NULL) delete [] st->uncompress_buf; st->uncompress_buf=NULL;
 
 	pthread_mutex_lock(&write_lock);
-	for (int j = 0; j < dim; j++) {
-		st->ofile->write(reinterpret_cast<const char*>(&lmin[j]), sizeof(lmin[j]));
-		st->ofile->write(reinterpret_cast<const char*>(&lmax[j]), sizeof(lmax[j]));
+	for (st->j = 0; st->j < dim; st->j++) {
+		st->ofile->write(reinterpret_cast<const char*>(&lmin[st->j]), sizeof(lmin[st->j]));
+		st->ofile->write(reinterpret_cast<const char*>(&lmax[st->j]), sizeof(lmax[st->j]));
 	}
-	for (int j = 0; j < dim; j++) {
-		st->ofile->write(reinterpret_cast<const char*>(&blo[j]), sizeof(blo[j]));
-		st->ofile->write(reinterpret_cast<const char*>(&bhi[j]), sizeof(bhi[j]));
+	for (st->j = 0; st->j < dim; st->j++) {
+		st->ofile->write(reinterpret_cast<const char*>(&blo[st->j]), sizeof(blo[st->j]));
+		st->ofile->write(reinterpret_cast<const char*>(&bhi[st->j]), sizeof(bhi[st->j]));
 	}
 	st->ofile->write(reinterpret_cast<const char*>(&size_in_mem), sizeof(size_in_mem));
 	st->ofile->write(reinterpret_cast<const char*>(&size_on_disk), sizeof(size_on_disk));

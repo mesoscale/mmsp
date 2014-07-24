@@ -1,25 +1,29 @@
+# Backup files
+*~
+*.orig
+
 # TeX auxiliary files
 *.aux
 *.dvi
 *.log
 *.out
-*.tex~
 *.toc
 doc/MMSP.manual.pdf
 
 # MMSP utility binaries
-MC2PF
-MC2sPF
-MC2vox
-mmsp2pvd
-mmsp2vti
-mmsp2xyz
-PF2MC
-PF2sPF
-sPF2MC
-sPF2PF
-TKmmsp2vti
-vox2MC
+utility/MC2PF
+utility/MC2sPF
+utility/MC2vox
+utility/mmsp2pvd
+utility/mmsp2vti
+utility/mmsp2xyz
+utility/PF2MC
+utility/PF2sPF
+utility/sPF2MC
+utility/sPF2PF
+utility/TKmmsp2vti
+utility/vox2MC
+utility/wrongendian
 
 # Compiled Object files
 *.slo

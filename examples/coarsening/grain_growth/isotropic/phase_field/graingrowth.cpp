@@ -1,5 +1,5 @@
 // graingrowth.hpp
-// Algorithms for 2D and 3D isotropic phase field grain growth 
+// Algorithms for 2D and 3D isotropic phase field grain growth
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef GRAINGROWTH_UPDATE
@@ -12,6 +12,21 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
+	if (dim==1) {
+		MMSP::grid<1,vector<double> > grid(2,0,128);
+
+		for (int i=0; i<nodes(grid); i++) {
+			vector<int> x = position(grid,i);
+			grid(x)[0] = 0.0;
+			grid(x)[1] = 0.0;
+			double d = 64.0-x[0];
+			if (d<32.0) grid(x)[1] = 1.0;
+			else grid(x)[0] = 1.0;
+		}
+
+		output(grid,filename);
+	}
+
 	if (dim==2) {
 		MMSP::grid<2,vector<double> > grid(2,0,128,0,128);
 

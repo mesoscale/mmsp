@@ -1,5 +1,5 @@
 // potts.hpp
-// 2D and 3D Potts model 
+// 2D and 3D Potts model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef POTTS_UPDATE
@@ -12,6 +12,15 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
+	if (dim==1) {
+		MMSP::grid<1,int> grid(1,0,128);
+
+		for (int i=0; i<nodes(grid); i++)
+			grid(i) = rand()%20;
+
+		output(grid,filename);
+	}
+
 	if (dim==2) {
 		MMSP::grid<2,int> grid(1,0,128,0,128);
 

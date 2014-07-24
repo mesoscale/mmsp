@@ -13,6 +13,19 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
+	if (dim==1) {
+		MMSP::grid<1,int> grid(0,0,128);
+
+		for (int i=0; i<nodes(grid); i++) {
+			vector<int> x = position(grid,i);
+			if      (x[0]<32) grid(i) = 3;
+			else if (x[0]>96) grid(i) = 2;
+			else              grid(i) = 0;
+		}
+
+		output(grid,filename);
+	}
+
 	if (dim==2) {
 		MMSP::grid<2,int> grid(0,0,128,0,128);
 

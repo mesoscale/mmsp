@@ -12,6 +12,21 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
+	if (dim==1) {
+		MMSP::grid<1,MMSP::vector<double> > grid(2,0,128);
+
+		int x0 = MMSP::x0(grid);
+		int x1 = MMSP::x1(grid);
+
+		for (int x=x0; x<x1; x++)
+				double r = double(rand())/double(RAND_MAX);
+				grid[x][0] = r;
+				grid[x][1] = 1.0-r;
+			}
+
+		MMSP::output(grid,filename);
+	}
+
 	if (dim==2) {
 		MMSP::grid<2,MMSP::vector<double> > grid(2,0,128,0,128);
 		int x0 = MMSP::x0(grid);

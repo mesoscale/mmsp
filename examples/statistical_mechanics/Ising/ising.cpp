@@ -1,5 +1,5 @@
 // ising.hpp
-// 2D and 3D Ising model 
+// 2D and 3D Ising model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef ISING_UPDATE
@@ -12,6 +12,15 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
+	if (dim==1) {
+		MMSP::grid<1,int> grid(1,0,128);
+
+		for (int i=0; i<nodes(grid); i++)
+			grid(i) = 2*(rand()%2)-1;
+
+		output(grid,filename);
+	}
+
 	if (dim==2) {
 		MMSP::grid<2,int> grid(1,0,128,0,128);
 

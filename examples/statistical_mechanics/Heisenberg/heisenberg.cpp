@@ -1,5 +1,5 @@
 // heisenberg.hpp
-// 2D and 3D Heisenberg model 
+// 2D and 3D Heisenberg model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef HEISENBERG_UPDATE
@@ -12,6 +12,20 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
+	if (dim==1) {
+		MMSP::grid<1,vector<double> > grid(3,0,128);
+
+		for (int i=0; i<nodes(grid); i++) {
+			double psi = 2.0*acos(-1.0)*double(rand())/double(RAND_MAX);
+			double theta = acos(1.0-2.0*double(rand())/double(RAND_MAX));
+			grid(i)[0] = cos(psi)*sin(theta);
+			grid(i)[1] = sin(psi)*sin(theta);
+			grid(i)[2] = cos(theta);
+		}
+
+		output(grid,filename);
+	}
+
 	if (dim==2) {
 		MMSP::grid<2,vector<double> > grid(3,0,128,0,128);
 
