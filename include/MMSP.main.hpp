@@ -101,16 +101,6 @@ int main(int argc, char* argv[]) {
 
 		int dim = atoi(argv[2]);
 
-		/*
-		// dimension must be 2 or 3
-		if (dim<2 or dim>3) {
-			std::cout<<PROGRAM<<": example grid must be of dimension 2 or 3.  Use\n\n";
-			std::cout<<"    "<<PROGRAM<<" --help\n\n";
-			std::cout<<"to generate help message.\n\n";
-			exit(-1);
-		}
-		*/
-
 		// set output file name
 		std::string outfile;
 		if (argc < 4) outfile = "example";
@@ -226,7 +216,7 @@ int main(int argc, char* argv[]) {
 		// grid type error check
 		if (type.substr(0, 4) != "grid") {
 			std::cerr << "File input error: file does not contain grid data." << std::endl;
-			//exit(-1);
+			exit(-1);
 		}
 
 		// read grid dimension
@@ -269,7 +259,33 @@ int main(int argc, char* argv[]) {
 		}
 
 
-		if (dim == 2) {
+		if (dim == 1) {
+			// construct grid object
+			GRID1D grid(argv[1]);
+
+			// perform computation
+			for (int i = iterations_start; i < steps; i += increment) {
+				MMSP::update(grid, increment);
+
+				// generate output filename
+				std::stringstream outstr;
+				int n = outstr.str().length();
+				for (int j = 0; n < length; j++) {
+					outstr.str("");
+					outstr << base;
+					for (int k = 0; k < j; k++) outstr << 0;
+					outstr << i + increment << suffix;
+					n = outstr.str().length();
+				}
+
+				char filename[FILENAME_MAX] = {}; // initialize null characters
+				for (unsigned int i=0; i<outstr.str().length(); i++)
+					filename[i]=outstr.str()[i];
+
+				// write grid output to file
+				MMSP::output(grid, filename);
+			}
+		} else if (dim == 2) {
 			// construct grid object
 			GRID2D grid(argv[1]);
 
@@ -295,9 +311,7 @@ int main(int argc, char* argv[]) {
 				// write grid output to file
 				MMSP::output(grid, filename);
 			}
-		}
-
-		if (dim == 3) {
+		} else if (dim == 3) {
 			// construct grid object
 			GRID3D grid(argv[1]);
 

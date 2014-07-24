@@ -5,6 +5,7 @@
 std::string PROGRAM = "ising";
 std::string MESSAGE = "Ising model using MMSP";
 
+typedef MMSP::grid<1,int> GRID1D;
 typedef MMSP::grid<2,int> GRID2D;
 typedef MMSP::grid<3,int> GRID3D;
 

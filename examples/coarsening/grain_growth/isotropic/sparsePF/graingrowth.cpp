@@ -1,5 +1,5 @@
 // graingrowth.hpp
-// Algorithms for 2D and 3D isotropic sparsePF grain growth 
+// Algorithms for 2D and 3D isotropic sparsePF grain growth
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef GRAINGROWTH_UPDATE
@@ -12,6 +12,19 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
+	if (dim==1) {
+		MMSP::grid<1,sparse<double> > grid(0,0,128);
+
+		for (int i=0; i<nodes(grid); i++) {
+			vector<int> x = position(grid,i);
+			double d = 64.0-x[0];
+			if (d<32.0) set(grid(i),1)= 1.0;
+			else set(grid(i),0) = 1.0;
+		}
+
+		output(grid,filename);
+	}
+
 	if (dim==2) {
 		MMSP::grid<2,sparse<double> > grid(0,0,128,0,128);
 

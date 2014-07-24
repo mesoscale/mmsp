@@ -149,8 +149,21 @@ void defect(const MMSP::grid<3,T>& u, const MMSP::grid<3,T>& f, MMSP::grid<3,T>&
 
 void generate(int dim, const char* filename)
 {
+	if (dim==1) {
+		MMSP::grid<1,double> grid(1,0,128);
+		int x0 = MMSP::x0(grid);
+		int x1 = MMSP::x1(grid);
+
+		for (int x=x0; x<x1; x++)
+			double X = double(x)/128.0;
+			grid[x] = exp(X);
+		}
+
+		MMSP::output(grid,filename);
+	}
+
 	if (dim==2) {
-		MMSP::grid<2,double> grid(1,0,129,0,129);
+		MMSP::grid<2,double> grid(1,0,128,0,128);
 		int x0 = MMSP::x0(grid);
 		int x1 = MMSP::x1(grid);
 		int y0 = MMSP::y0(grid);
@@ -158,8 +171,8 @@ void generate(int dim, const char* filename)
 
 		for (int x=x0; x<x1; x++)
 			for (int y=y0; y<y1; y++) {
-				double X = double(x)/129.0;
-				double Y = double(y)/129.0;
+				double X = double(x)/128.0;
+				double Y = double(y)/128.0;
 				grid[x][y] = exp(X*Y);
 			}
 
@@ -167,7 +180,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		MMSP::grid<3,double> grid(1,0,65,0,65,0,65);
+		MMSP::grid<3,double> grid(1,0,64,0,64,0,64);
 		int x0 = MMSP::x0(grid);
 		int x1 = MMSP::x1(grid);
 		int y0 = MMSP::y0(grid);
@@ -178,9 +191,9 @@ void generate(int dim, const char* filename)
 		for (int x=x0; x<x1; x++)
 			for (int y=y0; y<y1; y++)
 				for (int z=z0; z<z1; z++) {
-					double X = double(x)/129.0;
-					double Y = double(y)/129.0;
-					double Z = double(z)/129.0;
+					double X = double(x)/128.0;
+					double Y = double(y)/128.0;
+					double Z = double(z)/128.0;
 					grid[x][y][z] = exp(X*Y*Z);
 				}
 
