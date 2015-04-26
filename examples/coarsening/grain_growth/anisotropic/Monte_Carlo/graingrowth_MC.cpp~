@@ -97,7 +97,7 @@ unsigned long generate(MMSP::grid<dim,int >*& grid, int seeds, int nthreads)
 /*------------------Initial tmc----------------------*/
   double tmc_initial = pow(L_initial/K1/lambda,1.0/n1);
   vector<int> coords (dim,0);
-  double temp[2] = {673.0, 673.0}; // define temperatures at two ends of x direction 
+  double temp[2] = {573.0, 673.0}; // define temperatures at two ends of x direction 
   if(dim==2){
     for(int codx=x0(*grid, 0); codx <= x1(*grid, 0); codx++) 
       for(int cody=x0(*grid, 1); cody <= x1(*grid, 1); cody++){
@@ -408,7 +408,7 @@ template <int dim> void UpdateLocalTmc(MMSP::grid<dim, int>& grid, double t_inc)
 
 template <int dim> void UpdateLocalTmp(MMSP::grid<dim, int>& grid){
    vector<int> coords (dim,0);
-   double temp[2] = {673.0, 673.0}; // define temperatures at two ends of x direction 
+   double temp[2] = {573.0, 673.0}; // define temperatures at two ends of x direction 
    if(dim==2){
        for(int codx=x0(grid, 0); codx <= x1(grid, 0); codx++) 
          for(int cody=x0(grid, 1); cody <= x1(grid, 1); cody++){
