@@ -23,7 +23,7 @@
 -----------------Define Constants for Monte Carlo--------------------
 -------------------------------------------------------------------*/
 // From Monte Carlo Simulation: L = lambda*K1*(t_mc)^(n1)
-double lambda = 1e-3/1000;  // lambda = length/lattice_size
+double lambda = 1e-3/256;  // lambda = length/lattice_size
 double K1 = 0.94514608;  
 double n1 = 0.48921977;  
 
@@ -55,7 +55,7 @@ unsigned long generate(MMSP::grid<dim,int >*& grid, int seeds, int nthreads)
 
 	unsigned long timer=0;
 	if (dim == 2) {
-		const int edge = 1000;
+		const int edge = 256;
 		int number_of_fields(seeds);
 		if (number_of_fields==0) number_of_fields = static_cast<int>(float(edge*edge)/(M_PI*1*1));// Average grain is a disk of radius 1 voxels
 		#ifdef MPI_VERSIONacc
@@ -104,7 +104,7 @@ unsigned long generate(MMSP::grid<dim,int >*& grid, int seeds, int nthreads)
         coords[0] = codx;
         coords[1] = cody;
         (*grid).AccessToTmc(coords) = tmc_initial;
-        (*grid).AccessToTmp(coords) = temp[1]+(temp[0]-temp[1])/1000*codx; //set the initial temp, 1000 is the lattice size
+        (*grid).AccessToTmp(coords) = temp[1]+(temp[0]-temp[1])/256*codx; //set the initial temp, 256 is the lattice size
       }
   }
   else if(dim==3){
@@ -414,7 +414,7 @@ template <int dim> void UpdateLocalTmp(MMSP::grid<dim, int>& grid){
          for(int cody=x0(grid, 1); cody <= x1(grid, 1); cody++){
            coords[0] = codx;
            coords[1] = cody;
-           grid.AccessToTmp(coords) = temp[1]+(temp[0]-temp[1])/1000*codx; // 1000 is the lattice size
+           grid.AccessToTmp(coords) = temp[1]+(temp[0]-temp[1])/256*codx; // 256 is the lattice size
          }
    }
    else if(dim==3){
