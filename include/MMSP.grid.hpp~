@@ -333,7 +333,7 @@ public:
 				}
 
 				// compute the product of "dim" factors
-				unsigned int product = 1;
+				int product = 1;
 				for (int j=0; j<dim; j++)
 					product *= factors[combo[j]];
 
