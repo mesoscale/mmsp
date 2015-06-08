@@ -9,7 +9,7 @@
 #include <cassert>
 #include"MMSP.utility.hpp"
 
-typedef unsigned short id_type;
+typedef unsigned int id_type;
 
 namespace MMSP {
 
@@ -84,8 +84,8 @@ public:
 		return static_cast<T>(0);
 	}
 
-	int grain_id() const {
-		int max_index = 0;
+	unsigned int grain_id() const {
+		unsigned int max_index = 0;
 		T max_value = -1.0;
 
 		for (int i = 0; i < size; i++) {

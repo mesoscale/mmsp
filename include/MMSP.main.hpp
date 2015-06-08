@@ -18,6 +18,7 @@
 //
 //     std::string PROGRAM = "...";
 //     std::string MESSAGE = "...";
+//     typedef ... GRID1D;
 //     typedef ... GRID2D;
 //     typedef ... GRID3D;
 //
