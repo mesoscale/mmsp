@@ -789,7 +789,7 @@ public:
 		int blocks;
 		file.read(reinterpret_cast<char*>(&blocks), sizeof(blocks));
 
-		#ifdef DEBUG
+		#ifdef GRIDDEBUG
 		int actual_read=0;
 		unsigned long data_read=0;
 		#endif
@@ -827,7 +827,7 @@ public:
 			}
 
 			if (overlap) {
-				#ifdef DEBUG
+				#ifdef GRIDDEBUG
 				++actual_read;
 				data_read+=size_on_disk;
 				#endif
@@ -1016,7 +1016,7 @@ public:
 				assert(datasizes[n] < static_cast<unsigned long>(std::numeric_limits<int>::max()));
 				offsets[n]=offsets[n-1]+datasizes[n-1];
 			}
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			assert(datasizes[rank]==size);
 			if (rank==0) std::cout<<"  Synchronized data offsets on "<<np<<" ranks. Total size: "<<offsets[np-1]+datasizes[np-1]<<" B."<<std::endl;
 			#endif
@@ -1026,7 +1026,7 @@ public:
 			MPI::COMM_WORLD.Barrier();
 			MPI_File_iwrite_at(output,offsets[rank],buffer,datasizes[rank],MPI_CHAR,&request);
 			MPI_Wait(&request, &status);
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			int error, write_errors=0;
 			MPI_Get_count(&status, MPI_INT, &error);
 			error++;
@@ -1044,7 +1044,7 @@ public:
 			MPI_Offset actual_size;
 			MPI_File_get_size(output,&actual_size);
 			if (rank==0) {
-				#ifdef DEBUG
+				#ifdef GRIDDEBUG
 				std::cout<<fname<<" should be "<<offsets[np-1]+datasizes[np-1]<<" B;";
 				std::cout<<" wrote "<<actual_size<<" B to disk."<<std::endl;
 				#endif
@@ -1099,7 +1099,7 @@ public:
 				header_offset+=sizeof(rank);
 			}
 			MPI::COMM_WORLD.Bcast(&header_offset, 1, MPI_UNSIGNED_LONG, 0); // broadcast header size from rank 0
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			if (rank==0) std::cout<<"Prepared file header."<<std::endl;
 			#endif
 			MPI::COMM_WORLD.Barrier();
@@ -1107,7 +1107,7 @@ public:
 			// Compute file offsets based on buffer sizes
 			datasizes = new unsigned long[np];
 			MPI::COMM_WORLD.Allgather(&size, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			if (rank==0) std::cout<<"Synchronized data sizes."<<std::endl;
 			#endif
 
@@ -1123,7 +1123,7 @@ public:
 				offsets[n]=offsets[n-1]+datasizes[n-1];
 			}
 			offsets[0]=0;
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			assert(datasizes[rank]==size);
 			if (rank==0) std::cout<<"  Synchronized data offsets on "<<np<<" ranks. Total size: "<<offsets[np-1]+datasizes[np-1]<<" B."<<std::endl;
 			#endif
@@ -1136,7 +1136,7 @@ public:
 			assert(writesize % blocksize==0);
 			const unsigned long excessblocks=blocks % nwriters;
 			bool isWriter=false;
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			if (rank==0) std::cout<<"  Preparing "<<nwriters<<" aggregator/writers; writesize is "<<writesize<<" B, with "<<excessblocks<<" excess blocks."<<std::endl;
 			#endif
 
@@ -1190,7 +1190,7 @@ public:
 			MPI::COMM_WORLD.Barrier();
 			MPI::COMM_WORLD.Allgather(&deficiency, 1, MPI_UNSIGNED_LONG, misalignments, 1, MPI_UNSIGNED_LONG);
 
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			if (datasizes[rank]-deficiency>ws)
 				std::fprintf(stderr, "Error on Rank %u, alignment: buffered %lu B > writesize %lu B.\n", rank, datasizes[rank]-deficiency, ws);
 			#endif
@@ -1202,7 +1202,7 @@ public:
 			if (isWriter) {
 				// This rank is a writer.
 				assert(misalignments[rank] < datasizes[rank]);
-				#ifdef DEBUG
+				#ifdef GRIDDEBUG
 				if (rank>0 && writeranks[prevwriter+1]!=rank)
 					std::fprintf(stderr, "Error on Rank %u, writer ID: %u != %u\n", rank, writeranks[prevwriter+1], rank);
 				#endif
@@ -1214,7 +1214,7 @@ public:
 					memcpy(p, headbuffer, header_offset);
 					p+=header_offset;
 				}
-				#ifdef DEBUG
+				#ifdef GRIDDEBUG
 				if (datasizes[rank]-misalignments[rank]>ws)
 					std::fprintf(stderr, "Error on Rank %u, memcpy: %lu B > %lu B\n", rank, datasizes[rank]-misalignments[rank], ws);
 				#endif
@@ -1230,20 +1230,20 @@ public:
 				for (unsigned int i=0; i<silentranks && rank+i+1<np; i++) {
 					unsigned int recv_proc = rank+i+1;
 					assert(recv_proc!=rank && recv_proc<np);
-					#ifdef DEBUG
+					#ifdef GRIDDEBUG
 					if (recv_proc<rank || recv_proc>np)
 						std::fprintf(stderr, "Error on Rank %u, receiving: recv_proc=%i\n", rank, recv_proc);
 					#endif
 					unsigned long recv_size = misalignments[recv_proc];
 					if (recv_size==0) continue;
-					#ifdef DEBUG
+					#ifdef GRIDDEBUG
 					if (p+recv_size>filebuffer+ws)
 						std::fprintf(stderr, "Error on Rank %u, receiving from %i: %lu B > %lu B\n", rank, recv_proc, p-filebuffer, ws-recv_size);
 					#endif
 					MPI_Irecv(p, recv_size, MPI_CHAR, recv_proc, recv_proc, MPI::COMM_WORLD, &recvrequests[i]);
 					p+=recv_size;
 				}
-				#ifdef DEBUG
+				#ifdef GRIDDEBUG
 				if (p-filebuffer!=int(ws))
 					std::fprintf(stderr, "Error on Rank %u, total received: %i B != %lu B\n", rank, int(p-filebuffer), ws);
 				#endif
@@ -1263,7 +1263,7 @@ public:
 			MPI::COMM_WORLD.Barrier();
 
 			// file open error check
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			if (rank==0) std::cout<<"  Opening "<<std::string(fname)<<" for output."<<std::endl;
 			#endif
 			MPI_File output;

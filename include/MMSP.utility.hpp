@@ -7,7 +7,10 @@
 #include<fstream>
 #include<cstring>
 #include<cstdlib>
+#include<iostream>
+#include<iomanip>
 #include<ciso646>
+#include<ctime>
 
 namespace MMSP {
 
@@ -309,4 +312,27 @@ template <typename T> T global(T& value, const char* operation) {
 
 } // namespace MMSP
 
+/*
+void print_progress(const int step, const int steps, const int iterations) {
+  char* timestring;
+  static unsigned long tstart;
+  struct tm* timeinfo;
+
+  if (step==0) {
+    tstart = time(NULL);
+    std::time_t rawtime;
+    std::time( &rawtime );
+    timeinfo = std::localtime( &rawtime );
+    timestring = std::asctime(timeinfo);
+    timestring[std::strlen(timestring)-1] = '\0';
+    std::cout<<"Pass "<<std::setw(3)<<std::right<<iterations<<": "<<timestring<<" ["<<std::flush;
+  } else if (step==steps-1) {
+    unsigned long deltat = time(NULL)-tstart;
+    std::cout<<"•] "<<std::setw(2)<<std::right<<deltat/3600<<"h:"
+                    <<std::setw(2)<<std::right<<(deltat%3600)/60<<"m:"
+                    <<std::setw(2)<<std::right<<deltat%60<<"s"
+                    <<" (File "<<std::setw(5)<<std::right<<iterations*steps<<")."<<std::endl;
+  } else if ((20 * step) % steps == 0) std::cout<<"• "<<std::flush;
+}
+*/
 #endif

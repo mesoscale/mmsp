@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
 
 
 	// Estimate number of grains, for color randomization
-	int est_grains = 10000;
+	unsigned int est_grains = 10000;
 	if (dim==2) est_grains=static_cast<int>(1.5*float((g1[0]-g0[0])*(g1[1]-g0[1]))/(M_PI*10.*10.)); // average grain is a disk of radius 10
 	else if (dim==3) est_grains=static_cast<int>(1.5*float((g1[0]-g0[0])*(g1[1]-g0[1])*(g1[2]-g0[2]))/(4./3*M_PI*10.*10.*10.)); // Average grain is a sphere of radius 10 voxels
 	#ifdef DEBUG
