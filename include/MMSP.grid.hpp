@@ -22,136 +22,175 @@
 #include"MMSP.vector.hpp"
 #include"MMSP.sparse.hpp"
 
-namespace MMSP {
+namespace MMSP
+{
 
 // declaration of grid class
 template <int dim, typename T> class grid;
 
 // grid utility functions
-template <int dim, typename T> int nodes(const grid<dim, T>& GRID) {
+template <int dim, typename T> int nodes(const grid<dim, T>& GRID)
+{
 	return nodes(GRID);
 }
-template <int dim, typename T> int fields(const grid<dim, T>& GRID) {
+template <int dim, typename T> int fields(const grid<dim, T>& GRID)
+{
 	return fields(GRID);
 }
-template <int dim, typename T> int ghosts(const grid<dim, T>& GRID) {
+template <int dim, typename T> int ghosts(const grid<dim, T>& GRID)
+{
 	return ghosts(GRID);
 }
-template <int dim, typename T> int g0(const grid<dim, T>& GRID, int i) {
+template <int dim, typename T> int g0(const grid<dim, T>& GRID, int i)
+{
 	return g0(GRID, i);
 }
-template <int dim, typename T> int g1(const grid<dim, T>& GRID, int i) {
+template <int dim, typename T> int g1(const grid<dim, T>& GRID, int i)
+{
 	return g1(GRID, i);
 }
-template <int dim, typename T> int b0(const grid<dim, T>& GRID, int i) {
+template <int dim, typename T> int b0(const grid<dim, T>& GRID, int i)
+{
 	return b0(GRID, i);
 }
-template <int dim, typename T> int b1(const grid<dim, T>& GRID, int i) {
+template <int dim, typename T> int b1(const grid<dim, T>& GRID, int i)
+{
 	return b1(GRID, i);
 }
-template <int dim, typename T> int& b0(grid<dim, T>& GRID, int i) {
+template <int dim, typename T> int& b0(grid<dim, T>& GRID, int i)
+{
 	return b0(GRID, i);
 }
-template <int dim, typename T> int& b1(grid<dim, T>& GRID, int i) {
+template <int dim, typename T> int& b1(grid<dim, T>& GRID, int i)
+{
 	return b1(GRID, i);
 }
 
 // grid utility functions (all directions)
-template <int dim, typename T> int x0(const grid<dim, T>& GRID, int i) {
+template <int dim, typename T> int x0(const grid<dim, T>& GRID, int i)
+{
 	return x0(GRID, i);
 }
-template <int dim, typename T> int x1(const grid<dim, T>& GRID, int i) {
+template <int dim, typename T> int x1(const grid<dim, T>& GRID, int i)
+{
 	return x1(GRID, i);
 }
-template <int dim, typename T> int xmin(const grid<dim, T>& GRID, int i) {
+template <int dim, typename T> int xmin(const grid<dim, T>& GRID, int i)
+{
 	return xmin(GRID, i);
 }
-template <int dim, typename T> int xmax(const grid<dim, T>& GRID, int i) {
+template <int dim, typename T> int xmax(const grid<dim, T>& GRID, int i)
+{
 	return xmax(GRID, i);
 }
-template <int dim, typename T> int xlength(const grid<dim, T>& GRID, int i) {
+template <int dim, typename T> int xlength(const grid<dim, T>& GRID, int i)
+{
 	return xlength(GRID, i);
 }
-template <int dim, typename T> double dx(const grid<dim, T>& GRID, int i) {
+template <int dim, typename T> double dx(const grid<dim, T>& GRID, int i)
+{
 	return dx(GRID, i);
 }
-template <int dim, typename T> double& dx(grid<dim, T>& GRID, int i) {
+template <int dim, typename T> double& dx(grid<dim, T>& GRID, int i)
+{
 	return dx(GRID, i);
 }
 
 // grid utility functions (x direction)
-template <int dim, typename T> int x0(const grid<dim, T>& GRID) {
+template <int dim, typename T> int x0(const grid<dim, T>& GRID)
+{
 	return x0(GRID);
 }
-template <int dim, typename T> int x1(const grid<dim, T>& GRID) {
+template <int dim, typename T> int x1(const grid<dim, T>& GRID)
+{
 	return x1(GRID);
 }
-template <int dim, typename T> int xmin(const grid<dim, T>& GRID) {
+template <int dim, typename T> int xmin(const grid<dim, T>& GRID)
+{
 	return xmin(GRID);
 }
-template <int dim, typename T> int xmax(const grid<dim, T>& GRID) {
+template <int dim, typename T> int xmax(const grid<dim, T>& GRID)
+{
 	return xmax(GRID);
 }
-template <int dim, typename T> int xlength(const grid<dim, T>& GRID) {
+template <int dim, typename T> int xlength(const grid<dim, T>& GRID)
+{
 	return xlength(GRID);
 }
-template <int dim, typename T> double dx(const grid<dim, T>& GRID) {
+template <int dim, typename T> double dx(const grid<dim, T>& GRID)
+{
 	return dx(GRID);
 }
-template <int dim, typename T> double& dx(grid<dim, T>& GRID) {
+template <int dim, typename T> double& dx(grid<dim, T>& GRID)
+{
 	return dx(GRID);
 }
 
 // grid utility functions (y direction)
-template <int dim, typename T> int y0(const grid<dim, T>& GRID) {
+template <int dim, typename T> int y0(const grid<dim, T>& GRID)
+{
 	return y0(GRID);
 }
-template <int dim, typename T> int y1(const grid<dim, T>& GRID) {
+template <int dim, typename T> int y1(const grid<dim, T>& GRID)
+{
 	return y1(GRID);
 }
-template <int dim, typename T> int ymin(const grid<dim, T>& GRID) {
+template <int dim, typename T> int ymin(const grid<dim, T>& GRID)
+{
 	return ymin(GRID);
 }
-template <int dim, typename T> int ymax(const grid<dim, T>& GRID) {
+template <int dim, typename T> int ymax(const grid<dim, T>& GRID)
+{
 	return ymax(GRID);
 }
-template <int dim, typename T> int ylength(const grid<dim, T>& GRID) {
+template <int dim, typename T> int ylength(const grid<dim, T>& GRID)
+{
 	return ylength(GRID);
 }
-template <int dim, typename T> double dy(const grid<dim, T>& GRID) {
+template <int dim, typename T> double dy(const grid<dim, T>& GRID)
+{
 	return dy(GRID);
 }
-template <int dim, typename T> double& dy(grid<dim, T>& GRID) {
+template <int dim, typename T> double& dy(grid<dim, T>& GRID)
+{
 	return dy(GRID);
 }
 
 // grid utility functions (z direction)
-template <int dim, typename T> int z0(const grid<dim, T>& GRID) {
+template <int dim, typename T> int z0(const grid<dim, T>& GRID)
+{
 	return z0(GRID);
 }
-template <int dim, typename T> int z1(const grid<dim, T>& GRID) {
+template <int dim, typename T> int z1(const grid<dim, T>& GRID)
+{
 	return z1(GRID);
 }
-template <int dim, typename T> int zmin(const grid<dim, T>& GRID) {
+template <int dim, typename T> int zmin(const grid<dim, T>& GRID)
+{
 	return zmin(GRID);
 }
-template <int dim, typename T> int zmax(const grid<dim, T>& GRID) {
+template <int dim, typename T> int zmax(const grid<dim, T>& GRID)
+{
 	return zmax(GRID);
 }
-template <int dim, typename T> int zlength(const grid<dim, T>& GRID) {
+template <int dim, typename T> int zlength(const grid<dim, T>& GRID)
+{
 	return zlength(GRID);
 }
-template <int dim, typename T> double dz(const grid<dim, T>& GRID) {
+template <int dim, typename T> double dz(const grid<dim, T>& GRID)
+{
 	return dz(GRID);
 }
-template <int dim, typename T> double& dz(grid<dim, T>& GRID) {
+template <int dim, typename T> double& dz(grid<dim, T>& GRID)
+{
 	return dz(GRID);
 }
 
 
 // instantiation of grid class
 template <int dim, typename T>
-class grid {
+class grid
+{
 public:
 	// constructors
 	grid(int FIELDS, int min[dim], int max[dim], int GHOSTS = 1, bool SINGLE = false) {
@@ -352,7 +391,8 @@ public:
 			}
 
 			// clean up
-			delete [] factors; factors=NULL;
+			delete [] factors;
+			factors=NULL;
 
 			// compute slice sizes
 			for (int i=0; i<dim; i++) {
@@ -442,16 +482,6 @@ public:
 		for (int i=0; i<cells; i++)
 			resize(data[i], fields);
 
-		// resize temperature structures
-		tmp = new double[cells];
-		for (int i=0; i<cells; i++)
-			resize(tmp[i], fields);
-
-		// resize tmc structures
-		tmc = new double[cells];
-		for (int i=0; i<cells; i++)
-			resize(tmc[i], fields);
-
 		#ifdef MPI_VERSION
 		MPI::COMM_WORLD.Barrier();
 		#endif
@@ -459,11 +489,8 @@ public:
 
 	// destructor
 	~grid() {
-		delete [] data;	data=NULL;
-		delete [] tmp;
-		tmp=NULL;
-		delete [] tmc;
-		tmc=NULL;
+		delete [] data;
+		data=NULL;
 	}
 
 
@@ -502,24 +529,6 @@ public:
 			p += (x[i] - s0[i]) * sx[i];
 		}
 		return *p;
-	}
-
-	double& AccessToTmp(MMSP::vector<int> x) const {
-		double* ptemp = tmp;
-		for (int i=0; i<dim; i++) {
-			check_boundary(x[i], x0[i], x1[i], b0[i], b1[i]);
-			ptemp += (x[i] - s0[i]) * sx[i];
-		}
-		return *ptemp;
-	}
-
-	double& AccessToTmc(MMSP::vector<int> x) const {
-		double* pmc = tmc;
-		for (int i=0; i<dim; i++) {
-			check_boundary(x[i], x0[i], x1[i], b0[i], b1[i]);
-			pmc += (x[i] - s0[i]) * sx[i];
-		}
-		return *pmc;
 	}
 
 	T& operator()(int i) const {
@@ -594,8 +603,10 @@ public:
 				MPI::Request::Waitall(2, requests);
 				MPI::COMM_WORLD.Barrier();
 				this->from_buffer(recv_buffer, recv_min, recv_max); // populate ghost cell data from buffer
-				delete [] send_buffer; send_buffer=NULL;
-				delete [] recv_buffer; recv_buffer=NULL;
+				delete [] send_buffer;
+				send_buffer=NULL;
+				delete [] recv_buffer;
+				recv_buffer=NULL;
 			}
 
 			if (1) {
@@ -638,8 +649,10 @@ public:
 
 				this->from_buffer(recv_buffer, recv_min, recv_max); // populate ghost cell data from buffer
 
-				delete [] send_buffer; send_buffer=NULL;
-				delete [] recv_buffer; recv_buffer=NULL;
+				delete [] send_buffer;
+				send_buffer=NULL;
+				delete [] recv_buffer;
+				recv_buffer=NULL;
 			}
 		}
 		MPI::COMM_WORLD.Barrier();
@@ -896,10 +909,8 @@ public:
 				MPI::COMM_WORLD.Barrier();
 				char* send_buffer = new char[send_size];
 				char* recv_buffer = new char[recv_size];
-//std::cout<<"send_size is (buffer_size) "<<send_size<<std::endl;
 				send_size = this->to_buffer_save(send_buffer, send_min, send_max);
-//std::cout<<"send_size is (to_buffer) "<<send_size<<std::endl;
-//getchar();
+
 				// Large data transfer requires non-blocking communication
 				requests[0] = MPI::COMM_WORLD.Isend(send_buffer, send_size, MPI_CHAR, send_proc, 200); // send ghosts
 				requests[1] = MPI::COMM_WORLD.Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 200); // receive ghosts
@@ -1222,7 +1233,6 @@ public:
 		}
 		return size;
 	}
-
 	// buffer I/O
 	unsigned long buffer_size() const {
 		return buffer_size(x0, x1);
@@ -1322,7 +1332,8 @@ public:
 		#endif
 
 		// setup grid parameters
-		delete [] data; data=NULL;
+		delete [] data;
+		data=NULL;
 		setup(SINGLE);
 
 		// read cell spacing
@@ -1352,7 +1363,7 @@ public:
 		int blocks;
 		file.read(reinterpret_cast<char*>(&blocks), sizeof(blocks));
 
-		#ifdef DEBUG
+		#ifdef GRIDDEBUG
 		int actual_read=0;
 		unsigned long data_read=0;
 		#endif
@@ -1390,7 +1401,7 @@ public:
 			}
 
 			if (overlap) {
-				#ifdef DEBUG
+				#ifdef GRIDDEBUG
 				++actual_read;
 				data_read+=size_on_disk;
 				#endif
@@ -1405,7 +1416,7 @@ public:
 					// Uncompress data
 					char* raw = new char[size_in_mem];
 					int status = uncompress(reinterpret_cast<Bytef*>(raw), &size_in_mem, reinterpret_cast<Bytef*>(buffer), size_on_disk);
-					switch( status ) {
+					switch ( status ) {
 					case Z_OK:
 						break;
 					case Z_MEM_ERROR:
@@ -1418,17 +1429,20 @@ public:
 						break;
 					}
 					GRID.from_buffer(raw);
-					delete [] raw; raw=NULL;
+					delete [] raw;
+					raw=NULL;
 					#endif
 				} else GRID.from_buffer(buffer);
-				delete [] buffer; buffer=NULL;
+				delete [] buffer;
+				buffer=NULL;
 
 				// copy block data that overlaps
 				unsigned long size = GRID.buffer_size(min, max);
 				buffer = new char[size];
 				GRID.to_buffer(buffer, min, max);
 				this->from_buffer(buffer, min, max);
-				delete [] buffer; buffer=NULL;
+				delete [] buffer;
+				buffer=NULL;
 
 				// set boundary conditions from file
 				for (int j=0; j<dim; j++) {
@@ -1485,7 +1499,8 @@ public:
 		unsigned long size=this->write_buffer(buffer);
 		// output grid data
 		output.write(buffer, size);
-		delete [] buffer;	buffer=NULL;
+		delete [] buffer;
+		buffer=NULL;
 
 
 		#else
@@ -1494,7 +1509,7 @@ public:
 		// MPI C-style functions require char*, not const char*, filename
 		char fname[FILENAME_MAX] = {}; // initializes array with null chars
 		// C-style strings are null-terminated ('\0') by definition
-		for (unsigned int i=0; filename[i]>char(31) && i<FILENAME_MAX; i++)
+		for (unsigned int i=0; i<FILENAME_MAX && filename[i]!='\0'; i++)
 			fname[i]=filename[i];
 		MPI::COMM_WORLD.Barrier();
 		unsigned int rank = MPI::COMM_WORLD.Get_rank();
@@ -1506,15 +1521,18 @@ public:
 		struct statvfs buf;
 		const unsigned long blocksize = (statvfs(".", &buf) == -1)?4096:buf.f_bsize;
 
-		if (blocksize<=4096) {
+		if (blocksize<5144) {
 			// Standard MPI-IO: every rank writes to disk
+			#ifdef BGQ
+			if (rank==0) std::cout<<"Bug: using normal IO, instead of BGQ IO!"<<std::endl;
+			#endif
 			MPI_File output;
-			MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_CREATE, MPI::INFO_NULL, &output);
+			MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_EXCL|MPI::MODE_CREATE, MPI::INFO_NULL, &output);
 			if (!output) {
 				std::cerr << "File output error: could not open " << fname << "." << std::endl;
 				exit(-1);
 			}
-			MPI_File_set_size(output, 0);
+			//MPI_File_set_size(output, 0);
 
 			// Generate MMSP header from rank 0
 			unsigned long header_offset=0;
@@ -1536,13 +1554,10 @@ public:
 				for (unsigned int i=0; i<header_offset; i++)
 					header[i] = outstr.str()[i];
 				MPI_File_sync(output);
-				//request = output.Iwrite_at(0,outstr.str().c_str(), header_offset, MPI_CHAR);
-				//MPI_File_iwrite_at(output,0,outstr.str().c_str(), header_offset, MPI_CHAR, &request);
 				MPI_File_iwrite_at(output,0,header, header_offset, MPI_CHAR, &request);
 				MPI_Wait(&request, &status);
 				MPI_File_sync(output);
 				// Write number of blocks (processors) to file
-				//request = output.Iwrite_at(header_offset,reinterpret_cast<const char*>(&np), sizeof(np), MPI_CHAR);
 				MPI_File_iwrite_at(output,header_offset,reinterpret_cast<char*>(&np), sizeof(np), MPI_CHAR, &request);
 				MPI_Wait(&request, &status);
 				MPI_File_sync(output);
@@ -1559,7 +1574,7 @@ public:
 			assert(buffer!=NULL);
 
 			// Compute file offsets based on buffer sizes
-			unsigned long *datasizes = new unsigned long[np];
+			unsigned long* datasizes = new unsigned long[np];
 			MPI::COMM_WORLD.Barrier();
 			MPI::COMM_WORLD.Allgather(&size, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
 
@@ -1569,13 +1584,13 @@ public:
 			MPI::COMM_WORLD.Barrier();
 			MPI_File_preallocate(output, filesize);
 
-			unsigned long *offsets = new unsigned long[np];
+			unsigned long* offsets = new unsigned long[np];
 			offsets[0]=header_offset;
 			for (unsigned int n=1; n<np; ++n) {
 				assert(datasizes[n] < static_cast<unsigned long>(std::numeric_limits<int>::max()));
 				offsets[n]=offsets[n-1]+datasizes[n-1];
 			}
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			assert(datasizes[rank]==size);
 			if (rank==0) std::cout<<"  Synchronized data offsets on "<<np<<" ranks. Total size: "<<offsets[np-1]+datasizes[np-1]<<" B."<<std::endl;
 			#endif
@@ -1585,7 +1600,7 @@ public:
 			MPI::COMM_WORLD.Barrier();
 			MPI_File_iwrite_at(output,offsets[rank],buffer,datasizes[rank],MPI_CHAR,&request);
 			MPI_Wait(&request, &status);
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			int error, write_errors=0;
 			MPI_Get_count(&status, MPI_INT, &error);
 			error++;
@@ -1594,7 +1609,8 @@ public:
 			if (rank==0) std::cout<<"  Write finished on "<<write_errors<<'/'<<np<<" ranks."<<std::endl;
 			assert(write_errors==np);
 			#endif
-			delete [] buffer;	buffer=NULL;
+			delete [] buffer;
+			buffer=NULL;
 
 			MPI::COMM_WORLD.Barrier();
 			MPI_File_sync(output);
@@ -1602,7 +1618,7 @@ public:
 			MPI_Offset actual_size;
 			MPI_File_get_size(output,&actual_size);
 			if (rank==0) {
-				#ifdef DEBUG
+				#ifdef GRIDDEBUG
 				std::cout<<fname<<" should be "<<offsets[np-1]+datasizes[np-1]<<" B;";
 				std::cout<<" wrote "<<actual_size<<" B to disk."<<std::endl;
 				#endif
@@ -1610,8 +1626,10 @@ public:
 			}
 			MPI::COMM_WORLD.Barrier();
 			MPI_File_close(&output);
-			delete [] offsets; offsets=NULL;
-			delete [] datasizes; datasizes=NULL;
+			delete [] offsets;
+			offsets=NULL;
+			delete [] datasizes;
+			datasizes=NULL;
 
 		} else {
 
@@ -1655,7 +1673,7 @@ public:
 				header_offset+=sizeof(rank);
 			}
 			MPI::COMM_WORLD.Bcast(&header_offset, 1, MPI_UNSIGNED_LONG, 0); // broadcast header size from rank 0
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			if (rank==0) std::cout<<"Prepared file header."<<std::endl;
 			#endif
 			MPI::COMM_WORLD.Barrier();
@@ -1663,7 +1681,7 @@ public:
 			// Compute file offsets based on buffer sizes
 			datasizes = new unsigned long[np];
 			MPI::COMM_WORLD.Allgather(&size, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			if (rank==0) std::cout<<"Synchronized data sizes."<<std::endl;
 			#endif
 
@@ -1679,7 +1697,7 @@ public:
 				offsets[n]=offsets[n-1]+datasizes[n-1];
 			}
 			offsets[0]=0;
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			assert(datasizes[rank]==size);
 			if (rank==0) std::cout<<"  Synchronized data offsets on "<<np<<" ranks. Total size: "<<offsets[np-1]+datasizes[np-1]<<" B."<<std::endl;
 			#endif
@@ -1692,7 +1710,7 @@ public:
 			assert(writesize % blocksize==0);
 			const unsigned long excessblocks=blocks % nwriters;
 			bool isWriter=false;
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			if (rank==0) std::cout<<"  Preparing "<<nwriters<<" aggregator/writers; writesize is "<<writesize<<" B, with "<<excessblocks<<" excess blocks."<<std::endl;
 			#endif
 
@@ -1746,7 +1764,7 @@ public:
 			MPI::COMM_WORLD.Barrier();
 			MPI::COMM_WORLD.Allgather(&deficiency, 1, MPI_UNSIGNED_LONG, misalignments, 1, MPI_UNSIGNED_LONG);
 
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			if (datasizes[rank]-deficiency>ws)
 				std::fprintf(stderr, "Error on Rank %u, alignment: buffered %lu B > writesize %lu B.\n", rank, datasizes[rank]-deficiency, ws);
 			#endif
@@ -1758,7 +1776,7 @@ public:
 			if (isWriter) {
 				// This rank is a writer.
 				assert(misalignments[rank] < datasizes[rank]);
-				#ifdef DEBUG
+				#ifdef GRIDDEBUG
 				if (rank>0 && writeranks[prevwriter+1]!=rank)
 					std::fprintf(stderr, "Error on Rank %u, writer ID: %u != %u\n", rank, writeranks[prevwriter+1], rank);
 				#endif
@@ -1770,7 +1788,7 @@ public:
 					memcpy(p, headbuffer, header_offset);
 					p+=header_offset;
 				}
-				#ifdef DEBUG
+				#ifdef GRIDDEBUG
 				if (datasizes[rank]-misalignments[rank]>ws)
 					std::fprintf(stderr, "Error on Rank %u, memcpy: %lu B > %lu B\n", rank, datasizes[rank]-misalignments[rank], ws);
 				#endif
@@ -1786,20 +1804,20 @@ public:
 				for (unsigned int i=0; i<silentranks && rank+i+1<np; i++) {
 					unsigned int recv_proc = rank+i+1;
 					assert(recv_proc!=rank && recv_proc<np);
-					#ifdef DEBUG
+					#ifdef GRIDDEBUG
 					if (recv_proc<rank || recv_proc>np)
 						std::fprintf(stderr, "Error on Rank %u, receiving: recv_proc=%i\n", rank, recv_proc);
 					#endif
 					unsigned long recv_size = misalignments[recv_proc];
 					if (recv_size==0) continue;
-					#ifdef DEBUG
+					#ifdef GRIDDEBUG
 					if (p+recv_size>filebuffer+ws)
 						std::fprintf(stderr, "Error on Rank %u, receiving from %i: %lu B > %lu B\n", rank, recv_proc, p-filebuffer, ws-recv_size);
 					#endif
 					MPI_Irecv(p, recv_size, MPI_CHAR, recv_proc, recv_proc, MPI::COMM_WORLD, &recvrequests[i]);
 					p+=recv_size;
 				}
-				#ifdef DEBUG
+				#ifdef GRIDDEBUG
 				if (p-filebuffer!=int(ws))
 					std::fprintf(stderr, "Error on Rank %u, total received: %i B != %lu B\n", rank, int(p-filebuffer), ws);
 				#endif
@@ -1819,18 +1837,11 @@ public:
 			MPI::COMM_WORLD.Barrier();
 
 			// file open error check
-			#ifdef DEBUG
+			#ifdef GRIDDEBUG
 			if (rank==0) std::cout<<"  Opening "<<std::string(fname)<<" for output."<<std::endl;
 			#endif
-			MPI_Info info = MPI::INFO_NULL;
-			#ifdef BGQ
-			MPI_Info_create(&info);
-			MPI_Info_set(info, "IBM_largeblock_io", "true");
-			#else
-			info = MPI::INFO_NULL;
-			#endif
 			MPI_File output;
-			mpi_err = MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_CREATE, info, &output);
+			mpi_err = MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_EXCL|MPI::MODE_CREATE, MPI::INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
 				char error_string[256];
 				int length_of_error_string=256;
@@ -1842,7 +1853,7 @@ public:
 				if (rank==0) std::cerr << "                   If it already exists, delete it and try again." << std::endl;
 				exit(-1);
 			}
-			mpi_err = MPI_File_set_size(output, 0);
+			//mpi_err = MPI_File_set_size(output, 0);
 			if (mpi_err != MPI_SUCCESS) {
 				char error_string[256];
 				int length_of_error_string=256;
@@ -1871,7 +1882,6 @@ public:
 
 			MPI::COMM_WORLD.Barrier();
 			MPI_File_close(&output);
-			MPI_Info_free(&info);
 			if (recvrequests!=NULL) {
 				delete [] recvrequests;
 				recvrequests=NULL;
@@ -1898,13 +1908,13 @@ public:
 		#endif
 	}
 
-	unsigned long write_buffer(char* &buf) const {
+	unsigned long write_buffer(char*& buf) const {
 		// Find out how big the dataset is
 		unsigned long size_in_mem = this->buffer_size();
 		unsigned long size_on_disk = 1.125 * size_in_mem + 12;
 		#ifdef RAW
-    size_on_disk=size_in_mem;
-    #endif
+		size_on_disk=size_in_mem;
+		#endif
 
 		// Figure out the block extents
 		unsigned long header_size = 0;
@@ -1916,7 +1926,7 @@ public:
 		}
 		// Make a buffer to hold all the data
 		unsigned long size = header_size + static_cast<unsigned long>(sizeof(size_in_mem))
-		                  + size_on_disk + static_cast<unsigned long>(sizeof(size_on_disk));
+		                     + size_on_disk + static_cast<unsigned long>(sizeof(size_on_disk));
 		buf = new char[size];
 		char* dst = buf;
 		unsigned long increment=0; // number of bytes to copy
@@ -1956,29 +1966,30 @@ public:
 
 		// Read the data block from grid private data
 		#ifdef RAW
-    size_on_disk=this->to_buffer(dst);
-    #else
+		size_on_disk=this->to_buffer(dst);
+		#else
 		char* raw = new char[size_in_mem];
 		size_in_mem = this->to_buffer(raw);
 
 		// Compress the data block to the buffer
 		int level=9; // highest compression level (slowest speed)
 		int status = compress2(reinterpret_cast<Bytef*>(dst), &size_on_disk, reinterpret_cast<Bytef*>(raw), size_in_mem, level);
-		switch(status) {
-			case Z_OK:
-				break;
-			case Z_MEM_ERROR:
-				std::cerr << "Compress: out of memory." << std::endl;
-				exit(1);
-				break;
-			case Z_BUF_ERROR:
-				std::cerr << "Compress: output buffer wasn't large enough." << std::endl;
-				exit(1);
-				break;
+		switch (status) {
+		case Z_OK:
+			break;
+		case Z_MEM_ERROR:
+			std::cerr << "Compress: out of memory." << std::endl;
+			exit(1);
+			break;
+		case Z_BUF_ERROR:
+			std::cerr << "Compress: output buffer wasn't large enough." << std::endl;
+			exit(1);
+			break;
 		}
 		assert(size_on_disk<=size_in_mem); // otherwise, what's the point?
 		dst=NULL;
-		delete [] raw; raw=NULL;
+		delete [] raw;
+		raw=NULL;
 
 		// Re-write the size of the (compressed) data block
 		increment = sizeof(size_on_disk);
@@ -2054,12 +2065,6 @@ public:
 	}
 	friend int sp(const grid& GRID, int i) {
 		return GRID.sp[i];
-	}
-	friend int s0(const grid& GRID, int i) {
-		return GRID.s0[i];
-	}
-	friend int s1(const grid& GRID, int i) {
-		return GRID.s1[i];
 	}
 
 	// grid utility functions (x direction)
@@ -2215,7 +2220,8 @@ public:
 	void copy(const grid& GRID) {
 		// initialize data
 		if (data != NULL) {
-			delete [] data;	data=NULL;
+			delete [] data;
+			data=NULL;
 		}
 
 		// copy number of nodes
@@ -2261,15 +2267,14 @@ public:
 			char* buffer = new char[size];
 			MMSP::to_buffer(GRID.data[i], buffer);
 			MMSP::from_buffer(data[i], buffer);
-			delete [] buffer;	buffer=NULL;
+			delete [] buffer;
+			buffer=NULL;
 		}
 	}
 
 
 protected:
 	T* data;        // local grid data
-  double* tmp;
-  double* tmc;
 
 	int nodes;			// number of nodes (excluding ghosts)
 	int cells;			// number of nodes (including ghosts)
@@ -2302,7 +2307,8 @@ protected:
 
 
 // math functions
-template <int dim, typename T> T laplacian(const grid<dim, T>& GRID, const vector<int>& x) {
+template <int dim, typename T> T laplacian(const grid<dim, T>& GRID, const vector<int>& x)
+{
 	T laplacian = 0.0;
 	MMSP::vector<int> s = x;
 	const T& y = GRID(x);
@@ -2320,7 +2326,8 @@ template <int dim, typename T> T laplacian(const grid<dim, T>& GRID, const vecto
 	return laplacian;
 }
 
-template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& GRID, const vector<int>& x) {
+template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& GRID, const vector<int>& x)
+{
 	int N = fields(GRID);
 	vector<T> laplacian(N, 0.0);
 	vector<int> s = x;
@@ -2341,7 +2348,8 @@ template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& 
 	return laplacian;
 }
 
-template <int dim, typename T> sparse<T> laplacian(const grid<dim, sparse<T> >& GRID, const vector<int>& x) {
+template <int dim, typename T> sparse<T> laplacian(const grid<dim, sparse<T> >& GRID, const vector<int>& x)
+{
 	sparse<T> laplacian;
 	vector<int> s = x;
 
@@ -2360,22 +2368,26 @@ template <int dim, typename T> sparse<T> laplacian(const grid<dim, sparse<T> >& 
 	return laplacian;
 }
 
-template <int dim, typename T> T laplacian(const grid<dim, T>& GRID, int i) {
+template <int dim, typename T> T laplacian(const grid<dim, T>& GRID, int i)
+{
 	vector<int> x = GRID.position(i);
 	return laplacian(GRID, x);
 }
 
-template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& GRID, int i) {
+template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& GRID, int i)
+{
 	vector<int> x = GRID.position(i);
 	return laplacian(GRID, x);
 }
 
-template <int dim, typename T> sparse<T> laplacian(const grid<dim, sparse<T> >& GRID, int i) {
+template <int dim, typename T> sparse<T> laplacian(const grid<dim, sparse<T> >& GRID, int i)
+{
 	vector<int> x = GRID.position(i);
 	return laplacian(GRID, x);
 }
 
-template <int dim, typename T> vector<T> gradient(const grid<dim, T>& GRID, const vector<int>& x) {
+template <int dim, typename T> vector<T> gradient(const grid<dim, T>& GRID, const vector<int>& x)
+{
 	vector<T> gradient(dim);
 	vector<int> s = x;
 
@@ -2392,11 +2404,13 @@ template <int dim, typename T> vector<T> gradient(const grid<dim, T>& GRID, cons
 	return gradient;
 }
 
-template <int dim, typename T> vector<T> grad(const grid<dim, T>& GRID, const vector<int>& x) {
+template <int dim, typename T> vector<T> grad(const grid<dim, T>& GRID, const vector<int>& x)
+{
 	return gradient(GRID, x);
 }
 
-template <int dim, typename T> T divergence(const grid<dim, T>& GRID, const vector<int>& x) {
+template <int dim, typename T> T divergence(const grid<dim, T>& GRID, const vector<int>& x)
+{
 	T divergence = 0.0;
 	vector<int> s = x;
 
@@ -2413,7 +2427,8 @@ template <int dim, typename T> T divergence(const grid<dim, T>& GRID, const vect
 	return divergence;
 }
 
-template <int dim, typename T> vector<T> divergence(const grid<dim, vector<T> >& GRID, const vector<int>& x) {
+template <int dim, typename T> vector<T> divergence(const grid<dim, vector<T> >& GRID, const vector<int>& x)
+{
 	vector<T> divergence(dim, 0.0);
 	vector<int> s = x;
 
@@ -2433,72 +2448,86 @@ template <int dim, typename T> vector<T> divergence(const grid<dim, vector<T> >&
 	return divergence;
 }
 
-template <int dim, typename T> T div(const grid<dim, T>& GRID, const vector<int>& x) {
+template <int dim, typename T> T div(const grid<dim, T>& GRID, const vector<int>& x)
+{
 	return divergence(GRID, x);
 }
 
-template <int dim, typename T> vector<T> div(const grid<dim, vector<T> >& GRID, const vector<int>& x) {
+template <int dim, typename T> vector<T> div(const grid<dim, vector<T> >& GRID, const vector<int>& x)
+{
 	return divergence(GRID, x);
 }
 
 // position utility function
-template <int dim, typename T> MMSP::vector<int> position(const grid<dim, T>& GRID, int index) {
+template <int dim, typename T> MMSP::vector<int> position(const grid<dim, T>& GRID, int index)
+{
 	return GRID.position(index);
 }
 
 // parallelization
-template <int dim, typename T> void ghostswap(grid<dim, T>& GRID) {
+template <int dim, typename T> void ghostswap(grid<dim, T>& GRID)
+{
 	GRID.ghostswap();
 }
 
 template <int dim, typename T> void ghostswap(grid<dim, T>& GRID, const int sublattice) {
 	GRID.ghostswap(sublattice);
 }
-
 // buffer I/O functions
-template <int dim, typename T> unsigned long buffer_size(const grid<dim, T>& GRID) {
+template <int dim, typename T> unsigned long buffer_size(const grid<dim, T>& GRID)
+{
 	return GRID.buffer_size();
 }
-template <int dim, typename T> unsigned long to_buffer(const grid<dim, T>& GRID, char* buffer) {
+template <int dim, typename T> unsigned long to_buffer(const grid<dim, T>& GRID, char* buffer)
+{
 	return GRID.to_buffer(buffer);
 }
-template <int dim, typename T> unsigned long from_buffer(grid<dim, T>& GRID, const char* buffer) {
+template <int dim, typename T> unsigned long from_buffer(grid<dim, T>& GRID, const char* buffer)
+{
 	return GRID.from_buffer(buffer);
 }
 
 // file I/O functions
-template <int dim, typename T> void read(grid<dim, T>& GRID, std::ifstream& file) {
+template <int dim, typename T> void read(grid<dim, T>& GRID, std::ifstream& file)
+{
 	GRID.read(file);
 }
-template <int dim, typename T> void write(const grid<dim, T>& GRID, std::ifstream& file) {
+template <int dim, typename T> void write(const grid<dim, T>& GRID, std::ifstream& file)
+{
 	GRID.write(file);
 }
-template <int dim, typename T> void input(grid<dim, T>& GRID, const char* filename, int GHOSTS = 1, int SINGLE = false) {
+template <int dim, typename T> void input(grid<dim, T>& GRID, const char* filename, int GHOSTS = 1, int SINGLE = false)
+{
 	GRID.input(filename, GHOSTS, SINGLE);
 }
-template <int dim, typename T> void output(const grid<dim, T>& GRID, const char* filename) {
+template <int dim, typename T> void output(const grid<dim, T>& GRID, const char* filename)
+{
 	GRID.output(filename);
 }
-template <int dim, typename T> unsigned long write_buffer(const grid<dim, T>& GRID, char* &buf) {
+template <int dim, typename T> unsigned long write_buffer(const grid<dim, T>& GRID, char*& buf)
+{
 	return GRID.write_buffer(buf);
 }
 
 // utility functions
-template <int dim, typename T> int length(const grid<dim, T>& GRID) {
+template <int dim, typename T> int length(const grid<dim, T>& GRID)
+{
 	return nodes(GRID);
 }
 template <int dim, typename T> void resize(int n, grid<dim, T>& GRID) {}
-template <int dim, typename T> void swap(grid<dim, T>& GRID1, grid<dim, T>& GRID2) {
+template <int dim, typename T> void swap(grid<dim, T>& GRID1, grid<dim, T>& GRID2)
+{
 	GRID1.swap(GRID2);
 }
-template <int dim, typename T> void copy(grid<dim, T>& GRID1, grid<dim, T>& GRID2) {
+template <int dim, typename T> void copy(grid<dim, T>& GRID1, grid<dim, T>& GRID2)
+{
 	GRID2.copy(GRID1);
 }
-template <int dim, typename T> std::string name(const grid<dim, T>& GRID) {
+template <int dim, typename T> std::string name(const grid<dim, T>& GRID)
+{
 	return std::string("grid:") + name(T());
 }
 
 } // namespace MMSP
-
 
 #endif

@@ -9,7 +9,7 @@
 #include <cassert>
 #include"MMSP.utility.hpp"
 
-typedef unsigned short id_type;
+typedef unsigned int id_type;
 
 namespace MMSP {
 
@@ -27,25 +27,34 @@ public:
 		size = 0;
 		data = NULL;
 	}
+	sparse(const sparse& x) {
+		size = x.length();
+		data = new item<T>[size];
+		memcpy(data, x.data, size * sizeof(item<T>));
+	}
 	~sparse() {
-		delete [] data;
+		if (data!=NULL) delete [] data;
 	}
 
 	// assignment operator
 	sparse& operator=(const sparse& x) {
-		delete [] data;
+		if (data!=NULL) delete [] data;
 		size = x.length();
 		data = new item<T>[size];
-		memcpy(data, x.data, size * sizeof(item<T>));
+		//memcpy(data, x.data, size * sizeof(item<T>));
+		for (int i = 0; i < size; i++) {
+			data[i].index = x.index(i);
+			data[i].value = x.value(i);
+		}
 		return *this;
 	}
 	template <typename U> sparse& operator=(const sparse<U>& x) {
-		delete [] data;
+		if (data!=NULL) delete [] data;
 		size = x.length();
 		data = new item<T>[size];
 		for (int i = 0; i < size; i++) {
-			data[i].index = x.data[i].index;
-			data[i].value = static_cast<T>(x.data[i].value);
+			data[i].index = x.index(i);
+			data[i].value = static_cast<T>(x.value(i));
 		}
 		return *this;
 	}
@@ -58,7 +67,7 @@ public:
 
 		item<T>* temp = new item<T>[size];
 		memcpy(temp, data, size * sizeof(item<T>));
-		delete [] data;
+		if (data!=NULL) delete [] data;
 		data = new item<T>[size + 1];
 		memcpy(data, temp, size * sizeof(item<T>));
 		delete [] temp;
@@ -75,8 +84,8 @@ public:
 		return static_cast<T>(0);
 	}
 
-	int grain_id() const {
-		int max_index = 0;
+	unsigned int grain_id() const {
+		unsigned int max_index = 0;
 		T max_value = -1.0;
 
 		for (int i = 0; i < size; i++) {
@@ -118,7 +127,7 @@ public:
 	}
 	int from_buffer(const char* buffer) {
 		memcpy(&size, buffer, sizeof(size));
-		delete [] data;
+		if (data!=NULL)	delete [] data;
 		data = new item<T>[size];
 		memcpy(data, buffer + sizeof(size), size * sizeof(item<T>));
 		return sizeof(size) + size * sizeof(item<T>);
@@ -131,7 +140,7 @@ public:
 	}
 	void read(std::ifstream& file) {
 		file.read(reinterpret_cast<char*>(&size), sizeof(size));
-		delete [] data;
+		if (data!=NULL) delete [] data;
 		data = new item<T>[size];
 		file.read(reinterpret_cast<char*>(data), size * sizeof(item<T>));
 	}
@@ -143,7 +152,7 @@ public:
 	void resize(int n) {}
 	void copy(const sparse& s) {
 		size = s.size;
-		delete [] data;
+		if (data!=NULL) delete [] data;
 		data = new item<T>[size];
 		memcpy(data, s.data, size * sizeof(item<T>));
 	}
@@ -451,6 +460,24 @@ sparse<T>& operator*=(target<0, ind, sparse<T> > x, const U& value) {
 template <int ind, typename T, typename U>
 sparse<T> operator*(const U& value, const target<0, ind, sparse<T> >& x) {
 	return operator*(value, *(x.data));
+}
+template <typename T> bool operator==(const sparse<T>& a, const sparse<T>& b) {
+  int N=a.length();
+  if (N != b.length()) return false;
+  for (int i=0; i<N; ++i) {
+  	int indexA = a.index(i);
+  	bool found=false;
+  	bool match=false;
+  	for (int j=0; j<N && !found; ++j) {
+  		int indexB = b.index(j);
+  		if (indexA==indexB) {
+  			found=true;
+  			match = (a.value(i) == b.value(j));
+  		}
+  	}
+  	if (!found || (found && !match)) return false;
+	}
+  return true;
 }
 
 } // namespace MMSP

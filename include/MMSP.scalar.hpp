@@ -89,8 +89,6 @@ public:
 private:
 	// object data
 	T data;
-  double tmc;
-  double tmp;
 };
 
 // buffer I/O functions
@@ -202,8 +200,6 @@ public:
 
 	// object data
 	scalar<T>* data;
-  scalar<double>* tmp;
-  scalar<double>* tmc;
 	const int* s0;
 	const int* sx;
 	const int* x0;
