@@ -193,7 +193,8 @@ class grid
 {
 public:
 	// constructors
-	grid(int FIELDS, int min[dim], int max[dim], int GHOSTS = 1, bool SINGLE = false) {
+	grid(int FIELDS, int min[dim], int max[dim], int GHOSTS = 1, bool SINGLE = false)
+	{
 		// set number of fields
 		fields = FIELDS;
 
@@ -214,7 +215,8 @@ public:
 		setup(SINGLE);
 	}
 
-	grid(int FIELDS, ...) {
+	grid(int FIELDS, ...)
+	{
 		// set number of fields
 		fields = FIELDS;
 
@@ -239,7 +241,8 @@ public:
 		setup();
 	}
 
-	grid(const grid& GRID) {
+	grid(const grid& GRID)
+	{
 		// set number of fields
 		fields = MMSP::fields(GRID);
 
@@ -268,7 +271,8 @@ public:
 	}
 
 	template <typename U>
-	grid(const grid<dim, U>& GRID, int FIELDS) {
+	grid(const grid<dim, U>& GRID, int FIELDS)
+	{
 		// set number of fields
 		fields = FIELDS;
 
@@ -296,7 +300,8 @@ public:
 		}
 	}
 
-	grid(const char* filename, int GHOSTS = 1) {
+	grid(const char* filename, int GHOSTS = 1)
+	{
 		// initialize data
 		data=NULL;
 
@@ -304,7 +309,8 @@ public:
 		input(filename, GHOSTS);
 	}
 
-	void setup(bool SINGLE = false) {
+	void setup(bool SINGLE = false)
+	{
 		// setup default grid parameters
 		for (int i=0; i<dim; i++) {
 			x0[i] = g0[i];
@@ -372,7 +378,7 @@ public:
 				}
 
 				// compute the product of "dim" factors
-				unsigned int product = 1;
+				int product = 1;
 				for (int j=0; j<dim; j++)
 					product *= factors[combo[j]];
 
@@ -488,41 +494,48 @@ public:
 	}
 
 	// destructor
-	~grid() {
+	~grid()
+	{
 		delete [] data;
 		data=NULL;
 	}
 
 
 	// assignment operators
-	template <typename U> grid& operator=(const U& value) {
+	template <typename U> grid& operator=(const U& value)
+	{
 		for (int i=0; i<cells; i++)
 			data[i] = static_cast<T>(value);
 	}
 
-	template <typename U> grid& operator=(const grid<dim, U>& GRID) {
+	template <typename U> grid& operator=(const grid<dim, U>& GRID)
+	{
 		for (int i=0; i<cells; i++)
 			data[i] = static_cast<T>(GRID.data[i]);
 	}
 
-	template <typename U> grid& operator+=(const grid<dim, U>& GRID) {
+	template <typename U> grid& operator+=(const grid<dim, U>& GRID)
+	{
 		for (int i=0; i<cells; i++)
 			data[i] += static_cast<T>(GRID.data[i]);
 	}
 
-	template <typename U> grid& operator-=(const grid<dim, U>& GRID) {
+	template <typename U> grid& operator-=(const grid<dim, U>& GRID)
+	{
 		for (int i=0; i<cells; i++)
 			data[i] -= static_cast<T>(GRID.data[i]);
 	}
 
 
 	// subscript operators
-	target < dim - 1, 0, T > operator [](int x) const {
+	target < dim - 1, 0, T > operator [](int x) const
+	{
 		check_boundary(x, x0[0], x1[0], b0[0], b1[0]);
 		return target < dim - 1, 0, T > (data + (x - s0[0]) * sx[0], s0, sx, x0, x1, b0, b1);
 	}
 
-	T& operator()(MMSP::vector<int> x) const {
+	T& operator()(MMSP::vector<int> x) const
+	{
 		T* p = data;
 		for (int i=0; i<dim; i++) {
 			check_boundary(x[i], x0[i], x1[i], b0[i], b1[i]);
@@ -531,7 +544,8 @@ public:
 		return *p;
 	}
 
-	T& operator()(int i) const {
+	T& operator()(int i) const
+	{
 		#ifdef MPI_VERSION
 		int x[dim];
 		for (int j=0; j<dim; j++) {
@@ -549,7 +563,8 @@ public:
 
 
 	// position utility function
-	MMSP::vector<int> position(int i) const {
+	MMSP::vector<int> position(int i) const
+	{
 		MMSP::vector<int> x(dim);
 		for (int j=0; j<dim; j++) {
 			int n = i / xx[j];
@@ -561,7 +576,8 @@ public:
 
 
 	// parallelization
-	void ghostswap() {
+	void ghostswap()
+	{
 		#ifdef MPI_VERSION
 		MPI::COMM_WORLD.Barrier();
 		for (int i=0; i<dim; i++) {
@@ -659,16 +675,604 @@ public:
 		#endif
 	}
 
+	void ghostswap(const int sublattice)   // ghostswap for Monte Carlo communiation reduction.
+	{
+		#ifdef MPI_VERSION
+		MPI::COMM_WORLD.Barrier();
+		for (int i=0; i<dim; i++) {
+			if (1) {
+				// send to processor above and receive from processor below
+				int send_proc = n1[i];
+				int recv_proc = n0[i];
+
+				int send_min[dim], send_max[dim];
+				int recv_min[dim], recv_max[dim];
+				for (int j=0; j<dim; j++) {
+					send_min[j] = x0[j] - ghosts;
+					send_max[j] = x1[j] + ghosts;
+					recv_min[j] = x0[j] - ghosts;
+					recv_max[j] = x1[j] + ghosts;
+				}
+
+				send_min[i] = x1[i] - ghosts; //ghosts = 1; x0 x1 excluding ghost
+				send_max[i] = x1[i];
+				recv_min[i] = x0[i] - ghosts;
+				recv_max[i] = x0[i];
+
+				if (dim==2) {
+					if (sublattice==0) {
+						send_min[i] = ((x1[i] - ghosts)%2==0? x1[i]-ghosts:x1[i]); // only send even number
+						recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i]-ghosts:x0[i]); // only recv even number
+						send_min[abs(1-i)] = (send_min[abs(1-i)]%2==0?send_min[abs(1-i)]:send_min[abs(1-i)]+1); //the first element of that 1 layer strip should be even
+						recv_min[abs(1-i)] = (recv_min[abs(1-i)]%2==0?recv_min[abs(1-i)]:recv_min[abs(1-i)]+1); //the first element of that 1 layer strip should be even
+					}
+
+					if (sublattice==3) {
+						send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i]-ghosts:x1[i]); // only send odd number
+						recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i]-ghosts:x0[i]); // only recv odd number
+						send_min[abs(1-i)] = (send_min[abs(1-i)]%2!=0?send_min[abs(1-i)]:send_min[abs(1-i)]+1); //the first element of that 1 layer strip should be odd
+						recv_min[abs(1-i)] = (recv_min[abs(1-i)]%2!=0?recv_min[abs(1-i)]:recv_min[abs(1-i)]+1); //the first element of that 1 layer strip should be odd
+					}
+
+					if (sublattice==1) {
+						if (i==0) {
+							send_min[i] = ((x1[i] - ghosts)%2==0? x1[i]-ghosts:x1[i]); // only send even number
+							recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i]-ghosts:x0[i]); // only recv even number
+							send_min[abs(1-i)] = (send_min[abs(1-i)]%2!=0?send_min[abs(1-i)]:send_min[abs(1-i)]+1); //the first element of that 1 layer strip should be odd
+							recv_min[abs(1-i)] = (recv_min[abs(1-i)]%2!=0?recv_min[abs(1-i)]:recv_min[abs(1-i)]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==1) {
+							send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i]-ghosts:x1[i]); // only send odd number
+							recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i]-ghosts:x0[i]); // only recv odd number
+							send_min[abs(1-i)] = (send_min[abs(1-i)]%2==0?send_min[abs(1-i)]:send_min[abs(1-i)]+1); //the first element of that 1 layer strip should be even
+							recv_min[abs(1-i)] = (recv_min[abs(1-i)]%2==0?recv_min[abs(1-i)]:recv_min[abs(1-i)]+1); //the first element of that 1 layer strip should be even
+						}
+					}
+
+					if (sublattice==2) {
+						if (i==0) {
+							send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i]-ghosts:x1[i]); // only send odd number
+							recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i]-ghosts:x0[i]); // only recv odd number
+							send_min[abs(1-i)] = (send_min[abs(1-i)]%2==0?send_min[abs(1-i)]:send_min[abs(1-i)]+1); //the first element of that 1 layer strip should be even
+							recv_min[abs(1-i)] = (recv_min[abs(1-i)]%2==0?recv_min[abs(1-i)]:recv_min[abs(1-i)]+1); //the first element of that 1 layer strip should be even
+						} else if (i==1) {
+							send_min[i] = ((x1[i] - ghosts)%2==0? x1[i]-ghosts:x1[i]); // only send even number
+							recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i]-ghosts:x0[i]); // only recv even number
+							send_min[abs(1-i)] = (send_min[abs(1-i)]%2!=0?send_min[abs(1-i)]:send_min[abs(1-i)]+1); //the first element of that 1 layer strip should be odd
+							recv_min[abs(1-i)] = (recv_min[abs(1-i)]%2!=0?recv_min[abs(1-i)]:recv_min[abs(1-i)]+1); //the first element of that 1 layer strip should be odd
+						}
+					}
+				} else if (dim==3) {
+					if (sublattice==0) { // 0,0,0
+						send_min[i] = ((x1[i] - ghosts)%2==0? x1[i] - ghosts:x1[i]); // only send even number
+						recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i] - ghosts:x0[i]); // only recv even number
+						for (int l=0; l<dim; l++) {
+							if (l!=i) {
+								send_min[l] = (send_min[l]%2==0?send_min[l]:send_min[l]+1); //the first element of that 1 layer strip should be even
+								recv_min[l] = (recv_min[l]%2==0?recv_min[l]:recv_min[l]+1); //the first element of that 1 layer strip should be even
+							}
+						}
+					}
+
+					else if (sublattice==1) { //0,0,1
+						if (i==0) { //only send/recv even
+							send_min[i] = ((x1[i] - ghosts)%2==0? x1[i] - ghosts:x1[i]); // only send even number
+							recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i] - ghosts:x0[i]); // only recv even number
+							send_min[1] = (send_min[1]%2==0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be even
+							recv_min[1] = (recv_min[1]%2==0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be even
+							send_min[2] = (send_min[2]%2!=0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be odd
+							recv_min[2] = (recv_min[2]%2!=0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==1) { //only send/recv even
+							send_min[i] = ((x1[i] - ghosts)%2==0? x1[i] - ghosts:x1[i]); // only send even number
+							recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i] - ghosts:x0[i]); // only recv even number
+							send_min[0] = (send_min[0]%2==0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be even
+							recv_min[0] = (recv_min[0]%2==0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be even
+							send_min[2] = (send_min[2]%2!=0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be odd
+							recv_min[2] = (recv_min[2]%2!=0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==2) { //only send/recv odd
+							send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i] - ghosts:x1[i]); // only send odd number
+							recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i] - ghosts:x0[i]); // only recv odd number
+							send_min[0] = (send_min[0]%2==0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be even
+							recv_min[0] = (recv_min[0]%2==0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be even
+							send_min[1] = (send_min[1]%2==0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be even
+							recv_min[1] = (recv_min[1]%2==0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be even
+						}
+					}
+
+					else if (sublattice==2) { //0,1,0
+						if (i==0) { //only send/recv even
+							send_min[i] = ((x1[i] - ghosts)%2==0? x1[i] - ghosts:x1[i]); // only send even number
+							recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i] - ghosts:x0[i]); // only recv even number
+							send_min[1] = (send_min[1]%2!=0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be odd
+							recv_min[1] = (recv_min[1]%2!=0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be odd
+							send_min[2] = (send_min[2]%2==0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be even
+							recv_min[2] = (recv_min[2]%2==0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be even
+						} else if (i==1) { //only send/recv odd
+							send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i] - ghosts:x1[i]); // only send odd number
+							recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i] - ghosts:x0[i]); // only recv odd number
+							send_min[0] = (send_min[0]%2==0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be even
+							recv_min[0] = (recv_min[0]%2==0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be even
+							send_min[2] = (send_min[2]%2==0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be even
+							recv_min[2] = (recv_min[2]%2==0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be even
+						} else if (i==2) { //only send/recv even
+							send_min[i] = ((x1[i] - ghosts)%2==0? x1[i] - ghosts:x1[i]); // only send even number
+							recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i] - ghosts:x0[i]); // only recv even number
+							send_min[0] = (send_min[0]%2==0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be even
+							recv_min[0] = (recv_min[0]%2==0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be even
+							send_min[1] = (send_min[1]%2!=0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be odd
+							recv_min[1] = (recv_min[1]%2!=0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be odd
+						}
+					}
+
+					else if (sublattice==3) { //0,1,1
+						if (i==0) { //only send/recv even
+							send_min[i] = ((x1[i] - ghosts)%2==0? x1[i] - ghosts:x1[i]); // only send even number
+							recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i] - ghosts:x0[i]); // only recv even number
+							send_min[1] = (send_min[1]%2!=0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be odd
+							recv_min[1] = (recv_min[1]%2!=0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be odd
+							send_min[2] = (send_min[2]%2!=0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be odd
+							recv_min[2] = (recv_min[2]%2!=0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==1) { //only send/recv odd
+							send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i] - ghosts:x1[i]); // only send odd number
+							recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i] - ghosts:x0[i]); // only recv odd number
+							send_min[0] = (send_min[0]%2==0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be even
+							recv_min[0] = (recv_min[0]%2==0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be even
+							send_min[2] = (send_min[2]%2!=0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be odd
+							recv_min[2] = (recv_min[2]%2!=0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==2) { //only send/recv even
+							send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i] - ghosts:x1[i]); // only send odd number
+							recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i] - ghosts:x0[i]); // only recv odd number
+							send_min[0] = (send_min[0]%2==0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be even
+							recv_min[0] = (recv_min[0]%2==0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be even
+							send_min[1] = (send_min[1]%2!=0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be odd
+							recv_min[1] = (recv_min[1]%2!=0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be odd
+						}
+					}
+
+					else if (sublattice==4) { //1,0,0
+						if (i==0) { //only send/recv odd
+							send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i] - ghosts:x1[i]); // only send odd number
+							recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i] - ghosts:x0[i]); // only recv odd number
+							send_min[1] = (send_min[1]%2==0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be even
+							recv_min[1] = (recv_min[1]%2==0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be even
+							send_min[2] = (send_min[2]%2==0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be even
+							recv_min[2] = (recv_min[2]%2==0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be even
+						} else if (i==1) { //only send/recv even
+							send_min[i] = ((x1[i] - ghosts)%2==0? x1[i] - ghosts:x1[i]); // only send even number
+							recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i] - ghosts:x0[i]); // only recv even number
+							send_min[0] = (send_min[0]%2!=0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be odd
+							recv_min[0] = (recv_min[0]%2!=0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be odd
+							send_min[2] = (send_min[2]%2==0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be even
+							recv_min[2] = (recv_min[2]%2==0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be even
+						} else if (i==2) { //only send/recv even
+							send_min[i] = ((x1[i] - ghosts)%2==0? x1[i] - ghosts:x1[i]); // only send even number
+							recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i] - ghosts:x0[i]); // only recv even number
+							send_min[0] = (send_min[0]%2!=0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be odd
+							recv_min[0] = (recv_min[0]%2!=0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be odd
+							send_min[1] = (send_min[1]%2==0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be even
+							recv_min[1] = (recv_min[1]%2==0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be even
+						}
+					}
+
+					else if (sublattice==5) { //1,0,1
+						if (i==0) { //only send/recv odd
+							send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i] - ghosts:x1[i]); // only send odd number
+							recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i] - ghosts:x0[i]); // only recv odd number
+							send_min[1] = (send_min[1]%2==0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be even
+							recv_min[1] = (recv_min[1]%2==0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be even
+							send_min[2] = (send_min[2]%2!=0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be odd
+							recv_min[2] = (recv_min[2]%2!=0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==1) { //only send/recv even
+							send_min[i] = ((x1[i] - ghosts)%2==0? x1[i] - ghosts:x1[i]); // only send even number
+							recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i] - ghosts:x0[i]); // only recv even number
+							send_min[0] = (send_min[0]%2!=0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be odd
+							recv_min[0] = (recv_min[0]%2!=0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be odd
+							send_min[2] = (send_min[2]%2!=0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be odd
+							recv_min[2] = (recv_min[2]%2!=0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==2) { //only send/recv odd
+							send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i] - ghosts:x1[i]); // only send odd number
+							recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i] - ghosts:x0[i]); // only recv odd number
+							send_min[0] = (send_min[0]%2!=0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be odd
+							recv_min[0] = (recv_min[0]%2!=0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be odd
+							send_min[1] = (send_min[1]%2==0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be even
+							recv_min[1] = (recv_min[1]%2==0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be even
+						}
+					}
+
+					else if (sublattice==6) { //1,1,0
+						if (i==0) { //only send/recv odd
+							send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i] - ghosts:x1[i]); // only send odd number
+							recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i] - ghosts:x0[i]); // only recv odd number
+							send_min[1] = (send_min[1]%2!=0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be odd
+							recv_min[1] = (recv_min[1]%2!=0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be odd
+							send_min[2] = (send_min[2]%2==0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be even
+							recv_min[2] = (recv_min[2]%2==0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be even
+						} else if (i==1) { //only send/recv even
+							send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i] - ghosts:x1[i]); // only send odd number
+							recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i] - ghosts:x0[i]); // only recv odd number
+							send_min[0] = (send_min[0]%2!=0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be odd
+							recv_min[0] = (recv_min[0]%2!=0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be odd
+							send_min[2] = (send_min[2]%2==0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be even
+							recv_min[2] = (recv_min[2]%2==0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be even
+						} else if (i==2) { //only send/recv odd
+							send_min[i] = ((x1[i] - ghosts)%2==0? x1[i] - ghosts:x1[i]); // only send even number
+							recv_min[i] = ((x0[i] - ghosts)%2==0? x0[i] - ghosts:x0[i]); // only recv even number
+							send_min[0] = (send_min[0]%2!=0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be odd
+							recv_min[0] = (recv_min[0]%2!=0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be odd
+							send_min[1] = (send_min[1]%2!=0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be odd
+							recv_min[1] = (recv_min[1]%2!=0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be odd
+						}
+					}
+
+					else if (sublattice==7) {
+						send_min[i] = ((x1[i] - ghosts)%2!=0? x1[i]-ghosts:x1[i]); // only send odd number
+						recv_min[i] = ((x0[i] - ghosts)%2!=0? x0[i]-ghosts:x0[i]); // only recv odd number
+						for (int l=0; l<dim; l++) {
+							if (l!=i) {
+								send_min[l] = (send_min[l]%2!=0?send_min[l]:send_min[l]+1); //the first element of that 1 layer strip should be odd
+								recv_min[l] = (recv_min[l]%2!=0?recv_min[l]:recv_min[l]+1); //the first element of that 1 layer strip should be odd
+							}
+						}
+					}
+				}//dim == 3
+
+				unsigned long send_size = this->buffer_size_save(send_min, send_max);
+				unsigned long recv_size = 0;
+
+				// Small data transfer: blocking Sendrecv should scale -- but don't plan on it.
+				MPI::Request requests[2];
+				requests[0] = MPI::COMM_WORLD.Isend(&send_size, 1, MPI_UNSIGNED_LONG, send_proc, 100); // send number of ghosts
+				requests[1] = MPI::COMM_WORLD.Irecv(&recv_size, 1, MPI_UNSIGNED_LONG, recv_proc, 100); // receive number of ghosts
+				MPI::Request::Waitall(2, requests);
+				MPI::COMM_WORLD.Barrier();
+				char* send_buffer = new char[send_size];
+				char* recv_buffer = new char[recv_size];
+				send_size = this->to_buffer_save(send_buffer, send_min, send_max);
+
+				// Large data transfer requires non-blocking communication
+				requests[0] = MPI::COMM_WORLD.Isend(send_buffer, send_size, MPI_CHAR, send_proc, 200); // send ghosts
+				requests[1] = MPI::COMM_WORLD.Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 200); // receive ghosts
+				MPI::Request::Waitall(2, requests);
+				MPI::COMM_WORLD.Barrier();
+
+				this->from_buffer_save(recv_buffer, recv_min, recv_max); // populate ghost cell data from buffer
+
+				delete [] send_buffer;
+				send_buffer=NULL;
+				delete [] recv_buffer;
+				recv_buffer=NULL;
+			}
+
+			if (1) {
+				// send to processor below and receive from processor above
+				int send_proc = n0[i];
+				int recv_proc = n1[i];
+
+				int send_min[dim], send_max[dim];
+				int recv_min[dim], recv_max[dim];
+				for (int j=0; j<dim; j++) {
+					send_min[j] = x0[j] - ghosts;
+					send_max[j] = x1[j] + ghosts;
+					recv_min[j] = x0[j] - ghosts;
+					recv_max[j] = x1[j] + ghosts;
+				}
+
+				send_min[i] = x0[i];
+				send_max[i] = x0[i] + ghosts;
+				recv_min[i] = x1[i];
+				recv_max[i] = x1[i] + ghosts;
+
+				if (dim==2) {
+					if (sublattice==0) {
+						send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+						recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+						send_min[abs(1-i)] = (send_min[abs(1-i)]%2==0?send_min[abs(1-i)]:send_min[abs(1-i)]+1); //the first element of that 1 layer strip should be even
+						recv_min[abs(1-i)] = (recv_min[abs(1-i)]%2==0?recv_min[abs(1-i)]:recv_min[abs(1-i)]+1); //the first element of that 1 layer strip should be even
+					}
+
+					if (sublattice==3) {
+						send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+						recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+						send_min[abs(1-i)] = (send_min[abs(1-i)]%2!=0?send_min[abs(1-i)]:send_min[abs(1-i)]+1); //the first element of that 1 layer strip should be odd
+						recv_min[abs(1-i)] = (recv_min[abs(1-i)]%2!=0?recv_min[abs(1-i)]:recv_min[abs(1-i)]+1); //the first element of that 1 layer strip should be odd
+					}
+
+					if (sublattice==1) {
+						if (i==0) {
+							send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+							recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+							send_min[abs(1-i)] = (send_min[abs(1-i)]%2!=0?send_min[abs(1-i)]:send_min[abs(1-i)]+1); //the first element of that 1 layer strip should be odd
+							recv_min[abs(1-i)] = (recv_min[abs(1-i)]%2!=0?recv_min[abs(1-i)]:recv_min[abs(1-i)]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==1) {
+							send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+							recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+							send_min[abs(1-i)] = (send_min[abs(1-i)]%2==0?send_min[abs(1-i)]:send_min[abs(1-i)]+1); //the first element of that 1 layer strip should be even
+							recv_min[abs(1-i)] = (recv_min[abs(1-i)]%2==0?recv_min[abs(1-i)]:recv_min[abs(1-i)]+1); //the first element of that 1 layer strip should be even
+						}
+					}
+
+					if (sublattice==2) {
+						if (i==0) {
+							send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+							recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+							send_min[abs(1-i)] = (send_min[abs(1-i)]%2==0?send_min[abs(1-i)]:send_min[abs(1-i)]+1); //the first element of that 1 layer strip should be even
+							recv_min[abs(1-i)] = (recv_min[abs(1-i)]%2==0?recv_min[abs(1-i)]:recv_min[abs(1-i)]+1); //the first element of that 1 layer strip should be even
+						} else if (i==1) {
+							send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+							recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+							send_min[abs(1-i)] = (send_min[abs(1-i)]%2!=0?send_min[abs(1-i)]:send_min[abs(1-i)]+1); //the first element of that 1 layer strip should be odd
+							recv_min[abs(1-i)] = (recv_min[abs(1-i)]%2!=0?recv_min[abs(1-i)]:recv_min[abs(1-i)]+1); //the first element of that 1 layer strip should be odd
+						}
+					}
+				} else if (dim==3) {
+					if (sublattice==0) { // 0,0,0
+						send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+						recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+						for (int l=0; l<dim; l++) {
+							if (l!=i) {
+								send_min[l] = (send_min[l]%2==0?send_min[l]:send_min[l]+1); //the first element of that 1 layer strip should be even
+								recv_min[l] = (recv_min[l]%2==0?recv_min[l]:recv_min[l]+1); //the first element of that 1 layer strip should be even
+							}
+						}
+					}
+
+					else if (sublattice==1) { //0,0,1
+						if (i==0) { //only send/recv even
+							send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+							recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+							send_min[1] = (send_min[1]%2==0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be even
+							recv_min[1] = (recv_min[1]%2==0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be even
+							send_min[2] = (send_min[2]%2!=0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be odd
+							recv_min[2] = (recv_min[2]%2!=0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==1) { //only send/recv even
+							send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+							recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+							send_min[0] = (send_min[0]%2==0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be even
+							recv_min[0] = (recv_min[0]%2==0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be even
+							send_min[2] = (send_min[2]%2!=0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be odd
+							recv_min[2] = (recv_min[2]%2!=0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==2) { //only send/recv odd
+							send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+							recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+							send_min[0] = (send_min[0]%2==0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be even
+							recv_min[0] = (recv_min[0]%2==0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be even
+							send_min[1] = (send_min[1]%2==0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be even
+							recv_min[1] = (recv_min[1]%2==0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be even
+						}
+					}
+
+					else if (sublattice==2) { //0,1,0
+						if (i==0) { //only send/recv even
+							send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+							recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+							send_min[1] = (send_min[1]%2!=0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be odd
+							recv_min[1] = (recv_min[1]%2!=0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be odd
+							send_min[2] = (send_min[2]%2==0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be even
+							recv_min[2] = (recv_min[2]%2==0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be even
+						} else if (i==1) { //only send/recv odd
+							send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+							recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+							send_min[0] = (send_min[0]%2==0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be even
+							recv_min[0] = (recv_min[0]%2==0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be even
+							send_min[2] = (send_min[2]%2==0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be even
+							recv_min[2] = (recv_min[2]%2==0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be even
+						} else if (i==2) { //only send/recv even
+							send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+							recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+							send_min[0] = (send_min[0]%2==0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be even
+							recv_min[0] = (recv_min[0]%2==0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be even
+							send_min[1] = (send_min[1]%2!=0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be odd
+							recv_min[1] = (recv_min[1]%2!=0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be odd
+						}
+					}
+
+					else if (sublattice==3) { //0,1,1
+						if (i==0) { //only send/recv even
+							send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+							recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+							send_min[1] = (send_min[1]%2!=0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be odd
+							recv_min[1] = (recv_min[1]%2!=0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be odd
+							send_min[2] = (send_min[2]%2!=0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be odd
+							recv_min[2] = (recv_min[2]%2!=0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==1) { //only send/recv odd
+							send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+							recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+							send_min[0] = (send_min[0]%2==0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be even
+							recv_min[0] = (recv_min[0]%2==0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be even
+							send_min[2] = (send_min[2]%2!=0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be odd
+							recv_min[2] = (recv_min[2]%2!=0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==2) { //only send/recv even
+							send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+							recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+							send_min[0] = (send_min[0]%2==0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be even
+							recv_min[0] = (recv_min[0]%2==0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be even
+							send_min[1] = (send_min[1]%2!=0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be odd
+							recv_min[1] = (recv_min[1]%2!=0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be odd
+						}
+					}
+
+					else if (sublattice==4) { //1,0,0
+						if (i==0) { //only send/recv odd
+							send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+							recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+							send_min[1] = (send_min[1]%2==0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be even
+							recv_min[1] = (recv_min[1]%2==0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be even
+							send_min[2] = (send_min[2]%2==0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be even
+							recv_min[2] = (recv_min[2]%2==0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be even
+						} else if (i==1) { //only send/recv even
+							send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+							recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+							send_min[0] = (send_min[0]%2!=0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be odd
+							recv_min[0] = (recv_min[0]%2!=0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be odd
+							send_min[2] = (send_min[2]%2==0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be even
+							recv_min[2] = (recv_min[2]%2==0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be even
+						} else if (i==2) { //only send/recv even
+							send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+							recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+							send_min[0] = (send_min[0]%2!=0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be odd
+							recv_min[0] = (recv_min[0]%2!=0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be odd
+							send_min[1] = (send_min[1]%2==0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be even
+							recv_min[1] = (recv_min[1]%2==0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be even
+						}
+					}
+
+					else if (sublattice==5) { //1,0,1
+						if (i==0) { //only send/recv odd
+							send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+							recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+							send_min[1] = (send_min[1]%2==0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be even
+							recv_min[1] = (recv_min[1]%2==0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be even
+							send_min[2] = (send_min[2]%2!=0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be odd
+							recv_min[2] = (recv_min[2]%2!=0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==1) { //only send/recv even
+							send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+							recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+							send_min[0] = (send_min[0]%2!=0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be odd
+							recv_min[0] = (recv_min[0]%2!=0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be odd
+							send_min[2] = (send_min[2]%2!=0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be odd
+							recv_min[2] = (recv_min[2]%2!=0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be odd
+						} else if (i==2) { //only send/recv odd
+							send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+							recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+							send_min[0] = (send_min[0]%2!=0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be odd
+							recv_min[0] = (recv_min[0]%2!=0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be odd
+							send_min[1] = (send_min[1]%2==0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be even
+							recv_min[1] = (recv_min[1]%2==0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be even
+						}
+					}
+
+					else if (sublattice==6) { //1,1,0
+						if (i==0) { //only send/recv odd
+							send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+							recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+							send_min[1] = (send_min[1]%2!=0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be odd
+							recv_min[1] = (recv_min[1]%2!=0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be odd
+							send_min[2] = (send_min[2]%2==0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be even
+							recv_min[2] = (recv_min[2]%2==0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be even
+						} else if (i==1) { //only send/recv even
+							send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+							recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+							send_min[0] = (send_min[0]%2!=0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be odd
+							recv_min[0] = (recv_min[0]%2!=0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be odd
+							send_min[2] = (send_min[2]%2==0?send_min[2]:send_min[2]+1); //the first element of that 1 layer strip should be even
+							recv_min[2] = (recv_min[2]%2==0?recv_min[2]:recv_min[2]+1); //the first element of that 1 layer strip should be even
+						} else if (i==2) { //only send/recv odd
+							send_min[i] = (x0[i]%2==0? x0[i]:x0[i]+ghosts); // only send even number
+							recv_min[i] = (x1[i]%2==0? x1[i]:x1[i]+ghosts); // only recv even number
+							send_min[0] = (send_min[0]%2!=0?send_min[0]:send_min[0]+1); //the first element of that 1 layer strip should be odd
+							recv_min[0] = (recv_min[0]%2!=0?recv_min[0]:recv_min[0]+1); //the first element of that 1 layer strip should be odd
+							send_min[1] = (send_min[1]%2!=0?send_min[1]:send_min[1]+1); //the first element of that 1 layer strip should be odd
+							recv_min[1] = (recv_min[1]%2!=0?recv_min[1]:recv_min[1]+1); //the first element of that 1 layer strip should be odd
+						}
+					}
+
+					else if (sublattice==7) { //1,1,1
+						send_min[i] = (x0[i]%2!=0? x0[i]:x0[i]+ghosts); // only send odd number
+						recv_min[i] = (x1[i]%2!=0? x1[i]:x1[i]+ghosts); // only recv odd number
+						for (int l=0; l<dim; l++) {
+							if (l!=i) {
+								send_min[l] = (send_min[l]%2!=0?send_min[l]:send_min[l]+1); //the first element of that 1 layer strip should be odd
+								recv_min[l] = (recv_min[l]%2!=0?recv_min[l]:recv_min[l]+1); //the first element of that 1 layer strip should be odd
+							}
+						}
+					}
+				}//dim == 3
+
+				unsigned long send_size = this->buffer_size_save(send_min, send_max);
+				unsigned long recv_size = 0;
+
+				// Small data transfer: blocking Sendrecv should scale -- but don't plan on it.
+				MPI::Request requests[2];
+				requests[0] = MPI::COMM_WORLD.Isend(&send_size, 1, MPI_UNSIGNED_LONG, send_proc, 300); // send number of ghosts
+				requests[1] = MPI::COMM_WORLD.Irecv(&recv_size, 1, MPI_UNSIGNED_LONG, recv_proc, 300); // receive number of incoming ghosts
+				MPI::Request::Waitall(2, requests);
+				MPI::COMM_WORLD.Barrier();
+				char* send_buffer = new char[send_size];
+				char* recv_buffer = new char[recv_size];
+
+				send_size = this->to_buffer_save(send_buffer, send_min, send_max);
+
+				// Large data transfer requires non-blocking communication
+				requests[0] = MPI::COMM_WORLD.Isend(send_buffer, send_size, MPI_CHAR, send_proc, 400); // send ghosts
+				requests[1] = MPI::COMM_WORLD.Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 400); // receive ghosts
+				MPI::Request::Waitall(2, requests);
+				MPI::COMM_WORLD.Barrier();
+
+				this->from_buffer_save(recv_buffer, recv_min, recv_max); // populate ghost cell data from buffer
+
+				delete [] send_buffer;
+				send_buffer=NULL;
+				delete [] recv_buffer;
+				recv_buffer=NULL;
+			}
+		}
+		MPI::COMM_WORLD.Barrier();
+		#endif
+	}
+
+	unsigned long buffer_size_save(const int min[dim], const int max[dim]) const
+	{
+		return buffer_size_save(data, 0, min, max);
+	}
+	unsigned long buffer_size_save(T* p, int i, const int min[dim], const int max[dim]) const
+	{
+		unsigned long size = 0;
+		if (i == dim - 1)
+			for (int x = min[i]; x < max[i]; x+=2)
+				size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
+
+		else
+			for (int x = min[i]; x < max[i]; x+=2)
+				size += buffer_size_save(p + (x - s0[i]) * sx[i], i + 1, min, max);
+		return size;
+	}
+
+	unsigned long to_buffer_save(char* buffer, const int min[dim], const int max[dim]) const
+	{
+		return to_buffer_save(buffer, data, 0, min, max);
+	}
+
+	unsigned long to_buffer_save(char* buffer, T* p, int i, const int min[dim], const int max[dim]) const
+	{
+		unsigned long size = 0;
+		if (i == dim - 1)
+			for (int x = min[i]; x < max[i]; x+=2)
+				size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+		else
+			for (int x = min[i]; x < max[i]; x+=2)
+				size += to_buffer_save(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max);
+		return size;
+	}
+
+	unsigned long from_buffer_save(char* buffer, const int min[dim], const int max[dim])
+	{
+		return from_buffer_save(buffer, data, 0, min, max);
+	}
+
+	unsigned long from_buffer_save(char* buffer, T* p, int i, const int min[dim], const int max[dim])
+	{
+		unsigned long size = 0;
+		if (i == dim - 1) {
+			for (int x = min[i]; x < max[i]; x+=2)
+				size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
+		} else {
+			for (int x = min[i]; x < max[i]; x+=2)
+				size += from_buffer_save(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max);
+		}
+		return size;
+	}
 	// buffer I/O
-	unsigned long buffer_size() const {
+	unsigned long buffer_size() const
+	{
 		return buffer_size(x0, x1);
 	}
 
-	unsigned long buffer_size(const int min[dim], const int max[dim]) const {
+	unsigned long buffer_size(const int min[dim], const int max[dim]) const
+	{
 		return buffer_size(data, 0, min, max);
 	}
 
-	unsigned long buffer_size(T* p, int i, const int min[dim], const int max[dim]) const {
+	unsigned long buffer_size(T* p, int i, const int min[dim], const int max[dim]) const
+	{
 		unsigned long size = 0;
 		if (i == dim - 1)
 			for (int x = min[i]; x < max[i]; x++)
@@ -679,15 +1283,18 @@ public:
 		return size;
 	}
 
-	unsigned long to_buffer(char* buffer) const {
+	unsigned long to_buffer(char* buffer) const
+	{
 		return to_buffer(buffer, x0, x1);
 	}
 
-	unsigned long to_buffer(char* buffer, const int min[dim], const int max[dim]) const {
+	unsigned long to_buffer(char* buffer, const int min[dim], const int max[dim]) const
+	{
 		return to_buffer(buffer, data, 0, min, max);
 	}
 
-	unsigned long to_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim]) const {
+	unsigned long to_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim]) const
+	{
 		unsigned long size = 0;
 		if (i == dim - 1)
 			for (int x = min[i]; x < max[i]; x++)
@@ -698,15 +1305,18 @@ public:
 		return size;
 	}
 
-	unsigned long from_buffer(char* buffer) {
+	unsigned long from_buffer(char* buffer)
+	{
 		return from_buffer(buffer, x0, x1);
 	}
 
-	unsigned long from_buffer(char* buffer, const int min[dim], const int max[dim]) {
+	unsigned long from_buffer(char* buffer, const int min[dim], const int max[dim])
+	{
 		return from_buffer(buffer, data, 0, min, max);
 	}
 
-	unsigned long from_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim]) {
+	unsigned long from_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim])
+	{
 		unsigned long size = 0;
 		if (i == dim - 1) {
 			for (int x = min[i]; x < max[i]; x++)
@@ -719,7 +1329,8 @@ public:
 	}
 
 	// file I/O
-	void input(const char* filename, int GHOSTS = 1, int SINGLE = false) {
+	void input(const char* filename, int GHOSTS = 1, int SINGLE = false)
+	{
 		// file open error check
 		std::ifstream input(filename);
 		if (!input) {
@@ -777,7 +1388,8 @@ public:
 		input.close();
 	}
 
-	void read(std::ifstream& file, int GHOSTS = 1) {
+	void read(std::ifstream& file, int GHOSTS = 1)
+	{
 		/*
 			Reads each block of the input file and constructs a
 			temporary grid, "GRID". Then compares the spatial extents of
@@ -886,7 +1498,8 @@ public:
 		#endif
 	}
 
-	void output(const char* filename) const {
+	void output(const char* filename) const
+	{
 		#ifndef MPI_VERSION
 		unsigned int np=1;
 		// file open error check
@@ -958,7 +1571,6 @@ public:
 				std::cerr << "File output error: could not open " << fname << "." << std::endl;
 				exit(-1);
 			}
-			//MPI_File_set_size(output, 0);
 
 			// Generate MMSP header from rank 0
 			unsigned long header_offset=0;
@@ -1334,7 +1946,8 @@ public:
 		#endif
 	}
 
-	unsigned long write_buffer(char*& buf) const {
+	unsigned long write_buffer(char*& buf) const
+	{
 		// Find out how big the dataset is
 		unsigned long size_in_mem = this->buffer_size();
 		unsigned long size_on_disk = 1.125 * size_in_mem + 12;
@@ -1427,144 +2040,187 @@ public:
 	}
 
 	// grid utility functions
-	friend int nodes(const grid& GRID) {
+	friend int nodes(const grid& GRID)
+	{
 		return GRID.nodes;
 	}
-	friend int fields(const grid& GRID) {
+	friend int fields(const grid& GRID)
+	{
 		return GRID.fields;
 	}
-	friend int ghosts(const grid& GRID) {
+	friend int ghosts(const grid& GRID)
+	{
 		return GRID.ghosts;
 	}
-	friend int g0(const grid& GRID, int i) {
+	friend int g0(const grid& GRID, int i)
+	{
 		return GRID.g0[i];
 	}
-	friend int g1(const grid& GRID, int i) {
+	friend int g1(const grid& GRID, int i)
+	{
 		return GRID.g1[i];
 	}
-	friend int b0(const grid& GRID, int i) {
+	friend int b0(const grid& GRID, int i)
+	{
 		return GRID.b0[i];
 	}
-	friend int b1(const grid& GRID, int i) {
+	friend int b1(const grid& GRID, int i)
+	{
 		return GRID.b1[i];
 	}
-	friend int& b0(grid& GRID, int i) {
+	friend int& b0(grid& GRID, int i)
+	{
 		return GRID.b0[i];
 	}
-	friend int& b1(grid& GRID, int i) {
+	friend int& b1(grid& GRID, int i)
+	{
 		return GRID.b1[i];
 	}
 
 	// grid utility functions (all directions)
-	friend int x0(const grid& GRID, int i) {
+	friend int x0(const grid& GRID, int i)
+	{
 		return GRID.x0[i];
 	}
-	friend int x1(const grid& GRID, int i) {
+	friend int x1(const grid& GRID, int i)
+	{
 		return GRID.x1[i];
 	}
-	friend int xmin(const grid& GRID, int i) {
+	friend int xmin(const grid& GRID, int i)
+	{
 		return GRID.x0[i];
 	}
-	friend int xmax(const grid& GRID, int i) {
+	friend int xmax(const grid& GRID, int i)
+	{
 		return GRID.x1[i];
 	}
-	friend int xlength(const grid& GRID, int i) {
+	friend int xlength(const grid& GRID, int i)
+	{
 		return GRID.x1[i] - GRID.x0[i];
 	}
-	friend double dx(const grid& GRID, int i) {
+	friend double dx(const grid& GRID, int i)
+	{
 		return GRID.dx[i];
 	}
-	friend double& dx(grid& GRID, int i) {
+	friend double& dx(grid& GRID, int i)
+	{
 		return GRID.dx[i];
 	}
-	friend int N0(const grid& GRID, int i) {
+	friend int N0(const grid& GRID, int i)
+	{
 		return GRID.n0[i];
 	}
-	friend int N1(const grid& GRID, int i) {
+	friend int N1(const grid& GRID, int i)
+	{
 		return GRID.n1[i];
 	}
-	friend int P0(const grid& GRID, int i) {
+	friend int P0(const grid& GRID, int i)
+	{
 		return GRID.p0[i];
 	}
-	friend int P1(const grid& GRID, int i) {
+	friend int P1(const grid& GRID, int i)
+	{
 		return GRID.p1[i];
 	}
-	friend int sp(const grid& GRID, int i) {
+	friend int sp(const grid& GRID, int i)
+	{
 		return GRID.sp[i];
 	}
 
 	// grid utility functions (x direction)
-	friend int x0(const grid& GRID) {
+	friend int x0(const grid& GRID)
+	{
 		return GRID.x0[0];
 	}
-	friend int x1(const grid& GRID) {
+	friend int x1(const grid& GRID)
+	{
 		return GRID.x1[0];
 	}
-	friend int xmin(const grid& GRID) {
+	friend int xmin(const grid& GRID)
+	{
 		return GRID.x0[0];
 	}
-	friend int xmax(const grid& GRID) {
+	friend int xmax(const grid& GRID)
+	{
 		return GRID.x1[0];
 	}
-	friend int xlength(const grid& GRID) {
+	friend int xlength(const grid& GRID)
+	{
 		return GRID.x1[0] - GRID.x0[0];
 	}
-	friend double dx(const grid& GRID) {
+	friend double dx(const grid& GRID)
+	{
 		return GRID.dx[0];
 	}
-	friend double& dx(grid& GRID) {
+	friend double& dx(grid& GRID)
+	{
 		return GRID.dx[0];
 	}
 
 	// grid utility functions (y direction)
-	friend int y0(const grid& GRID) {
+	friend int y0(const grid& GRID)
+	{
 		return GRID.x0[1];
 	}
-	friend int y1(const grid& GRID) {
+	friend int y1(const grid& GRID)
+	{
 		return GRID.x1[1];
 	}
-	friend int ymin(const grid& GRID) {
+	friend int ymin(const grid& GRID)
+	{
 		return GRID.x0[1];
 	}
-	friend int ymax(const grid& GRID) {
+	friend int ymax(const grid& GRID)
+	{
 		return GRID.x1[1];
 	}
-	friend int ylength(const grid& GRID) {
+	friend int ylength(const grid& GRID)
+	{
 		return GRID.x1[1] - GRID.x0[1];
 	}
-	friend double dy(const grid& GRID) {
+	friend double dy(const grid& GRID)
+	{
 		return GRID.dx[1];
 	}
-	friend double& dy(grid& GRID) {
+	friend double& dy(grid& GRID)
+	{
 		return GRID.dx[1];
 	}
 
 	// grid utility functions (z direction)
-	friend int z0(const grid& GRID) {
+	friend int z0(const grid& GRID)
+	{
 		return GRID.x0[2];
 	}
-	friend int z1(const grid& GRID) {
+	friend int z1(const grid& GRID)
+	{
 		return GRID.x1[2];
 	}
-	friend int zmin(const grid& GRID) {
+	friend int zmin(const grid& GRID)
+	{
 		return GRID.x0[2];
 	}
-	friend int zmax(const grid& GRID) {
+	friend int zmax(const grid& GRID)
+	{
 		return GRID.x1[2];
 	}
-	friend int zlength(const grid& GRID) {
+	friend int zlength(const grid& GRID)
+	{
 		return GRID.x1[2] - GRID.x0[2];
 	}
-	friend double dz(const grid& GRID) {
+	friend double dz(const grid& GRID)
+	{
 		return GRID.dx[2];
 	}
-	friend double& dz(grid& GRID) {
+	friend double& dz(grid& GRID)
+	{
 		return GRID.dx[2];
 	}
 
 
 	// utility functions
-	void swap(grid& GRID) {
+	void swap(grid& GRID)
+	{
 		// swap grid data
 		T* DATA = data;
 		data = GRID.data;
@@ -1643,7 +2299,8 @@ public:
 		}
 	}
 
-	void copy(const grid& GRID) {
+	void copy(const grid& GRID)
+	{
 		// initialize data
 		if (data != NULL) {
 			delete [] data;
@@ -1896,6 +2553,10 @@ template <int dim, typename T> void ghostswap(grid<dim, T>& GRID)
 	GRID.ghostswap();
 }
 
+template <int dim, typename T> void ghostswap(grid<dim, T>& GRID, const int sublattice)
+{
+	GRID.ghostswap(sublattice);
+}
 // buffer I/O functions
 template <int dim, typename T> unsigned long buffer_size(const grid<dim, T>& GRID)
 {
