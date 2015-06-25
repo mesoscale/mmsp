@@ -9,13 +9,13 @@ incdir = ../../../../../include
 compiler = g++
 flags = -O3 -I $(incdir)
 pcompiler = mpic++
-pflags = -O3 -I $(incdir) -include mpi.h
+pflags = -O3 -I $(incdir) -include mpi.h 
 
 # dependencies
 core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.utility.hpp \
        $(incdir)/MMSP.grid.hpp \
-       $(incdir)/MMSP.scalar.hpp
+       $(incdir)/MMSP.vector.hpp
 
 # the program
 graingrowth: graingrowth.cpp $(core)
