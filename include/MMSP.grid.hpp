@@ -1560,7 +1560,7 @@ public:
 		struct statvfs buf;
 		const unsigned long blocksize = (statvfs(".", &buf) == -1)?4096:buf.f_bsize;
 
-		if (blocksize<5144) {
+		if (blocksize<1048576) {
 			// Standard MPI-IO: every rank writes to disk
 			#ifdef BGQ
 			if (rank==0) std::cout<<"Bug: using normal IO, instead of BGQ IO!"<<std::endl;
