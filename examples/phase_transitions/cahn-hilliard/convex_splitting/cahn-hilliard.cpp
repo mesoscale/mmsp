@@ -188,15 +188,16 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
             ghostswap(update);
 
 	    	iter++;
+	    	#ifdef DEBUG
+       		if (rank==0)
+   	    	    std::cout<<step<<'.'<<iter<<'\t'<<residual<<std::endl;
+   		    #endif
         }
 
 		swap(grid,update);
 		ghostswap(grid);
 
-  		#ifdef DEBUG
-   		if (rank==0)
-   		    std::cout<<"Step "<<step<<" converged with residual "<<residual<<" after "<<iter<<" iterations."std::endl;
-   		#else
+  		#ifndef DEBUG
 		double energy = 0.0;
 		double mass = 0.0;
 		for (int i=0; i<nodes(grid); i++) {
