@@ -33,40 +33,42 @@ double expansive_dfdc(const double& C)
 namespace MMSP {
 
 // Define a Laplacian function for a specific field
-double field_laplacian(const grid<2, vector<double> >& GRID, const vector<int>& x, const int field)
+template<int dim, typename T>
+double field_laplacian(const grid<dim, vector<T> >& GRID, const vector<int>& x, const int field)
 {
-  double laplacian(0.0);
+  T laplacian(0.0);
   vector<int> s = x;
 
   const double& y = GRID(x)[field];
 
-  for (int i=0; i<2; i++) {
+  for (int i=0; i<dim; i++) {
     s[i] += 1;
     const double& yh = GRID(s)[field];
     s[i] -= 2;
     const double& yl = GRID(s)[field];
     s[i] += 1;
 
-    double weight = 1.0 / std::pow(dx(GRID, i),2);
+    double weight = 1.0 / pow(dx(GRID, i),2);
     laplacian += weight * (yh - 2.0 * y + yl);
   }
   return laplacian;
 }
 
 // Define a Laplacian function missing the central value, for implicit source terms
-double ring_laplacian(const grid<2, vector<double> >& GRID, const vector<int>& x, const int field)
+template<int dim, typename T>
+double ring_laplacian(const grid<dim, vector<T> >& GRID, const vector<int>& x, const int field)
 {
-  double laplacian(0.0);
+  T laplacian(0.0);
   vector<int> s = x;
 
-  for (int i=0; i<2; i++) {
+  for (int i=0; i<dim; i++) {
     s[i] += 1;
     const double& yh = GRID(s)[field];
     s[i] -= 2;
     const double& yl = GRID(s)[field];
     s[i] += 1;
 
-    double weight = 1.0 / std::pow(dx(GRID, i),2);
+    double weight = 1.0 / pow(dx(GRID, i),2);
     laplacian += weight * (yh + yl);
   }
   return laplacian;
@@ -172,14 +174,14 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
                 const double Ax1 = cramerX1 + A12*cramerX2;
                 const double Ax2 = cramerX2 - cramerX1*A21;
                 const double normB = std::sqrt(pow(deltaX,2)*(pow(S1,2)+pow(S2,2)));
-                const double normBminusAx = std::sqrt(pow(deltaX,2)*pow(S1-Ax1,2) + pow(deltaX,2)*pow(S2-Ax2,2))
+                const double normBminusAx = std::sqrt(pow(deltaX,2)*pow(S1-Ax1,2) + pow(deltaX,2)*pow(S2-Ax2,2));
 
                 residual += normBminusAx/(normB*nodes(grid));
 	    	}
        		#ifdef MPI_VERSION
 	        double localResidual=residual;
 	        MPI::COMM_WORLD.Barrier();
-       		MPI::COMM_WORLD.Alleduce(&localResidual, &residual, 1, MPI_DOUBLE, MPI_SUM);
+       		MPI::COMM_WORLD.Allreduce(&localResidual, &residual, 1, MPI_DOUBLE, MPI_SUM);
        		#endif
 
             swap(update, guess);
