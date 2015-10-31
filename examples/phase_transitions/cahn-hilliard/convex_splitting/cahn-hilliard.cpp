@@ -11,7 +11,7 @@
 
 const double AA = 0.25*(B + Ca + Cb);
 const double BB = B*Cm + pow(Ca,2) + pow(Cb,2);
-const double CC = 0.5*(A - 3.0*B*pow(Cm,2) - 3.0*pow(Ca,3) - 3.0*pow(Cb,3));
+const double CC = 0.5*(3.0*B*pow(Cm,2) + 3.0*pow(Ca,3) + 3.0*pow(Cb,3) - A);
 const double DD = A*Cm - B*pow(Cm,3) - pow(Ca,4) - pow(Cb,4);
 const double EE = 0.5*(A*pow(Cm,2) - 0.5*B*pow(Cm,4) - 0.5*pow(Ca,5) - 0.5*pow(Cb,5));
 
@@ -89,6 +89,7 @@ void generate(int dim, const char* filename)
 	rank = MPI::COMM_WORLD.Get_rank();
 	#endif
 
+    std::cout<<"f(C) = ("<<AA<<")C^4 - ("<<BB<<")C^3 - ("<<CC<<")C^2 + ("<<DD<<")C - ("<<EE<<')'<<std::endl;
     if (AA<0) {
         if (rank==0)
             std::cerr<<"Error: parameter AA is negative. Double-check your constants."<<std::endl;
