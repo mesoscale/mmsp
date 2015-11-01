@@ -9,11 +9,11 @@
 #include"cahn-hilliard.hpp"
 #include"../energy.hpp"
 
-const double AA = 0.25*(B + Ca + Cb);
-const double BB = B*Cm + pow(Ca,2) + pow(Cb,2);
-const double CC = 0.5*(3.0*B*pow(Cm,2) + 3.0*pow(Ca,3) + 3.0*pow(Cb,3) - A);
-const double DD = A*Cm - B*pow(Cm,3) - pow(Ca,4) - pow(Cb,4);
-const double EE = 0.5*(A*pow(Cm,2) - 0.5*B*pow(Cm,4) - 0.5*pow(Ca,5) - 0.5*pow(Cb,5));
+const double AA = 0.25;// 0.25*(B + Ca + Cb);
+const double BB = 0.0;// B*Cm + pow(Ca,2) + pow(Cb,2);
+const double CC = 0.5;// 0.5*(3.0*B*pow(Cm,2) + 3.0*pow(Ca,3) + 3.0*pow(Cb,3) - A);
+const double DD = 0.0;// A*Cm - B*pow(Cm,3) - pow(Ca,4) - pow(Cb,4);
+const double EE = 0.0;// 0.5*(A*pow(Cm,2) - 0.5*B*pow(Cm,4) - 0.5*pow(Ca,5) - 0.5*pow(Cb,5));
 
 const double deltaX = 1.0;
 const double CFL = 25.0;
@@ -34,18 +34,18 @@ namespace MMSP {
 
 // Define a Laplacian function for a specific field
 template<int dim, typename T>
-double field_laplacian(const grid<dim, vector<T> >& GRID, const vector<int>& x, const int field)
+double field_laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field)
 {
   T laplacian(0.0);
   vector<int> s = x;
 
-  const double& y = GRID(x)[field];
+  const T& y = GRID(x)[field];
 
   for (int i=0; i<dim; i++) {
     s[i] += 1;
-    const double& yh = GRID(s)[field];
+    const T& yh = GRID(s)[field];
     s[i] -= 2;
-    const double& yl = GRID(s)[field];
+    const T& yl = GRID(s)[field];
     s[i] += 1;
 
     double weight = 1.0 / pow(dx(GRID, i),2);
@@ -56,16 +56,16 @@ double field_laplacian(const grid<dim, vector<T> >& GRID, const vector<int>& x, 
 
 // Define a Laplacian function missing the central value, for implicit source terms
 template<int dim, typename T>
-double ring_laplacian(const grid<dim, vector<T> >& GRID, const vector<int>& x, const int field)
+double ring_laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field)
 {
   T laplacian(0.0);
   vector<int> s = x;
 
   for (int i=0; i<dim; i++) {
     s[i] += 1;
-    const double& yh = GRID(s)[field];
+    const T& yh = GRID(s)[field];
     s[i] -= 2;
-    const double& yl = GRID(s)[field];
+    const T& yl = GRID(s)[field];
     s[i] += 1;
 
     double weight = 1.0 / pow(dx(GRID, i),2);
@@ -146,12 +146,20 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 		dx(guess,d) = deltaX;
 	}
 
+    double gridSize=1.0*nodes(grid);
+	#ifdef MPI_VERSION
+    double localGridSize=gridSize;
+    MPI::COMM_WORLD.Barrier();
+	MPI::COMM_WORLD.Allreduce(&localGridSize, &gridSize, 1, MPI_DOUBLE, MPI_SUM);
+	#endif
+
 	for (int step=0; step<steps; step++) {
 
         update.copy(grid); // deep copy: includes data and ghost cells
 
         double residual=1.0;
         unsigned int iter=0;
+
         while (residual>tolerance) {
             residual = 0.0;
     		for (int n=0; n<nodes(grid); n++) {
@@ -159,11 +167,11 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 
 	    		const double S1 = grid(x)[0] + dt*D*ring_laplacian(update, x, 1);
 	    		const double S2 = DD - 3.0*BB*pow(grid(x)[0],2) - 2.0*CC*grid(x)[0] - K*ring_laplacian(update, x, 0);
-	    		const double A12 = (2.0*dim)*D/pow(deltaX,2);
-	    		const double A21 = -(2.0*dim)*pow(K,2)/pow(deltaX,2) - 4.0*AA*pow(update(x)[0],2);
+	    		const double A12 = (2.0*dim)*dt*D/pow(deltaX,2);
+	    		const double A21 = -(2.0*dim)*K/pow(deltaX,2) - 4.0*AA*pow(update(x)[0],2);
 
 	    		// Apply Cramer's Rule to the [2x2][2]=[2] matrix equation
-	    		const double cramerDenom = 1.0 - A12*A21;
+	    		const double cramerDenom = 1.0 - A12*A21; // A11*A22 = 1*1 = 1
 	    		const double cramerX1 = (S1 - S2*A12)/cramerDenom;
 	    		const double cramerX2 = (S2 - A21*S1)/cramerDenom;
 
@@ -171,27 +179,30 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
                 guess(x)[0] = cramerX1;
                 guess(x)[1] = cramerX2;
 
-                // Compute ||b-Ax||
-                const double Ax1 = cramerX1 + A12*cramerX2;
-                const double Ax2 = cramerX2 - cramerX1*A21;
-                const double normB = std::sqrt(pow(deltaX,2)*(pow(S1,2)+pow(S2,2)));
-                const double normBminusAx = std::sqrt(pow(deltaX,2)*pow(S1-Ax1,2) + pow(deltaX,2)*pow(S2-Ax2,2));
+                // Compute ||b-Ax|| / ||b||
+                const double AX1 = 1.0*cramerX1 + A12*cramerX2;
+                const double AX2 = A21*cramerX1 + 1.0*cramerX2;
+                const double normBminusAx = std::sqrt(pow(S1-AX1,2) + pow(S2-AX2,2));
+                //const double normB = std::sqrt(pow(S1,2)+pow(S2,2));
+                const double normB = std::sqrt(pow(grid(x)[0],2)+pow(DD - 3.0*BB*pow(grid(x)[0],2) - 2.0*CC*grid(x)[0],2));
 
-                residual += normBminusAx/(normB*nodes(grid));
+                residual += normBminusAx/(normB*gridSize);
 	    	}
+
+            swap(update, guess);
+            ghostswap(update);
+
+	    	iter++;
+
        		#ifdef MPI_VERSION
 	        double localResidual=residual;
 	        MPI::COMM_WORLD.Barrier();
        		MPI::COMM_WORLD.Allreduce(&localResidual, &residual, 1, MPI_DOUBLE, MPI_SUM);
        		#endif
 
-            swap(update, guess);
-            ghostswap(update);
-
-	    	iter++;
 	    	#ifdef DEBUG
        		if (rank==0)
-   	    	    std::cout<<step<<'.'<<iter<<'\t'<<residual<<std::endl;
+   	    	    std::cout<<step<<'\t'<<iter<<'\t'<<residual<<std::endl;
    		    #endif
         }
 
