@@ -8,10 +8,10 @@
 
 const double Ca = 0.05;
 const double Cb = 0.95;
-const double Cm = 0.5*(Ca + Cb);
+const double Cm = 0.5*(Ca + Cb);      // = 0.5
 const double A = 2.0;
-const double B = A/((Ca-Cm)*(Ca-Cm));
-const double D = 2.0/(Cb-Ca);
+const double B = A/((Ca-Cm)*(Ca-Cm)); // = 9.8765
+const double D = 2.0/(Cb-Ca);         // = 2.2222
 const double K = 2.0;
 
 template<typename T>
