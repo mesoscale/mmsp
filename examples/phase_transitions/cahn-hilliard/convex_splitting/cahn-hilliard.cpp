@@ -28,12 +28,13 @@ const double DD = A*Cm - B*pow(Cm,3) - pow(Ca,4) - pow(Cb,4);
 const double EE = 0.5*(A*pow(Cm,2) - 0.5*B*pow(Cm,4) - 0.5*pow(Ca,5) - 0.5*pow(Cb,5));
 */
 
-const int edge = 90;
+const int edge = 200;
 const double deltaX = 1.0;
 const double CFL = 20.0;
 const double dt = pow(deltaX, 4)*CFL/(32.0*D*K);
 const double tolerance = 1.0e-8; // "Fair" value. 1e-5 is poor, 1e-12 is publication-quality but slow.
 const unsigned int max_iter = 5000; // don't let the solver stagnate
+const int resfreq=2; // number of iterations per residual computation
 
 template <typename T>
 T parametric_energy_density(const T& C)
@@ -221,7 +222,7 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
     		// Strictly, ||b-Ax|| should be re-computed using the latest guess after each iteration.
     		// But this almost doubles the computational cost, so I'll cheat and infrequently compute it.
             double normB = 0.0;
-    		if (iter%5==0) {
+    		if (iter%resfreq==0) {
                 residual = 0.0;
     		    for (int n=0; n<nodes(grid); n++) {
 	    	    	MMSP::vector<int> x = position(grid,n);
