@@ -9,25 +9,6 @@
 #include"cahn-hilliard.hpp"
 #include"../energy.hpp"
 
-// Parametrize free energy density
-// F(c) = AA*c^4  - BB*c^3 - CC*c^2 + DD*c - EE
-// Simplest form sets AA=0.25, CC=0.5, BB=DD=EE=0 --> F(c) = 0.25*c^4 - 0.5*c^2,
-//                                                    f(c) = c^3 - c^2.
-
-const double AA = 0.25;
-const double BB = 0.0;
-const double CC = 0.5;
-const double DD = 0.0;
-const double EE = 0.0;
-
-/*
-const double AA = 0.25*(B + Ca + Cb);
-const double BB = B*Cm + pow(Ca,2) + pow(Cb,2);
-const double CC = 0.5*(A - 3.0*B*pow(Cm,2) - 3.0*pow(Ca,3) - 3.0*pow(Cb,3));
-const double DD = A*Cm - B*pow(Cm,3) - pow(Ca,4) - pow(Cb,4);
-const double EE = 0.5*(A*pow(Cm,2) - 0.5*B*pow(Cm,4) - 0.5*pow(Ca,5) - 0.5*pow(Cb,5));
-*/
-
 const int edge = 200;
 const double deltaX = 1.0;
 const double CFL = 20.0;
@@ -36,23 +17,62 @@ const double tolerance = 1.0e-8; // "Fair" value. 1e-5 is poor, 1e-12 is publica
 const unsigned int max_iter = 5000; // don't let the solver stagnate
 const int resfreq=2; // number of iterations per residual computation
 
-template <typename T>
-T parametric_energy_density(const T& C)
-{
-    return (AA*pow(C,4) - BB*pow(C,3) - CC*pow(C,2) + DD*C - EE);
-}
+
+// Vanilla Cahn-Hilliard
+const double AA = 1.0;
+const double BB = 0.0;
+const double CC = -1.0;
+const double DD = 0.0;
 
 template <typename T>
-T parametric_dfdc(const T& C)
+T energy_density(const T& C)
 {
-    return (4.0*AA*pow(C,3) - 3.0*BB*pow(C,2) - 2.0*CC*C + DD);
+    return 0.25*pow(C,4) - 0.5*pow(C,2);
 }
-
+template <typename T>
+T full_dfdc(const T& C)
+{
+    return pow(C,3) - C;
+}
+template <typename T>
+T contractive_dfdc(const T& C)
+{
+    return pow(C,3);
+}
 template <typename T>
 T expansive_dfdc(const T& C)
 {
-    return (DD - 3.0*BB*pow(C,3) - 2.0*CC*pow(C,2));
+    return -C;
 }
+
+/*
+// Parametric Cahn-Hilliard
+const double AA = B + Ca + Cb;
+const double BB = 3.0*(B*Cm + pow(Ca,2) + pow(Cb,2));
+const double CC = 3.0*(B*pow(Cm,2) + pow(Ca,3) + pow(Cb,3)) - A;
+const double DD = B*pow(Cm,3) + pow(Ca,4) + pow(Cb,4) - A*Cm;
+
+template <typename T>
+T energy_density(const T& C)
+{
+    return -0.5*A*pow(C-Cm,2) + 0.25*B*pow(C-Cm,4) + 0.25*Ca*pow(C-Ca,4) + 0.25*Cb*pow(C-Cb,4);
+}
+template <typename T>
+T full_dfdc(const T& C)
+{
+    return AA*pow(C,3) - BB*pow(C,2) + CC*C - DD;
+}
+template <typename T>
+T contractive_dfdc(const T& C)
+{
+    return AA*pow(C,3) - BB*pow(C,2);
+}
+template <typename T>
+T expansive_dfdc(const T& C)
+{
+    return CC*C - DD;
+}
+*/
 
 namespace MMSP {
 
@@ -113,19 +133,6 @@ void generate(int dim, const char* filename)
 	rank = MPI::COMM_WORLD.Get_rank();
 	#endif
 
-    if (rank==0)
-        std::cout<<"F(C) = ("<<AA<<")C^4 - ("<<BB<<")C^3 - ("<<CC<<")C^2 + ("<<DD<<")C - ("<<EE<<')'<<std::endl;
-    if (AA<0) {
-        if (rank==0)
-            std::cerr<<"Warning: parameter AA is negative. Double-check your inputs."<<std::endl;
-    } else if (BB<0) {
-        if (rank==0)
-            std::cerr<<"Warning: parameter BB is negative. Double-check your inputs."<<std::endl;
-    } else if (CC<0) {
-        if (rank==0)
-            std::cerr<<"Warning: parameter CC is negative. Double-check your inputs."<<std::endl;
-    } // DD and EE don't matter, since their convexity is not in question.
-
     const double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)};
 
 	if (dim==2) {
@@ -142,7 +149,7 @@ void generate(int dim, const char* filename)
 
 		for (int i=0; i<nodes(grid); i++) {
 			MMSP::vector<int> x = position(grid,i);
-		    grid(x)[1] = parametric_dfdc(grid(x)[0]) - K*field_laplacian(grid, x, 0);
+		    grid(x)[1] = full_dfdc(grid(x)[0]) - K*field_laplacian(grid, x, 0);
 		}
 
 		#ifdef MPI_VERSION
@@ -206,12 +213,11 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 	    		const double B1 = grid(x)[0] + dt*D*fringe_laplacian(update, x, 1);
 	    		const double B2 = expansive_dfdc(grid(x)[0]) - K*fringe_laplacian(update, x, 0);
 	    		const double A12 = dt*D*lapWeight;
-	    		const double A21 = -K*lapWeight - 4.0*AA*pow(update(x)[0],2);
+	    		const double A21 = -contractive_dfdc(update(x)[0]) - K*lapWeight;
 
 	    		const double denom = 1.0 - A12*A21;
 	    		guess(x)[0] =(B1 -  B2*A12)/denom;
 	    		guess(x)[1] =(B2 - A21*B1 )/denom;
-
              }
 
             swap(update, guess);
@@ -229,7 +235,7 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 
                     // Compute Σ(dV||B-AX||) / Σ(dV||B||) using L2 vector norms
                     const double R1 = guess(x)[0] - grid(x)[0] - dt*D*field_laplacian(guess, x, 1);
-                    const double R2 = guess(x)[1] - 4.0*AA*pow(guess(x)[0],3) - expansive_dfdc(grid(x)[0]) + K*field_laplacian(guess, x, 0);
+                    const double R2 = guess(x)[1] - contractive_dfdc(guess(x)[0]) - expansive_dfdc(grid(x)[0]) + K*field_laplacian(guess, x, 0);
 
                     const double normBminusAX = pow(R1,2) + pow(R2,2);
 
@@ -261,7 +267,7 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 		double mass = 0.0;
 		for (int i=0; i<nodes(grid); i++) {
 			MMSP::vector<int> x = position(grid,i);
-			energy += dx(grid)*dy(grid)*parametric_energy_density(update(x)[0]);
+			energy += dx(grid)*dy(grid)*energy_density(update(x)[0]);
 			mass += dx(grid)*dy(grid)*update(x)[0];
 		}
 		#ifdef MPI_VERSION
