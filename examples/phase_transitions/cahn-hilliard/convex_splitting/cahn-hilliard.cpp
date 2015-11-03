@@ -28,7 +28,7 @@ const double DD = A*Cm - B*pow(Cm,3) - pow(Ca,4) - pow(Cb,4);
 const double EE = 0.5*(A*pow(Cm,2) - 0.5*B*pow(Cm,4) - 0.5*pow(Ca,5) - 0.5*pow(Cb,5));
 */
 
-const int edge = 96;
+const int edge = 90;
 const double deltaX = 1.0;
 const double CFL = 20.0;
 const double dt = pow(deltaX, 4)*CFL/(32.0*D*K);
@@ -198,8 +198,6 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
             // update stores the old gues, Jacobi lexicographic index l
             // guess  stores the new gues, Jacobi lexicographic index l+1
 
-            double normB = 0.0;
-
             // Solve AX=B using Cramer's rule
     		for (int n=0; n<nodes(grid); n++) {
 	    		MMSP::vector<int> x = position(grid,n);
@@ -210,11 +208,9 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 	    		const double A21 = -K*lapWeight - 4.0*AA*pow(update(x)[0],2);
 
 	    		const double denom = 1.0 - A12*A21;
-	    		guess(x)[0] =( B1 -  B2*A12)/denom;
-	    		guess(x)[1] =(B2  - A21*B1 )/denom;
+	    		guess(x)[0] =(B1 -  B2*A12)/denom;
+	    		guess(x)[1] =(B2 - A21*B1 )/denom;
 
-                //normB += pow(dV,2) * (pow(grid(x)[0],2) + pow(expansive_dfdc(grid(x)[0]),2)); // dV||B||
-                normB += pow(dV,2) * (pow(grid(x)[0] + dt*D*fringe_laplacian(guess, x, 1),2) + pow(expansive_dfdc(grid(x)[0]) - K*fringe_laplacian(guess, x, 0),2)); // dV||B||
              }
 
             swap(update, guess);
@@ -224,35 +220,35 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 
     		// Strictly, ||b-Ax|| should be re-computed using the latest guess after each iteration.
     		// But this almost doubles the computational cost, so I'll cheat and infrequently compute it.
+            double normB = 0.0;
     		if (iter%5==0) {
                 residual = 0.0;
     		    for (int n=0; n<nodes(grid); n++) {
 	    	    	MMSP::vector<int> x = position(grid,n);
 
-                    // Compute Σ[dV||B-AX|| / Σ(dV||B||)] using L2 vector norms
-	        		const double B1 = grid(x)[0] + dt*D*fringe_laplacian(guess, x, 1);
-	        		const double B2 = expansive_dfdc(grid(x)[0]) - K*fringe_laplacian(guess, x, 0);
-    	    		const double A12 = dt*D*lapWeight;
-	    		    const double A21 = -K*lapWeight - 4.0*AA*pow(guess(x)[0],2);
+                    // Compute Σ(dV||B-AX||) / Σ(dV||B||) using L2 vector norms
+                    const double R1 = guess(x)[0] - grid(x)[0] - dt*D*field_laplacian(guess, x, 1);
+                    const double R2 = guess(x)[1] - 4.0*AA*pow(guess(x)[0],3) - expansive_dfdc(grid(x)[0]) + K*field_laplacian(guess, x, 0);
 
-                    const double AX1 =     guess(x)[0] + A12*guess(x)[1];
-                    const double AX2 = A21*guess(x)[0] +     guess(x)[1];
-                    const double normBminusAX = pow(dV,2) * (pow(B1-AX1,2) + pow(B2-AX2,2));
+                    const double normBminusAX = pow(R1,2) + pow(R2,2);
 
-                    residual += normBminusAX/normB;
+                    residual += normBminusAX;
+                    normB += pow(grid(x)[0],2) + pow(expansive_dfdc(grid(x)[0]),2);
     	    	}
 
     	    	#ifdef MPI_VERSION
     	    	double localResidual=residual;
         		MPI::COMM_WORLD.Allreduce(&localResidual, &residual, 1, MPI_DOUBLE, MPI_SUM);
+    	    	double localNormB=normB;
+        		MPI::COMM_WORLD.Allreduce(&localNormB, &normB, 1, MPI_DOUBLE, MPI_SUM);
     	    	#endif
 
-    	    	residual = sqrt(residual);
+    	    	residual = sqrt(residual)/(2.0*gridSize*sqrt(normB));
 	    	}
 
 	    	#ifdef DEBUG
        		if (rank==0)
-   	    	    std::cout<<step<<'\t'<<iter<<'\t'<<residual<<std::endl;
+   	    	    std::cout<<step<<'\t'<<iter<<'\t'<<normB<<'\t'<<residual<<std::endl;
    		    #endif
         }
 
