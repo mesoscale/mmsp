@@ -8,11 +8,10 @@
 #include<cmath>
 #include<fstream>
 #include"cahn-hilliard.hpp"
-#include"../energy.hpp"
 
 // Vanilla Cahn-Hilliard
-const double D = 1.0; //2.0/(Cb-Ca);         // = 2.2222
-const double K = 1.0; //2.0;
+const double D = 1.0;
+const double K = 1.0;
 
 template <typename T>
 T energy_density(const T& C)
@@ -44,6 +43,25 @@ T expansive_dfdc(const T& C)
 
 /*
 // Parametric Cahn-Hilliard
+
+const double Ca = 0.05;
+const double Cb = 0.95;
+const double Cm = 0.5*(Ca + Cb);      // = 0.5
+const double A = 2.0;
+const double B = A/((Ca-Cm)*(Ca-Cm)); // = 9.8765
+
+template<typename T>
+double energydensity(const T& C)
+{
+        return -0.5*A*pow(C-Cm,2) + 0.25*B*pow(C-Cm,4) + 0.25*Ca*pow(C-Ca,4) + 0.25*Cb*pow(C-Cb,4);
+}
+
+template<typename T>
+double dfdc(const T& C)
+{
+    return -A*(C-Cm) + B*pow(C-Cm, 3) + Ca*pow(C-Ca, 3) + Cb*pow(C-Cb, 3);
+}
+
 const double D = 2.0/(Cb-Ca);         // = 2.2222
 const double K = 2.0;
 
@@ -80,7 +98,7 @@ T expansive_dfdc(const T& C)
 */
 
 
-const int edge = 200;
+const int edge = 180;
 const double deltaX = 1.0;
 const double CFL = 20.0;
 const double dt = pow(deltaX, 4)*CFL/(32.0*D*K);
@@ -159,17 +177,14 @@ void generate(int dim, const char* filename)
 		for (int i=0; i<nodes(grid); i++) {
 			MMSP::vector<int> x = position(grid,i);
 			grid(x)[0] = 0.45 + 0.01 * std::cos(x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1]);
-			grid(x)[1] = 0.5;
 		}
 
-		/*
 		ghostswap(grid); // otherwise, parallel jobs have a "window frame" artifact
 
 		for (int i=0; i<nodes(grid); i++) {
 			MMSP::vector<int> x = position(grid,i);
 		    grid(x)[1] = full_dfdc(grid(x)[0]) - K*field_laplacian(grid, x, 0);
 		}
-		*/
 
 		#ifdef MPI_VERSION
 		MPI::COMM_WORLD.Barrier();
@@ -181,40 +196,41 @@ void generate(int dim, const char* filename)
 }
 
 template <int dim, typename T>
-void update(MMSP::grid<dim,vector<T> >& grid, int steps)
+void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 {
 	int rank=0;
 	#ifdef MPI_VERSION
 	rank = MPI::COMM_WORLD.Get_rank();
 	#endif
 
-    ghostswap(grid);
+    ghostswap(oldGrid);
 
-	MMSP::grid<dim,vector<T> > update(grid); // new values at each point and initial guess for iteration
-	MMSP::grid<dim,vector<T> > guess(grid); // new guess for iteration
+	MMSP::grid<dim,vector<T> > newGrid(oldGrid); // new values at each point and initial guess for iteration
+	MMSP::grid<dim,vector<T> > guessGrid(oldGrid); // new guess for iteration
 
 	// Make sure the grid spacing is correct. Modify at will.
 	for (int d=0; d<dim; d++) {
-		dx(grid,d) = deltaX;
-		dx(update,d) = deltaX;
-		dx(guess,d) = deltaX;
+		dx(oldGrid,d) = deltaX;
+		dx(newGrid,d) = deltaX;
+		dx(guessGrid,d) = deltaX;
 	}
 
-    double dV = 1.0;
-    for (int d=0; d<dim; d++)
-        dV *= dx(grid,d);
-    double gridSize=1.0*nodes(grid);
+    //double dV = 1.0;
+    //for (int d=0; d<dim; d++)
+    //    dV *= dx(oldGrid,d);
+    double gridSize=1.0*nodes(oldGrid);
+    double hsq = pow(dx(oldGrid),2);
 	#ifdef MPI_VERSION
     double localGridSize=gridSize;
     MPI::COMM_WORLD.Barrier();
 	MPI::COMM_WORLD.Allreduce(&localGridSize, &gridSize, 1, MPI_DOUBLE, MPI_SUM);
 	#endif
 
-    //double lapWeight = 4.0/pow(dx(grid,0),2);
+    //double lapWeight = 4.0/pow(dx(oldGrid,0),2);
     //for (int d=0; d<dim; d++)
-    //    lapWeight += 2.0/pow(dx(grid,d),2); // dim=2 --> lapWeight = 4/h^2 if dy=dx=h
+    //    lapWeight += 2.0/pow(dx(oldGrid,d),2); // dim=2 --> lapWeight = 4/h^2 if dy=dx=h
 
-    update.copy(grid); // deep copy: includes data and ghost cells
+    newGrid.copy(oldGrid); // deep copy: includes data and ghost cells
 
     std::ofstream ferr;
     if (rank==0)
@@ -226,51 +242,61 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
         unsigned int iter=0;
 
         while (iter<max_iter && residual>tolerance) {
-            // update stores the old gues, Jacobi lexicographic index l
-            // guess  stores the new gues, Jacobi lexicographic index l+1
+            // newGrid stores the old guess, Jacobi index l
+            // guessGrid stores the new guess, Jacobi index l+1
 
             // Solve AX=B using Cramer's rule
-    		for (int n=0; n<nodes(grid); n++) {
-	    		MMSP::vector<int> x = position(grid,n);
+    		for (int n=0; n<nodes(oldGrid); n++) {
+	    		MMSP::vector<int> x = position(oldGrid,n);
+	    		double cOld = oldGrid(x)[0];
+	    		double cLast = newGrid(x)[0];
 
-	    		// A is defined by the last guess, stored in update(x). It is a 2x2 matrix.
-	    		const double A11 = 1.0;                                              double A12 = 4.0*D*dt/pow(deltaX,2);
-	    		      double A21 = -pow(update(x)[0],2) - 4.0*K/pow(deltaX,2); const double A22 = 1.0;
+	    		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
+	    		const double A11 = 1.0;                             double A12 = 4.0*D*dt/hsq;
+	    		      double A21 = -pow(cLast,2) - 4.0*K/hsq; const double A22 = 1.0;
 	    		//const double A11 = 1.0;                                double A12 = dt*D*lapWeight;
-	    		//double A21 = -linear_dfdc(update(x)[0]) - K*lapWeight; const double A22 = 1.0;
+	    		//double A21 = -linear_dfdc(newGrid(x)[0]) - K*lapWeight; const double A22 = 1.0;
 
-	    		// B is defined by the last value, stored in grid(x), and the last guess, stored in update(x). It is a 2x1 column.
-	    		double B1 =  grid(x)[0] + D*dt*fringe_laplacian(update, x, 1);
-	    		double B2 = -grid(x)[0] - K*fringe_laplacian(update, x, 0);
-	    		//double B2 = expansive_dfdc(grid(x)[0]) - K*fringe_laplacian(update, x, 0);
+	    		// B is defined by the last value, stored in oldGrid(x), and the last guess, stored in newGrid(x). It is a 2x1 column.
+	    		double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
+	    		double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
+
+	    		double B1 =  cOld + D*dt*lapU;
+	    		double B2 = -cOld - K*lapC;
+	    		//double B2 = expansive_dfdc(oldGrid(x)[0]) - K*fringe_laplacian(newGrid, x, 0);
 
 	    		double denom = A11*A22 - A12*A21;
 
-	    		guess(x)[0] = (A22*B1 - B2*A12)/denom;
-	    		guess(x)[1] = (A11*B2 - B1*A21 )/denom;
+	    		guessGrid(x)[0] = (A22*B1 - B2*A12)/denom; // cNew
+	    		guessGrid(x)[1] = (A11*B2 - B1*A21 )/denom;// uNew
              }
 
-            swap(update, guess);
-            ghostswap(update);
+            swap(newGrid, guessGrid); // newGrid now holds the latest guess
+            ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
 
     		// Strictly, ||b-Ax|| should be re-computed using the latest guess after each iteration.
     		// But this almost doubles the computational cost, so I'll cheat and infrequently compute it.
             double normB = 0.0;
     		if (iter%resfreq==0) {
                 residual = 0.0;
-    		    for (int n=0; n<nodes(grid); n++) {
-	    	    	MMSP::vector<int> x = position(grid,n);
+    		    for (int n=0; n<nodes(oldGrid); n++) {
+	    	    	MMSP::vector<int> x = position(oldGrid,n);
+    	    		double cOld = oldGrid(x)[0];
+	        		double cNew = newGrid(x)[0];
+	        		double uNew = newGrid(x)[1];
+    	    		double lapU = field_laplacian(newGrid, x, 1); // excludes central term
+	        		double lapC = field_laplacian(newGrid, x, 0); // excludes central term
 
                     // Compute Σ(dV||B-AX||) / Σ(dV||B||) using L2 vector norms
-                    double R1 = update(x)[0] - grid(x)[0]                       - dt*D*field_laplacian(update, x, 1);
-                    double R2 = update(x)[1] - pow(update(x)[0],3) + grid(x)[0] + K*field_laplacian(update, x, 0);
-                    //double R2 = update(x)[1] - contractive_dfdc(update(x)[0]) - expansive_dfdc(grid(x)[0]) + K*field_laplacian(update, x, 0);
+                    double R1 = cNew - cOld               - dt*D*lapU;
+                    double R2 = uNew + cOld - pow(cNew,3) + K*lapC;
+                    //double R2 = newGrid(x)[1] - contractive_dfdc(newGrid(x)[0]) - expansive_dfdc(oldGrid(x)[0]) + K*field_laplacian(newGrid, x, 0);
 
                     double normBminusAX = pow(R1,2) + pow(R2,2);
 
                     residual += normBminusAX;
-                    normB += 2.0*pow(grid(x)[0],2);
-                    //normB += pow(grid(x)[0],2) + pow(expansive_dfdc(grid(x)[0]),2);
+                    normB += pow(cOld,2) + pow(-cOld,2);
+                    //normB += pow(oldGrid(x)[0],2) + pow(expansive_dfdc(oldGrid(x)[0]),2);
     	    	}
 
     	    	#ifdef MPI_VERSION
@@ -297,16 +323,17 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
    		    #endif
         }
 
-		grid.copy(update); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
-		//ghostswap(grid); // last step in the iteration is to ghostswap update
+		oldGrid.copy(newGrid); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
+		//ghostswap(oldGrid); // last step in the iteration is to ghostswap newGrid
 
   		#ifndef DEBUG
 		double energy = 0.0;
 		double mass = 0.0;
-		for (int i=0; i<nodes(grid); i++) {
-			MMSP::vector<int> x = position(grid,i);
-			energy += dx(grid)*dy(grid)*energy_density(update(x)[0]);
-			mass += dx(grid)*dy(grid)*update(x)[0];
+		for (int i=0; i<nodes(oldGrid); i++) {
+			MMSP::vector<int> x = position(oldGrid,i);
+			double C = oldGrid(x)[0];
+			energy += dx(oldGrid)*dy(oldGrid)*energy_density(C);
+			mass += dx(oldGrid)*dy(oldGrid)*C;
 		}
 		#ifdef MPI_VERSION
 		MPI::COMM_WORLD.Barrier();
