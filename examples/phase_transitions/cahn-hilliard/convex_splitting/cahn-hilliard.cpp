@@ -171,16 +171,16 @@ void generate(int dim, const char* filename)
 		for (int d=0; d<dim; d++)
 			dx(grid,d) = deltaX;
 
-		for (int i=0; i<nodes(grid); i++) {
-			MMSP::vector<int> x = position(grid,i);
-			grid(x)[0] = 0.45 + 0.01 * std::cos(x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1]);
+		for (int n=0; n<nodes(grid); n++) {
+			MMSP::vector<int> x = position(grid,n);
+			grid(n)[0] = 0.45 + 0.01 * std::cos(x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1]);
 		}
 
 		ghostswap(grid); // otherwise, parallel jobs have a "window frame" artifact
 
-		for (int i=0; i<nodes(grid); i++) {
-			MMSP::vector<int> x = position(grid,i);
-		    grid(x)[1] = full_dfdc(grid(x)[0]) - K*field_laplacian(grid, x, 0);
+		for (int n=0; n<nodes(grid); n++) {
+			MMSP::vector<int> x = position(grid,n);
+		    grid(n)[1] = full_dfdc(grid(n)[0]) - K*field_laplacian(grid, x, 0);
 		}
 
 		#ifdef MPI_VERSION
@@ -219,7 +219,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
         dV *= dx(oldGrid,d);
 
     double gridSize=1.0*nodes(oldGrid);
-    double hsq = pow(dx(oldGrid),2);
+    double hsq = pow(deltaX,2);
 	#ifdef MPI_VERSION
     double localGridSize=gridSize;
     MPI::COMM_WORLD.Barrier();
@@ -248,8 +248,8 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
             // Solve AX=B using Cramer's rule
     		for (int n=0; n<nodes(oldGrid); n++) {
 	    		MMSP::vector<int> x = position(oldGrid,n);
-	    		double cOld = oldGrid(x)[0];
-	    		double cLast = newGrid(x)[0];
+	    		double cOld = oldGrid(n)[0];
+	    		double cLast = newGrid(n)[0];
 
 	    		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
 	    		//const double A11 = 1.0;                                  double A12 = 4.0*D*dt/hsq;
@@ -266,8 +266,8 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 
 	    		double denom = A11*A22 - A12*A21;
 
-	    		guessGrid(x)[0] = (A22*B1 - B2*A12)/denom; // cNew
-	    		guessGrid(x)[1] = (A11*B2 - B1*A21)/denom; // uNew
+	    		guessGrid(n)[0] = (A22*B1 - B2*A12)/denom; // cNew
+	    		guessGrid(n)[1] = (A11*B2 - B1*A21)/denom; // uNew
              }
 
             ghostswap(guessGrid);
@@ -277,12 +277,12 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
             double normB = 0.0;
     		if (iter%resfreq==0) {
                 residual = 0.0;
-    		    for (int n=0; n<nodes(oldGrid); n++) {
-	    	    	MMSP::vector<int> x = position(oldGrid,n);
-    	    		double cOld = oldGrid(x)[0];
+    		    for (int n=0; n<nodes(guessGrid); n++) {
+	    	    	MMSP::vector<int> x = position(guessGrid,n);
+    	    		double cOld = oldGrid(n)[0];
 
-	        		double cNew = guessGrid(x)[0];
-	        		double uNew = guessGrid(x)[1];
+	        		double cNew = guessGrid(n)[0];
+	        		double uNew = guessGrid(n)[1];
 
     	    		double lapU = field_laplacian(guessGrid, x, 1); // excludes central term
 	        		double lapC = field_laplacian(guessGrid, x, 0); // excludes central term
@@ -291,7 +291,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                     double R1 = cNew - cOld                   - dt*D*lapU;
                     double R2 = uNew - contractive_dfdc(cNew) - expansive_dfdc(cOld) + K*lapC;
 
-                    double normBminusAX = R1*R1 + R2*R2; // "error"
+                    double normBminusAX = (R1*R1 + R2*R2)/(2.0*gridSize); // "error"
 
                     residual += normBminusAX;
 
@@ -310,7 +310,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     	    	if (rank==0)
     	    	    ferr<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
 
-    	    	residual = sqrt(residual)/(2.0*gridSize*sqrt(normB));
+    	    	residual = sqrt(residual)/(sqrt(2.0*gridSize)*sqrt(normB));
 
     	    	if (rank==0)
     	    	    ferr<<residual<<std::endl;
@@ -320,20 +320,16 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
             ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
 
 	    	iter++;
-
-	    	#ifdef DEBUG
-       		if (rank==0)
-   	    	    std::cout<<step<<'\t'<<iter<<'\t'<<normB<<'\t'<<residual<<std::endl;
-   		    #endif
         }
 
-		oldGrid.copy(newGrid); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
+		//oldGrid.copy(newGrid); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
+		swap(oldGrid,newGrid);
+		ghostswap(oldGrid);
 
-  		#ifndef DEBUG
 		double energy = 0.0;
 		double mass = 0.0;
-		for (int i=0; i<nodes(oldGrid); i++) {
-			MMSP::vector<int> x = position(oldGrid,i);
+		for (int n=0; n<nodes(oldGrid); n++) {
+			MMSP::vector<int> x = position(oldGrid,n);
 			double C = oldGrid(x)[0];
 			energy += dV*energy_density(C);
 			mass += dV*C;
@@ -347,14 +343,11 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		#endif
 		if (rank==0)
 			std::cout<<iter<<'\t'<<energy<<'\t'<<mass<<std::endl;
-		#endif
 
 	}
 	ferr.close();
-	#ifndef DEBUG
 	if (rank==0)
 		std::cout<<std::flush;
-	#endif
 }
 
 } // MMSP

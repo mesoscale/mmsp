@@ -28,7 +28,7 @@ parallel: cahn-hilliard.cpp $(core)
 
 # for profiling and leak checking
 debug: cahn-hilliard.cpp $(core)
-	$(gompiler) -DDEBUG $(gflags) $< -o $@ -lz
+	$(gompiler) $(gflags) $< -o $@ -lz
 
 tarball:
 	tar -cvzf cahn-hilliard.tar.gz cahn-hilliard.cpp cahn-hilliard.hpp Makefile notes
