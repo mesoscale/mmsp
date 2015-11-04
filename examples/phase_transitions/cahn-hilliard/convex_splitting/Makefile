@@ -30,5 +30,8 @@ parallel: cahn-hilliard.cpp $(core)
 debug: cahn-hilliard.cpp $(core)
 	$(gompiler) -DDEBUG $(gflags) $< -o $@ -lz
 
+tarball:
+	tar -cvzf cahn-hilliard.tar.gz cahn-hilliard.cpp cahn-hilliard.hpp Makefile notes
+
 clean:
-	rm -f cahn-hilliard parallel debug
+	rm -f cahn-hilliard parallel debug cahn-hilliard.tar.gz
