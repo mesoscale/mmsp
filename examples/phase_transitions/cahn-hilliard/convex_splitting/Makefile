@@ -6,7 +6,8 @@
 incdir = ../../../../include
 
 # compilers/flags
-compiler = g++
+compiler = icc
+gompiler = icc
 flags = -O3 -Wall -I $(incdir)
 gflags = -g -pg -Wall -O2 -I $(incdir)
 pcompiler = mpic++
@@ -27,7 +28,7 @@ parallel: cahn-hilliard.cpp $(core)
 
 # for profiling and leak checking
 debug: cahn-hilliard.cpp $(core)
-	$(compiler) -DDEBUG $(gflags) $< -o $@ -lz
+	$(gompiler) -DDEBUG $(gflags) $< -o $@ -lz
 
 clean:
 	rm -f cahn-hilliard parallel debug

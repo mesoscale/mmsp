@@ -6,23 +6,13 @@
 #define CAHNHILLIARD_UPDATE
 #include"MMSP.hpp"
 #include<cmath>
+#include<fstream>
 #include"cahn-hilliard.hpp"
 #include"../energy.hpp"
 
-const int edge = 200;
-const double deltaX = 1.0;
-const double CFL = 20.0;
-const double dt = pow(deltaX, 4)*CFL/(32.0*D*K);
-const double tolerance = 1.0e-8; // "Fair" value. 1e-5 is poor, 1e-12 is publication-quality but slow.
-const unsigned int max_iter = 5000; // don't let the solver stagnate
-const int resfreq=2; // number of iterations per residual computation
-
-
 // Vanilla Cahn-Hilliard
-const double AA = 1.0;
-const double BB = 0.0;
-const double CC = -1.0;
-const double DD = 0.0;
+const double D = 1.0; //2.0/(Cb-Ca);         // = 2.2222
+const double K = 1.0; //2.0;
 
 template <typename T>
 T energy_density(const T& C)
@@ -34,19 +24,29 @@ T full_dfdc(const T& C)
 {
     return pow(C,3) - C;
 }
+/*
 template <typename T>
 T contractive_dfdc(const T& C)
 {
     return pow(C,3);
 }
 template <typename T>
+T linear_dfdc(const T& C)
+{
+    return pow(C,2);
+}
+template <typename T>
 T expansive_dfdc(const T& C)
 {
     return -C;
 }
+*/
 
 /*
 // Parametric Cahn-Hilliard
+const double D = 2.0/(Cb-Ca);         // = 2.2222
+const double K = 2.0;
+
 const double AA = B + Ca + Cb;
 const double BB = 3.0*(B*Cm + pow(Ca,2) + pow(Cb,2));
 const double CC = 3.0*(B*pow(Cm,2) + pow(Ca,3) + pow(Cb,3)) - A;
@@ -68,11 +68,27 @@ T contractive_dfdc(const T& C)
     return AA*pow(C,3) - BB*pow(C,2);
 }
 template <typename T>
+T linear_dfdc(const T& C)
+{
+    return AA*pow(C,2) - BB*C;
+}
+template <typename T>
 T expansive_dfdc(const T& C)
 {
     return CC*C - DD;
 }
 */
+
+
+const int edge = 200;
+const double deltaX = 1.0;
+const double CFL = 20.0;
+const double dt = pow(deltaX, 4)*CFL/(32.0*D*K);
+
+const double tolerance = 1.0e-8; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
+const unsigned int max_iter = 10000; // don't let the solver stagnate
+const int resfreq=2; // number of iterations per residual computation
+
 
 namespace MMSP {
 
@@ -191,15 +207,19 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 	MPI::COMM_WORLD.Allreduce(&localGridSize, &gridSize, 1, MPI_DOUBLE, MPI_SUM);
 	#endif
 
-    double lapWeight = 0.0;
-    for (int d=0; d<dim; d++)
-        lapWeight += 2.0/pow(dx(grid,d),2);
+    //double lapWeight = 4.0/pow(dx(grid,0),2);
+    //for (int d=0; d<dim; d++)
+    //    lapWeight += 2.0/pow(dx(grid,d),2); // dim=2 --> lapWeight = 4/h^2 if dy=dx=h
 
     update.copy(grid); // deep copy: includes data and ghost cells
 
+    std::ofstream ferr;
+    if (rank==0)
+        ferr.open("error.log", std::ofstream::out | std::ofstream::app);
+
 	for (int step=0; step<steps; step++) {
 
-        double residual=1.0;
+        double residual=1000.0*tolerance;
         unsigned int iter=0;
 
         while (iter<max_iter && residual>tolerance) {
@@ -210,20 +230,24 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
     		for (int n=0; n<nodes(grid); n++) {
 	    		MMSP::vector<int> x = position(grid,n);
 
-	    		const double B1 = grid(x)[0] + dt*D*fringe_laplacian(update, x, 1);
-	    		const double B2 = expansive_dfdc(grid(x)[0]) - K*fringe_laplacian(update, x, 0);
-	    		const double A12 = dt*D*lapWeight;
-	    		const double A21 = -contractive_dfdc(update(x)[0]) - K*lapWeight;
+	    		// A is defined by the last guess, stored in update(x). It is a 2x2 matrix.
+	    		const double A11 = 1.0;                                              double A12 = 4.0*D*dt/pow(deltaX,2);
+	    		      double A21 = -pow(update(x)[0],2) - 4.0*K/pow(deltaX,2); const double A22 = 1.0;
+	    		//const double A11 = 1.0;                                double A12 = dt*D*lapWeight;
+	    		//double A21 = -linear_dfdc(update(x)[0]) - K*lapWeight; const double A22 = 1.0;
 
-	    		const double denom = 1.0 - A12*A21;
-	    		guess(x)[0] =(B1 -  B2*A12)/denom;
-	    		guess(x)[1] =(B2 - A21*B1 )/denom;
+	    		// B is defined by the last value, stored in grid(x), and the last guess, stored in update(x). It is a 2x1 column.
+	    		double B1 =  grid(x)[0] + D*dt*fringe_laplacian(update, x, 1);
+	    		double B2 = -grid(x)[0] - K*fringe_laplacian(update, x, 0);
+	    		//double B2 = expansive_dfdc(grid(x)[0]) - K*fringe_laplacian(update, x, 0);
+
+	    		double denom = A11*A22 - A12*A21;
+
+	    		guess(x)[0] = (A22*B1 - B2*A12)/denom;
+	    		guess(x)[1] = (A11*B2 - B1*A21 )/denom;
              }
 
-            swap(update, guess);
-            ghostswap(update);
-
-	    	iter++;
+            ghostswap(guess);
 
     		// Strictly, ||b-Ax|| should be re-computed using the latest guess after each iteration.
     		// But this almost doubles the computational cost, so I'll cheat and infrequently compute it.
@@ -234,13 +258,15 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 	    	    	MMSP::vector<int> x = position(grid,n);
 
                     // Compute Σ(dV||B-AX||) / Σ(dV||B||) using L2 vector norms
-                    const double R1 = guess(x)[0] - grid(x)[0] - dt*D*field_laplacian(guess, x, 1);
-                    const double R2 = guess(x)[1] - contractive_dfdc(guess(x)[0]) - expansive_dfdc(grid(x)[0]) + K*field_laplacian(guess, x, 0);
+                    double R1 = guess(x)[0] - grid(x)[0]                      - dt*D*field_laplacian(guess, x, 1);
+                    double R2 = guess(x)[1] - pow(guess(x)[0],3) + grid(x)[0] + K*field_laplacian(guess, x, 0);
+                    //double R2 = guess(x)[1] - contractive_dfdc(guess(x)[0]) - expansive_dfdc(grid(x)[0]) + K*field_laplacian(guess, x, 0);
 
-                    const double normBminusAX = pow(R1,2) + pow(R2,2);
+                    double normBminusAX = pow(R1,2) + pow(R2,2);
 
                     residual += normBminusAX;
-                    normB += pow(grid(x)[0],2) + pow(expansive_dfdc(grid(x)[0]),2);
+                    normB += 2.0*pow(grid(x)[0],2);
+                    //normB += pow(grid(x)[0],2) + pow(expansive_dfdc(grid(x)[0]),2);
     	    	}
 
     	    	#ifdef MPI_VERSION
@@ -250,8 +276,13 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
         		MPI::COMM_WORLD.Allreduce(&localNormB, &normB, 1, MPI_DOUBLE, MPI_SUM);
     	    	#endif
 
-    	    	residual = sqrt(residual)/(2.0*gridSize*sqrt(normB));
+    	    	residual = sqrt(residual/(2.0*gridSize*normB));
 	    	}
+
+            swap(update, guess);
+            ghostswap(update);
+
+	    	iter++;
 
 	    	#ifdef DEBUG
        		if (rank==0)
@@ -259,8 +290,8 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
    		    #endif
         }
 
-		swap(grid,guess);
-		ghostswap(grid);
+		grid.copy(update); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
+		//ghostswap(grid); // last step in the iteration is to ghostswap update
 
   		#ifndef DEBUG
 		double energy = 0.0;
@@ -278,7 +309,7 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 		MPI::COMM_WORLD.Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0);
 		#endif
 		if (rank==0)
-			std::cout<<iter<<'\t'<<energy<<'\t'<<mass<<'\n';
+			std::cout<<iter<<'\t'<<energy<<'\t'<<mass<<std::endl;
 		#endif
 
 	}
