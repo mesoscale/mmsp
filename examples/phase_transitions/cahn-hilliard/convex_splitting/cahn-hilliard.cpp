@@ -87,7 +87,7 @@ const double dt = pow(deltaX, 4)*CFL/(32.0*D*K);
 
 const double tolerance = 1.0e-8; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
 const unsigned int max_iter = 10000; // don't let the solver stagnate
-const int resfreq=2; // number of iterations per residual computation
+const int resfreq=1; // number of iterations per residual computation
 
 
 namespace MMSP {
@@ -159,14 +159,17 @@ void generate(int dim, const char* filename)
 		for (int i=0; i<nodes(grid); i++) {
 			MMSP::vector<int> x = position(grid,i);
 			grid(x)[0] = 0.45 + 0.01 * std::cos(x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1]);
+			grid(x)[1] = 0.5;
 		}
 
+		/*
 		ghostswap(grid); // otherwise, parallel jobs have a "window frame" artifact
 
 		for (int i=0; i<nodes(grid); i++) {
 			MMSP::vector<int> x = position(grid,i);
 		    grid(x)[1] = full_dfdc(grid(x)[0]) - K*field_laplacian(grid, x, 0);
 		}
+		*/
 
 		#ifdef MPI_VERSION
 		MPI::COMM_WORLD.Barrier();
@@ -247,7 +250,8 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 	    		guess(x)[1] = (A11*B2 - B1*A21 )/denom;
              }
 
-            ghostswap(guess);
+            swap(update, guess);
+            ghostswap(update);
 
     		// Strictly, ||b-Ax|| should be re-computed using the latest guess after each iteration.
     		// But this almost doubles the computational cost, so I'll cheat and infrequently compute it.
@@ -258,9 +262,9 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 	    	    	MMSP::vector<int> x = position(grid,n);
 
                     // Compute Σ(dV||B-AX||) / Σ(dV||B||) using L2 vector norms
-                    double R1 = guess(x)[0] - grid(x)[0]                      - dt*D*field_laplacian(guess, x, 1);
-                    double R2 = guess(x)[1] - pow(guess(x)[0],3) + grid(x)[0] + K*field_laplacian(guess, x, 0);
-                    //double R2 = guess(x)[1] - contractive_dfdc(guess(x)[0]) - expansive_dfdc(grid(x)[0]) + K*field_laplacian(guess, x, 0);
+                    double R1 = update(x)[0] - grid(x)[0]                       - dt*D*field_laplacian(update, x, 1);
+                    double R2 = update(x)[1] - pow(update(x)[0],3) + grid(x)[0] + K*field_laplacian(update, x, 0);
+                    //double R2 = update(x)[1] - contractive_dfdc(update(x)[0]) - expansive_dfdc(grid(x)[0]) + K*field_laplacian(update, x, 0);
 
                     double normBminusAX = pow(R1,2) + pow(R2,2);
 
@@ -276,11 +280,14 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
         		MPI::COMM_WORLD.Allreduce(&localNormB, &normB, 1, MPI_DOUBLE, MPI_SUM);
     	    	#endif
 
-    	    	residual = sqrt(residual/(2.0*gridSize*normB));
-	    	}
+    	    	if (rank==0)
+    	    	    ferr<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
 
-            swap(update, guess);
-            ghostswap(update);
+    	    	residual = sqrt(residual/(2.0*gridSize*normB));
+
+    	    	if (rank==0)
+    	    	    ferr<<residual<<std::endl;
+	    	}
 
 	    	iter++;
 
@@ -313,6 +320,7 @@ void update(MMSP::grid<dim,vector<T> >& grid, int steps)
 		#endif
 
 	}
+	ferr.close();
 	#ifndef DEBUG
 	if (rank==0)
 		std::cout<<std::flush;
