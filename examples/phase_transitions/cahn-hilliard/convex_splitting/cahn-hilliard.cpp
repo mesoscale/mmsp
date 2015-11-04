@@ -7,6 +7,7 @@
 #include"MMSP.hpp"
 #include<cmath>
 #include<fstream>
+//#include<time.h>
 #include"cahn-hilliard.hpp"
 
 // Vanilla Cahn-Hilliard
@@ -29,7 +30,7 @@ T contractive_dfdc(const T& C)
     return pow(C,3);
 }
 template <typename T> inline
-T linear_dfdc(const T& C)
+T nonlinear_coeff(const T& C)
 {
     return pow(C,2);
 }
@@ -39,28 +40,28 @@ T expansive_dfdc(const T& C)
     return -C;
 }
 
+
 /*
 // Parametric Cahn-Hilliard
 const double Ca = 0.05;
 const double Cb = 0.95;
 const double Cm = 0.5*(Ca + Cb);      // = 0.5
 const double A = 2.0;
-const double B = A/((Ca-Cm)*(Ca-Cm)); // = 9.8765
+const double B = A/pow(Ca-Cm,2); // = 9.8765
+const double D = 2.0/(Cb-Ca);         // = 2.2222
+const double K = 2.0;
 
-template<typename T>
+template<typename T> inline
 double energydensity(const T& C)
 {
         return -0.5*A*pow(C-Cm,2) + 0.25*B*pow(C-Cm,4) + 0.25*Ca*pow(C-Ca,4) + 0.25*Cb*pow(C-Cb,4);
 }
 
-template<typename T>
+template<typename T> inline
 double dfdc(const T& C)
 {
     return -A*(C-Cm) + B*pow(C-Cm, 3) + Ca*pow(C-Ca, 3) + Cb*pow(C-Cb, 3);
 }
-
-const double D = 2.0/(Cb-Ca);         // = 2.2222
-const double K = 2.0;
 
 const double AA = B + Ca + Cb;
 const double BB = 3.0*(B*Cm + pow(Ca,2) + pow(Cb,2));
@@ -83,7 +84,7 @@ T contractive_dfdc(const T& C)
     return AA*pow(C,3) - BB*pow(C,2);
 }
 template <typename T> inline
-T linear_dfdc(const T& C)
+T nonlinear_coeff(const T& C)
 {
     return AA*pow(C,2) - BB*C;
 }
@@ -95,14 +96,14 @@ T expansive_dfdc(const T& C)
 */
 
 
-const int edge = 180;
+const int edge = 200;
 const double deltaX = 1.0;
-const double CFL = 20.0;
+const double CFL = 9.0;
 const double dt = pow(deltaX, 4)*CFL/(32.0*D*K);
 // Max. semi-implicit timestep should be dt = pow(deltaX, 2)/(32.0*D*K)
 
-const double tolerance = 1.0e-8; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
-const unsigned int max_iter = 10000; // don't let the solver stagnate
+const double tolerance = 1.0e-9; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
+const unsigned int max_iter = 5000; // don't let the solver stagnate
 const int resfreq=1; // number of iterations per residual computation
 
 namespace MMSP {
@@ -164,7 +165,9 @@ void generate(int dim, const char* filename)
 	rank = MPI::COMM_WORLD.Get_rank();
 	#endif
 
-    const double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)};
+    //srand(time(NULL)/(rank+2));
+
+    const double q[2] = {0.1*sqrt(2.0), 0.2*sqrt(3.0)};
 
 	if (dim==2) {
 		MMSP::grid<2,vector<double> > grid(2,0,edge,0,edge); // field 0 is c, field 1 is mu
@@ -173,6 +176,7 @@ void generate(int dim, const char* filename)
 
 		for (int n=0; n<nodes(grid); n++) {
 			MMSP::vector<int> x = position(grid,n);
+			//grid(n)[0] = 0.5 + 0.025 * ((double(rand())/RAND_MAX) - 0.5);
 			grid(n)[0] = 0.45 + 0.01 * std::cos(x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1]);
 		}
 
@@ -189,6 +193,13 @@ void generate(int dim, const char* filename)
 		output(grid,filename);
 		if (rank==0)
 			std::cout<<"Timestep is "<<dt<<" (Co="<<CFL<<")\nIters\tEnergy\tMass"<<std::endl;
+
+        std::ofstream ferr;
+        if (rank==0) {
+            ferr.open("error.log");
+    	    ferr<<"step\titer\tnormBminusAX\tnormB\tresidual\n";
+    	    ferr.close();
+    	}
 	}
 }
 
@@ -212,23 +223,35 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		dx(oldGrid,d) = deltaX;
 		dx(newGrid,d) = deltaX;
 		dx(guessGrid,d) = deltaX;
+		/*
+		// Apply zero-flux boundaries
+		if (x0(oldGrid,1)==g0(oldGrid,1)) {
+		    b0(oldGrid,d)=Neumann;
+		    b0(newGrid,d)=Neumann;
+		    b0(guessGrid,d)=Neumann;
+		} else if (x1(oldGrid,1)==g1(oldGrid,1)) {
+		    b1(oldGrid,d)=Neumann;
+		    b1(newGrid,d)=Neumann;
+		    b1(guessGrid,d)=Neumann;
+		}
+		*/
 	}
 
     double dV = 1.0;
     for (int d=0; d<dim; d++)
         dV *= dx(oldGrid,d);
 
-    double gridSize=1.0*nodes(oldGrid);
+    double gridSize = 1.0*nodes(oldGrid);
     double hsq = pow(deltaX,2);
 	#ifdef MPI_VERSION
-    double localGridSize=gridSize;
+    double localGridSize = gridSize;
     MPI::COMM_WORLD.Barrier();
 	MPI::COMM_WORLD.Allreduce(&localGridSize, &gridSize, 1, MPI_DOUBLE, MPI_SUM);
 	#endif
 
     //double lapWeight = 4.0/pow(dx(oldGrid,0),2);
     //for (int d=0; d<dim; d++)
-    //    lapWeight += 2.0/pow(dx(oldGrid,d),2); // dim=2 --> lapWeight = 4/h^2 if dy=dx=h
+    //    lapWeight += 2.0/pow(dx(oldGrid,d),2); // dim=2 -> lapWeight = 4/h^2 if dy=dx=h
 
     std::ofstream ferr;
     if (rank==0)
@@ -254,20 +277,23 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	    		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
 	    		//const double A11 = 1.0;                                  double A12 = 4.0*D*dt/hsq;
 	    		//      double A21 = -pow(cLast,2) - 4.0*K/hsq; const double A22 = 1.0;
-	    		const double A11 = 1.0;                                   double A12 = 4.0*dt*D/hsq;
-	    		      double A21 = -linear_dfdc(cLast) - 4.0*K/hsq; const double A22 = 1.0;
+	    		const double A11 = 1.0;                                       double A12 = 4.0*dt*D/hsq;
+	    		      double A21 = -nonlinear_coeff(cLast) - 4.0*K/hsq; const double A22 = 1.0;
 
 	    		// B is defined by the last value, stored in oldGrid(x), and the last guess, stored in newGrid(x). It is a 2x1 column.
 	    		double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
 	    		double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
 
 	    		double B1 = cOld + D*dt*lapU;
-	    		double B2 = expansive_dfdc(oldGrid(x)[0]) - K*lapC;
+	    		double B2 = expansive_dfdc(cOld) - K*lapC;
 
-	    		double denom = A11*A22 - A12*A21;
+	    		double denom = 1.0 - A12*A21; // from Cramer's rule
 
-	    		guessGrid(n)[0] = (A22*B1 - B2*A12)/denom; // cNew
-	    		guessGrid(n)[1] = (A11*B2 - B1*A21)/denom; // uNew
+	    		double X1 = (A22*B1 - B2*A12)/denom; // cNew
+	    		double X2 = (A11*B2 - B1*A21)/denom; // uNew
+
+	    		guessGrid(n)[0] = X1; // cNew
+	    		guessGrid(n)[1] = X2; // uNew
              }
 
             ghostswap(guessGrid);
@@ -279,7 +305,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                 residual = 0.0;
     		    for (int n=0; n<nodes(guessGrid); n++) {
 	    	    	MMSP::vector<int> x = position(guessGrid,n);
-    	    		double cOld = oldGrid(n)[0];
+    	    		double cOld = oldGrid(n)[0]; //oldGrid(n)[0];
 
 	        		double cNew = guessGrid(n)[0];
 	        		double uNew = guessGrid(n)[1];
@@ -322,9 +348,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	    	iter++;
         }
 
-		//oldGrid.copy(newGrid); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
-		swap(oldGrid,newGrid);
-		ghostswap(oldGrid);
+		oldGrid.copy(newGrid); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
 
 		double energy = 0.0;
 		double mass = 0.0;
