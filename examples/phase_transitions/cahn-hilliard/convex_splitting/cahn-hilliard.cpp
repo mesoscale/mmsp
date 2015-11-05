@@ -10,6 +10,7 @@
 //#include<time.h>
 #include"cahn-hilliard.hpp"
 
+/*
 // Vanilla Cahn-Hilliard
 const double D = 1.0;
 const double K = 1.0;
@@ -39,9 +40,9 @@ T expansive_dfdc(const T& C)
 {
     return -C;
 }
+*/
 
 
-/*
 // Parametric Cahn-Hilliard
 const double Ca = 0.05;
 const double Cb = 0.95;
@@ -93,14 +94,13 @@ T expansive_dfdc(const T& C)
 {
     return CC*C - DD;
 }
-*/
 
 
 const int edge = 200;
 const double deltaX = 1.0;
-const double CFL = 9.0;
+const double CFL = 1.25;
 const double dt = pow(deltaX, 4)*CFL/(32.0*D*K);
-// Max. semi-implicit timestep should be dt = pow(deltaX, 2)/(32.0*D*K)
+// Max. semi-implicit timestep should be timestep = pow(deltaX, 2)/(32.0*D*K)
 
 const double tolerance = 1.0e-9; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
 const unsigned int max_iter = 5000; // don't let the solver stagnate
@@ -167,7 +167,7 @@ void generate(int dim, const char* filename)
 
     //srand(time(NULL)/(rank+2));
 
-    const double q[2] = {0.1*sqrt(2.0), 0.2*sqrt(3.0)};
+    const double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)}; // produces stipes oriented 45 degrees to horizontal
 
 	if (dim==2) {
 		MMSP::grid<2,vector<double> > grid(2,0,edge,0,edge); // field 0 is c, field 1 is mu
@@ -192,14 +192,16 @@ void generate(int dim, const char* filename)
 		#endif
 		output(grid,filename);
 		if (rank==0)
-			std::cout<<"Timestep is "<<dt<<" (Co="<<CFL<<")\nIters\tEnergy\tMass"<<std::endl;
+			std::cout<<"Timestep is "<<dt<<" (Co="<<CFL<<"). Run "<<150000*0.005/dt<<" steps to match explicit dataset.\nTime\tIters\tEnergy\tMass"<<std::endl;
 
+        #ifdef DEBUG
         std::ofstream ferr;
         if (rank==0) {
             ferr.open("error.log");
-    	    ferr<<"step\titer\tnormBminusAX\tnormB\tresidual\n";
+    	    ferr<<"time\tstep\titer\tnormBminusAX\tnormB\tresidual\n";
     	    ferr.close();
     	}
+    	#endif
 	}
 }
 
@@ -237,25 +239,25 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		*/
 	}
 
-    double dV = 1.0;
-    for (int d=0; d<dim; d++)
-        dV *= dx(oldGrid,d);
-
     double gridSize = 1.0*nodes(oldGrid);
-    double hsq = pow(deltaX,2);
 	#ifdef MPI_VERSION
     double localGridSize = gridSize;
     MPI::COMM_WORLD.Barrier();
 	MPI::COMM_WORLD.Allreduce(&localGridSize, &gridSize, 1, MPI_DOUBLE, MPI_SUM);
 	#endif
 
-    //double lapWeight = 4.0/pow(dx(oldGrid,0),2);
-    //for (int d=0; d<dim; d++)
-    //    lapWeight += 2.0/pow(dx(oldGrid,d),2); // dim=2 -> lapWeight = 4/h^2 if dy=dx=h
+    double lapWeight = 0.0;
+    double dV = 1.0;
+    for (int d=0; d<dim; d++) {
+        lapWeight += 2.0/pow(dx(oldGrid,d),2); // dim=2 -> lapWeight = 4/h^2 if dy=dx=h
+        dV *= dx(oldGrid,d);
+    }
 
+    #ifdef DEBUG
     std::ofstream ferr;
     if (rank==0)
         ferr.open("error.log", std::ofstream::out | std::ofstream::app);
+    #endif
 
 	for (int step=0; step<steps; step++) {
 
@@ -275,10 +277,8 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	    		double cLast = newGrid(n)[0];
 
 	    		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
-	    		//const double A11 = 1.0;                                  double A12 = 4.0*D*dt/hsq;
-	    		//      double A21 = -pow(cLast,2) - 4.0*K/hsq; const double A22 = 1.0;
-	    		const double A11 = 1.0;                                       double A12 = 4.0*dt*D/hsq;
-	    		      double A21 = -nonlinear_coeff(cLast) - 4.0*K/hsq; const double A22 = 1.0;
+	    		const double A11 = 1.0;                                       double A12 = dt*D*lapWeight;
+	    		      double A21 = -nonlinear_coeff(cLast) - K*lapWeight; const double A22 = 1.0;
 
 	    		// B is defined by the last value, stored in oldGrid(x), and the last guess, stored in newGrid(x). It is a 2x1 column.
 	    		double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
@@ -333,17 +333,22 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
         		MPI::COMM_WORLD.Allreduce(&localNormB, &normB, 1, MPI_DOUBLE, MPI_SUM);
     	    	#endif
 
+    	    	#ifdef DEBUG
     	    	if (rank==0)
     	    	    ferr<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
+    	    	#endif
 
     	    	residual = sqrt(residual)/(sqrt(2.0*gridSize)*sqrt(normB));
 
+    	    	#ifdef DEBUG
     	    	if (rank==0)
     	    	    ferr<<residual<<std::endl;
+                #endif
 	    	}
 
             swap(newGrid, guessGrid); // newGrid now holds the latest guess
             ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
+
 
 	    	iter++;
         }
@@ -369,7 +374,9 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 			std::cout<<iter<<'\t'<<energy<<'\t'<<mass<<std::endl;
 
 	}
+   	#ifdef DEBUG
 	ferr.close();
+	#endif
 	if (rank==0)
 		std::cout<<std::flush;
 }
