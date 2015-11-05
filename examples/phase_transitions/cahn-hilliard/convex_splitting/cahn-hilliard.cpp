@@ -10,7 +10,6 @@
 //#include<time.h>
 #include"cahn-hilliard.hpp"
 
-/*
 // Vanilla Cahn-Hilliard
 const double D = 1.0;
 const double K = 1.0;
@@ -40,9 +39,9 @@ T expansive_dfdc(const T& C)
 {
     return -C;
 }
-*/
 
 
+/*
 // Parametric Cahn-Hilliard
 const double Ca = 0.05;
 const double Cb = 0.95;
@@ -94,16 +93,18 @@ T expansive_dfdc(const T& C)
 {
     return CC*C - DD;
 }
+*/
 
 
 const int edge = 200;
 const double deltaX = 1.0;
 const double CFL = 1.25;
-const double dt = pow(deltaX, 4)*CFL/(32.0*D*K);
+const double dt_min = pow(deltaX, 4)*CFL/(32.0*D*K);
+const double dt_max = pow(deltaX, 4)*25.0/(32.0*D*K);
 // Max. semi-implicit timestep should be timestep = pow(deltaX, 2)/(32.0*D*K)
 
 const double tolerance = 1.0e-9; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
-const unsigned int max_iter = 5000; // don't let the solver stagnate
+const unsigned int max_iter = 10000; // don't let the solver stagnate
 const int resfreq=1; // number of iterations per residual computation
 
 namespace MMSP {
@@ -192,7 +193,7 @@ void generate(int dim, const char* filename)
 		#endif
 		output(grid,filename);
 		if (rank==0)
-			std::cout<<"Timestep is "<<dt<<" (Co="<<CFL<<"). Run "<<150000*0.005/dt<<" steps to match explicit dataset.\nTime\tIters\tEnergy\tMass"<<std::endl;
+			std::cout<<"Timestep is "<<dt_min<<" (Co="<<CFL<<"). Run "<<150000*0.005/dt_min<<" steps to match explicit dataset.\nTime\tIters\tEnergy\tMass"<<std::endl;
 
         #ifdef DEBUG
         std::ofstream ferr;
@@ -212,6 +213,9 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	#ifdef MPI_VERSION
 	rank = MPI::COMM_WORLD.Get_rank();
 	#endif
+
+    static double elapsed = 0.0;
+    static double dexp = -8.5;
 
     ghostswap(oldGrid);
 
@@ -260,6 +264,8 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     #endif
 
 	for (int step=0; step<steps; step++) {
+
+        double dt = max(dt_min, min(dt_max,exp(dexp)));
 
         double residual=1000.0*tolerance;
         unsigned int iter=0;
@@ -335,7 +341,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 
     	    	#ifdef DEBUG
     	    	if (rank==0)
-    	    	    ferr<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
+    	    	    ferr<<elapsed<<'\t'<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
     	    	#endif
 
     	    	residual = sqrt(residual)/(sqrt(2.0*gridSize)*sqrt(normB));
@@ -349,11 +355,13 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
             swap(newGrid, guessGrid); // newGrid now holds the latest guess
             ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
 
-
 	    	iter++;
         }
 
 		oldGrid.copy(newGrid); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
+
+    	elapsed += dt;
+    	dexp += 0.00025;
 
 		double energy = 0.0;
 		double mass = 0.0;
@@ -371,8 +379,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		MPI::COMM_WORLD.Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0);
 		#endif
 		if (rank==0)
-			std::cout<<iter<<'\t'<<energy<<'\t'<<mass<<std::endl;
-
+			std::cout<<elapsed<<'\t'<<iter<<'\t'<<energy<<'\t'<<mass<<std::endl;
 	}
    	#ifdef DEBUG
 	ferr.close();
