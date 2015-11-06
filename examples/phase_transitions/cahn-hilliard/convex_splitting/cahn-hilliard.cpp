@@ -97,7 +97,7 @@ T expansive_dfdc(const T& C)
 
 const int edge = 200;
 const double deltaX = 1.0;
-const double CFL = 2.0;
+const double CFL = 4.0;
 const double dt = pow(deltaX,4.0)*CFL/(32.0*D*K);
 // Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
 
@@ -220,7 +220,6 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     ghostswap(oldGrid);
 
 	MMSP::grid<dim,vector<T> > newGrid(oldGrid);   // new values at each point and initial guess for iteration
-	MMSP::grid<dim,vector<T> > guessGrid(oldGrid); // new guess for iteration
 
     newGrid.copy(oldGrid); // deep copy: includes data and ghost cells
 
@@ -228,7 +227,6 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	for (int d=0; d<dim; d++) {
 		dx(oldGrid,d) = deltaX;
 		dx(newGrid,d) = deltaX;
-		dx(guessGrid,d) = deltaX;
 	}
 
     double gridSize = 1.0*nodes(oldGrid);
@@ -257,12 +255,23 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
         unsigned int iter=0;
 
         while (iter<max_iter && residual>tolerance) {
-            // newGrid stores the old guess, Jacobi index l
-            // guessGrid stores the new guess, Jacobi index l+1
+            /*
+                RED-BLACK GAUSS SEIDEL
+                Iterate over a checkerboard, updating first red then black tiles.
+                This method eliminates the third "guess" grid, and should converge faster.
+                In 2-D and 3-D, if any two of the indices are odd, the tile is black.
+            */
 
-            // Solve AX=B using Cramer's rule
+    		// Red Sweep
     		for (int n=0; n<nodes(oldGrid); n++) {
 	    		MMSP::vector<int> x = position(oldGrid,n);
+	    		int nOdd=0;
+	    		for (int d=0; d<dim; d++)
+	    		    if (x[d]%2==1)
+	    		        nOdd++;
+	    		if (nOdd != 2)
+	    		    continue;
+
 	    		const double cOld = oldGrid(n)[0];
 	    		const double cLast = newGrid(n)[0];
 
@@ -277,16 +286,50 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	    		const double B1 = cOld + D*dt*lapU;
 	    		const double B2 = expansive_dfdc(cOld) - K*lapC;
 
-	    		const double denom = A11*A22 - A12*A21; // from Cramer's rule
-
+                // Solve AX=B using Cramer's rule
+	    		const double denom = A11*A22 - A12*A21; // det|A|
 	    		const double X1 = (A22*B1 - B2*A12)/denom; // cNew
 	    		const double X2 = (A11*B2 - B1*A21)/denom; // uNew
 
-	    		guessGrid(n)[0] = X1; // cNew
-	    		guessGrid(n)[1] = X2; // uNew
+                newGrid(n)[0] = X1;
+                newGrid(n)[1] = X2;
              }
 
-            swap(newGrid, guessGrid); // newGrid now holds the latest guess
+            ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
+
+    		// Black Sweep
+    		for (int n=0; n<nodes(oldGrid); n++) {
+	    		MMSP::vector<int> x = position(oldGrid,n);
+	    		int nOdd=0;
+	    		for (int d=0; d<dim; d++)
+	    		    if (x[d]%2==1)
+	    		        nOdd++;
+	    		if (nOdd == 2)
+	    		    continue;
+
+	    		const double cOld = oldGrid(n)[0];
+	    		const double cLast = newGrid(n)[0];
+
+	    		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
+	    		const double A11 = 1.0;                                   const double A12 = dt*D*lapWeight;
+	    		const double A21 = -nonlinear_coeff(cLast) - K*lapWeight; const double A22 = 1.0;
+
+	    		// B is defined by the last value, stored in oldGrid(x), and the last guess, stored in newGrid(x). It is a 2x1 column.
+	    		const double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
+	    		const double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
+
+	    		const double B1 = cOld + D*dt*lapU;
+	    		const double B2 = expansive_dfdc(cOld) - K*lapC;
+
+                // Solve AX=B using Cramer's rule
+	    		const double denom = A11*A22 - A12*A21; // det|A|
+	    		const double X1 = (A22*B1 - B2*A12)/denom; // cNew
+	    		const double X2 = (A11*B2 - B1*A21)/denom; // uNew
+
+                newGrid(n)[0] = X1;
+                newGrid(n)[1] = X2;
+             }
+
             ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
 
     		// Strictly, ||b-Ax|| should be re-computed using the latest guess after each iteration.
