@@ -97,11 +97,11 @@ T expansive_dfdc(const T& C)
 
 const int edge = 200;
 const double deltaX = 1.0;
-const double CFL = 6.25;
+const double CFL = 2.0;
 const double dt = pow(deltaX,4.0)*CFL/(32.0*D*K);
 // Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
 
-const double tolerance = 1.0e-9; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
+const double tolerance = 1.0e-12; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
 const unsigned int max_iter = 10000; // don't let the solver stagnate
 const int resfreq=1; // number of iterations per residual computation
 
@@ -175,7 +175,7 @@ void generate(int dim, const char* filename)
 
 		#ifdef VANILLA
     	for (int n=0; n<nodes(grid); n++)
-		    grid(n)[0] = 0.5 + 0.025 * ((double(rand())/RAND_MAX) - 0.5);
+		    grid(n)[0] = 0.45 + 0.02 * ((double(rand())/RAND_MAX) - 0.5);
 		#else
         const double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)}; // produces stipes oriented 45 degrees to horizontal
 		for (int n=0; n<nodes(grid); n++) {
@@ -251,8 +251,8 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
         ferr.open("error.log", std::ofstream::out | std::ofstream::app);
     #endif
 
-	for (int step=0; step<steps; step++) {
 
+	for (int step=0; step<steps; step++) {
         double residual=1000.0*tolerance;
         unsigned int iter=0;
 
@@ -263,24 +263,24 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
             // Solve AX=B using Cramer's rule
     		for (int n=0; n<nodes(oldGrid); n++) {
 	    		MMSP::vector<int> x = position(oldGrid,n);
-	    		double cOld = oldGrid(n)[0];
-	    		double cLast = newGrid(n)[0];
+	    		const double cOld = oldGrid(n)[0];
+	    		const double cLast = newGrid(n)[0];
 
 	    		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
-	    		const double A11 = 1.0;                                         double A12 = dt*D*lapWeight;
-	    		      double A21 = -nonlinear_coeff(cLast) - K*lapWeight; const double A22 = 1.0;
+	    		const double A11 = 1.0;                                   const double A12 = dt*D*lapWeight;
+	    		const double A21 = -nonlinear_coeff(cLast) - K*lapWeight; const double A22 = 1.0;
 
 	    		// B is defined by the last value, stored in oldGrid(x), and the last guess, stored in newGrid(x). It is a 2x1 column.
-	    		double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
-	    		double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
+	    		const double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
+	    		const double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
 
-	    		double B1 = cOld + D*dt*lapU;
-	    		double B2 = expansive_dfdc(cOld) - K*lapC;
+	    		const double B1 = cOld + D*dt*lapU;
+	    		const double B2 = expansive_dfdc(cOld) - K*lapC;
 
-	    		double denom = A11*A22 - A12*A21; // from Cramer's rule
+	    		const double denom = A11*A22 - A12*A21; // from Cramer's rule
 
-	    		double X1 = (A22*B1 - B2*A12)/denom; // cNew
-	    		double X2 = (A11*B2 - B1*A21)/denom; // uNew
+	    		const double X1 = (A22*B1 - B2*A12)/denom; // cNew
+	    		const double X2 = (A11*B2 - B1*A21)/denom; // uNew
 
 	    		guessGrid(n)[0] = X1; // cNew
 	    		guessGrid(n)[1] = X2; // uNew
@@ -297,35 +297,35 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     		    for (int n=0; n<nodes(newGrid); n++) {
 	    	    	MMSP::vector<int> x = position(newGrid,n);
 
-    	    		double cOld = oldGrid(n)[0]; //oldGrid(n)[0];
-	        		double cNew = newGrid(n)[0];
-	        		double uNew = newGrid(n)[1];
+    	    		const double cOld = oldGrid(n)[0]; //oldGrid(n)[0];
+	        		const double cNew = newGrid(n)[0];
+	        		const double uNew = newGrid(n)[1];
 
     	    		/*
-    	    		double lapU = field_laplacian(newGrid, x, 1); // excludes central term
-	        		double lapC = field_laplacian(newGrid, x, 0); // excludes central term
+    	    		const double lapU = field_laplacian(newGrid, x, 1); // excludes central term
+	        		const double lapC = field_laplacian(newGrid, x, 0); // excludes central term
 
-                    double AX1 = cNew - D*dt*lapU;
-                    double B1 = cOld;
+                    const double AX1 = cNew - D*dt*lapU;
+                    const double B1 = cOld;
 
-                    double AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
-                    double B2 = expansive_dfdc(cOld);
+                    const double AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
+                    const double B2 = expansive_dfdc(cOld);
                     */
 
-    	    		double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
-	        		double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
+    	    		const double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
+	        		const double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
 
-                    double AX1 = cNew + D*dt*lapWeight*uNew;
-                    double B1 = cOld + D*dt*lapU;
+                    const double AX1 = cNew + D*dt*lapWeight*uNew;
+                    const double B1 = cOld + D*dt*lapU;
 
-                    double AX2 = -contractive_dfdc(cNew) - K*lapWeight*cNew + uNew;
-                    double B2 = expansive_dfdc(cOld) - K*lapC;
+                    const double AX2 = -contractive_dfdc(cNew) - K*lapWeight*cNew + uNew;
+                    const double B2 = expansive_dfdc(cOld) - K*lapC;
 
                     // Compute Σ(dV||B-AX||) / Σ(dV||B||) using L2 vector norms
-                    double R1 = B1 - AX1;
-                    double R2 = B2 - AX2;
+                    const double R1 = B1 - AX1;
+                    const double R2 = B2 - AX2;
 
-                    double normBminusAX = pow(R1,2.0)/(2.0*gridSize) + pow(R2,2.0)/(2.0*gridSize); // "error"
+                    const double normBminusAX = pow(R1,2.0)/(2.0*gridSize) + pow(R2,2.0)/(2.0*gridSize); // "error"
 
                     residual += normBminusAX;
                     normB += pow(B1,2.0) + pow(B2,2.0);
@@ -360,7 +360,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		double mass = 0.0;
 		for (int n=0; n<nodes(oldGrid); n++) {
 			MMSP::vector<int> x = position(oldGrid,n);
-			double C = oldGrid(x)[0];
+			const double C = oldGrid(x)[0];
 			energy += dV*energy_density(C);
 			mass += dV*C;
 		}
@@ -373,7 +373,6 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		#endif
 		if (rank==0)
 			std::cout<<iter<<'\t'<<energy<<'\t'<<mass<<std::endl;
-
 	}
    	#ifdef DEBUG
 	ferr.close();
