@@ -25,14 +25,7 @@ plt.savefig('mass.png', bbox_inches='tight', dpi=300)
 plt.close()
 
 
-def movingaverage(interval, window_size):
-    window= np.ones(int(window_size))/float(window_size)
-    return np.convolve(interval, window, 'same')
-        
-iter_av = movingaverage(iter, 75)
-
-plt.semilogx(t, iter, 'k.')
-plt.semilogx(t, iter_av, 'r')
+plt.semilogx(t, iter)
 plt.xlabel(r'Step (using $\Delta t=0.009$, Co=1.25)')
 plt.ylabel(r'Iterations to Converge (atol=$10^{-8}$)')
 plt.title("Periodic Cahn-Hilliard")

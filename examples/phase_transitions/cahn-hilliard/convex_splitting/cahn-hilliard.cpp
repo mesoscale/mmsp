@@ -97,11 +97,11 @@ T expansive_dfdc(const T& C)
 
 const int edge = 200;
 const double deltaX = 1.0;
-const double CFL = 4.0;
+const double CFL = 2.0;
 const double dt = pow(deltaX,4.0)*CFL/(32.0*D*K);
 // Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
 
-const double tolerance = 1.0e-12; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
+const double tolerance = 1.0e-10; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
 const unsigned int max_iter = 10000; // don't let the solver stagnate
 const int resfreq=1; // number of iterations per residual computation
 
@@ -198,6 +198,28 @@ void generate(int dim, const char* filename)
 		if (rank==0)
 			std::cout<<"Timestep is "<<dt<<" (Co="<<CFL<<"). Run "<<150000*0.005/dt<<" steps to match explicit dataset.\nIters\tEnergy\tMass"<<std::endl;
 
+        double dV = 1.0;
+        for (int d=0; d<dim; d++)
+            dV *= dx(grid,d);
+
+		double energy = 0.0;
+		double mass = 0.0;
+		for (int n=0; n<nodes(grid); n++) {
+			MMSP::vector<int> x = position(grid,n);
+			const double C = grid(x)[0];
+			energy += dV*energy_density(C);
+			mass += dV*C;
+		}
+		#ifdef MPI_VERSION
+		MPI::COMM_WORLD.Barrier();
+		double localEnergy = energy;
+		double localMass = mass;
+		MPI::COMM_WORLD.Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0);
+		MPI::COMM_WORLD.Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0);
+		#endif
+		if (rank==0)
+			std::cout<<'0'<<'\t'<<energy<<'\t'<<mass<<std::endl;
+
         #ifdef DEBUG
         std::ofstream ferr;
         if (rank==0) {
@@ -259,17 +281,16 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                 RED-BLACK GAUSS SEIDEL
                 Iterate over a checkerboard, updating first red then black tiles.
                 This method eliminates the third "guess" grid, and should converge faster.
-                In 2-D and 3-D, if any two of the indices are odd, the tile is black.
+                In 2-D and 3-D, if the sum of indices is even, then the tile is Red; else, Black.
             */
 
     		// Red Sweep
     		for (int n=0; n<nodes(oldGrid); n++) {
 	    		MMSP::vector<int> x = position(oldGrid,n);
-	    		int nOdd=0;
+	    		int x_sum=0;
 	    		for (int d=0; d<dim; d++)
-	    		    if (x[d]%2==1)
-	    		        nOdd++;
-	    		if (nOdd != 2)
+	    		    x_sum += x[d];
+	    		if (x_sum%2 != 0)
 	    		    continue;
 
 	    		const double cOld = oldGrid(n)[0];
@@ -300,11 +321,10 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     		// Black Sweep
     		for (int n=0; n<nodes(oldGrid); n++) {
 	    		MMSP::vector<int> x = position(oldGrid,n);
-	    		int nOdd=0;
+	    		int x_sum=0;
 	    		for (int d=0; d<dim; d++)
-	    		    if (x[d]%2==1)
-	    		        nOdd++;
-	    		if (nOdd == 2)
+	    		    x_sum += x[d];
+	    		if (x_sum%2 != 1)
 	    		    continue;
 
 	    		const double cOld = oldGrid(n)[0];
@@ -396,6 +416,9 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 
 	    	iter++;
         }
+
+        if (iter==max_iter)
+            std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" with residual="<<residual<<std::endl;
 
 		oldGrid.copy(newGrid); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
 
