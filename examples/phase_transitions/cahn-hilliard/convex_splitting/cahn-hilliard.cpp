@@ -95,7 +95,7 @@ T expansive_dfdc(const T& C)
 #endif
 
 
-const int edge = 200;
+const int edge = 96;
 const double deltaX = 1.0;
 const double CFL = 2.0;
 const double dt = pow(deltaX,4.0)*CFL/(32.0*D*K);
@@ -103,7 +103,6 @@ const double dt = pow(deltaX,4.0)*CFL/(32.0*D*K);
 
 const double tolerance = 1.0e-10; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
 const unsigned int max_iter = 10000; // don't let the solver stagnate
-const int resfreq=1; // number of iterations per residual computation
 
 namespace MMSP {
 
@@ -271,154 +270,116 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
         ferr.open("error.log", std::ofstream::out | std::ofstream::app);
     #endif
 
+    const double jacobi_radius = (cos(2.0*M_PI/(g1(oldGrid,0)-g0(oldGrid,0)))  +  pow(dx(oldGrid,0)/dx(oldGrid,1),2)*cos(2.0*M_PI/(g1(oldGrid,1)-g0(oldGrid,1)))) /
+                                 (1.0+pow(dx(oldGrid,0)/dx(oldGrid,1),2)); // note: PI for Diriclet or Neumann, 2PI for periodic
 
 	for (int step=0; step<steps; step++) {
         double residual=1000.0*tolerance;
         unsigned int iter=0;
+        double omega = 1.0; // Successive Over-Relaxation relaxation parameter (w=1 is Gauss-Seidel)
 
         while (iter<max_iter && residual>tolerance) {
+
             /*
-                RED-BLACK GAUSS SEIDEL
+                ==== RED-BLACK GAUSS SEIDEL ====
+
                 Iterate over a checkerboard, updating first red then black tiles.
                 This method eliminates the third "guess" grid, and should converge faster.
                 In 2-D and 3-D, if the sum of indices is even, then the tile is Red; else, Black.
             */
 
-    		// Red Sweep
-    		for (int n=0; n<nodes(oldGrid); n++) {
-	    		MMSP::vector<int> x = position(oldGrid,n);
-	    		int x_sum=0;
-	    		for (int d=0; d<dim; d++)
-	    		    x_sum += x[d];
-	    		if (x_sum%2 != 0)
-	    		    continue;
-
-	    		const double cOld = oldGrid(n)[0];
-	    		const double cLast = newGrid(n)[0];
-
-	    		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
-	    		const double A11 = 1.0;                                   const double A12 = dt*D*lapWeight;
-	    		const double A21 = -nonlinear_coeff(cLast) - K*lapWeight; const double A22 = 1.0;
-
-	    		// B is defined by the last value, stored in oldGrid(x), and the last guess, stored in newGrid(x). It is a 2x1 column.
-	    		const double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
-	    		const double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
-
-	    		const double B1 = cOld + D*dt*lapU;
-	    		const double B2 = expansive_dfdc(cOld) - K*lapC;
-
-                // Solve AX=B using Cramer's rule
-	    		const double denom = A11*A22 - A12*A21; // det|A|
-	    		const double X1 = (A22*B1 - B2*A12)/denom; // cNew
-	    		const double X2 = (A11*B2 - B1*A21)/denom; // uNew
-
-                newGrid(n)[0] = X1;
-                newGrid(n)[1] = X2;
-             }
-
-            ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
-
-    		// Black Sweep
-    		for (int n=0; n<nodes(oldGrid); n++) {
-	    		MMSP::vector<int> x = position(oldGrid,n);
-	    		int x_sum=0;
-	    		for (int d=0; d<dim; d++)
-	    		    x_sum += x[d];
-	    		if (x_sum%2 != 1)
-	    		    continue;
-
-	    		const double cOld = oldGrid(n)[0];
-	    		const double cLast = newGrid(n)[0];
-
-	    		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
-	    		const double A11 = 1.0;                                   const double A12 = dt*D*lapWeight;
-	    		const double A21 = -nonlinear_coeff(cLast) - K*lapWeight; const double A22 = 1.0;
-
-	    		// B is defined by the last value, stored in oldGrid(x), and the last guess, stored in newGrid(x). It is a 2x1 column.
-	    		const double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
-	    		const double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
-
-	    		const double B1 = cOld + D*dt*lapU;
-	    		const double B2 = expansive_dfdc(cOld) - K*lapC;
-
-                // Solve AX=B using Cramer's rule
-	    		const double denom = A11*A22 - A12*A21; // det|A|
-	    		const double X1 = (A22*B1 - B2*A12)/denom; // cNew
-	    		const double X2 = (A11*B2 - B1*A21)/denom; // uNew
-
-                newGrid(n)[0] = X1;
-                newGrid(n)[1] = X2;
-             }
-
-            ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
-
-    		// Strictly, ||b-Ax|| should be re-computed using the latest guess after each iteration.
-    		// But this almost doubles the computational cost, so I'll cheat and infrequently compute it.
             double normB = 0.0;
-    		if (iter%resfreq==0) {
-                residual = 0.0;
-    		    for (int n=0; n<nodes(newGrid); n++) {
-	    	    	MMSP::vector<int> x = position(newGrid,n);
+            residual = 0.0;
+    		for (int color=1; color>-1; color--) {
+    		    // If color==1, skip BLACK tiles, which have Σx[d] odd
+    		    // If color==0, skip RED tiles, which have Σx[d] even
+        		for (int n=0; n<nodes(oldGrid); n++) {
+	    		    MMSP::vector<int> x = position(oldGrid,n);
+	    	    	int x_sum=0;
+	        		for (int d=0; d<dim; d++)
+	        		    x_sum += x[d];
+    	    		if (x_sum%2 == color)
+	    		        continue; // if odd
 
-    	    		const double cOld = oldGrid(n)[0]; //oldGrid(n)[0];
-	        		const double cNew = newGrid(n)[0];
-	        		const double uNew = newGrid(n)[1];
+	    	    	const double cOld = oldGrid(n)[0];
+	    	    	const double uOld = oldGrid(n)[1];
+	        		const double cLast = newGrid(n)[0];
 
-    	    		/*
-    	    		const double lapU = field_laplacian(newGrid, x, 1); // excludes central term
-	        		const double lapC = field_laplacian(newGrid, x, 0); // excludes central term
+	        		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
+    	    		const double A11 = 1.0;                                   const double A12 = dt*D*lapWeight;
+	    		    const double A21 = -nonlinear_coeff(cLast) - K*lapWeight; const double A22 = 1.0;
 
-                    const double AX1 = cNew - D*dt*lapU;
-                    const double B1 = cOld;
-
-                    const double AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
-                    const double B2 = expansive_dfdc(cOld);
-                    */
-
-    	    		const double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
+	    	    	// B is defined by the last value, stored in oldGrid(x), and the last guess, stored in newGrid(x). It is a 2x1 column.
 	        		const double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
+	        		const double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
 
-                    const double AX1 = cNew + D*dt*lapWeight*uNew;
-                    const double B1 = cOld + D*dt*lapU;
+    	    		const double B1 = cOld + D*dt*lapU;
+	    		    const double B2 = expansive_dfdc(cOld) - K*lapC;
 
-                    const double AX2 = -contractive_dfdc(cNew) - K*lapWeight*cNew + uNew;
-                    const double B2 = expansive_dfdc(cOld) - K*lapC;
+                    // Solve AX=B using Cramer's rule
+	        		const double denom = A11*A22 - A12*A21; // det|A|
+	        		const double cNew = (A22*B1 - B2*A12)/denom; // X1
+    	    		const double uNew = (A11*B2 - B1*A21)/denom; // X2
 
-                    // Compute Σ(dV||B-AX||) / Σ(dV||B||) using L2 vector norms
-                    const double R1 = B1 - AX1;
-                    const double R2 = B2 - AX2;
+                    newGrid(n)[0] = cOld + omega*(cNew - cOld);
+                    //newGrid(n)[1] = expansive_dfdc(cOld) + omega*(uNew - expansive_dfdc(cOld));
+                    newGrid(n)[1] = uOld + omega*(uNew - uOld);
+                }
 
-                    const double normBminusAX = pow(R1,2.0)/(2.0*gridSize) + pow(R2,2.0)/(2.0*gridSize); // "error"
+                // Chebyshev acceleration of relaxation parameter
+                //omega = (step==0) ? 1.0/(1.0-0.5*pow(jacobi_radius,2)) : 1.0/(1.0-0.25*omega*pow(jacobi_radius,2))  ;
 
-                    residual += normBminusAX;
-                    normB += pow(B1,2.0) + pow(B2,2.0);
-    	    	}
+                ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
+            }
 
-    	    	#ifdef MPI_VERSION
-    	    	double localResidual=residual;
-        		MPI::COMM_WORLD.Allreduce(&localResidual, &residual, 1, MPI_DOUBLE, MPI_SUM);
-    	    	double localNormB=normB;
-        		MPI::COMM_WORLD.Allreduce(&localNormB, &normB, 1, MPI_DOUBLE, MPI_SUM);
-    	    	#endif
+       		for (int n=0; n<nodes(oldGrid); n++) {
+    		    MMSP::vector<int> x = position(oldGrid,n);
+           		const double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
+	       		const double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
 
-    	    	#ifdef DEBUG
-    	    	if (rank==0)
-    	    	    ferr<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
-    	    	#endif
+       	    	const double cOld = oldGrid(n)[0];
+       	    	const double uOld = oldGrid(n)[1];
+                const double cNew = newGrid(n)[0] - (1.0 - omega)*cOld;
+                const double uNew = newGrid(n)[1] - (1.0 - omega)*uOld;
 
-    	    	residual = sqrt(residual)/(sqrt(2.0*gridSize)*sqrt(normB));
+        		const double B1 = cOld + D*dt*lapU;
+	   		    const double B2 = expansive_dfdc(cOld) - K*lapC;
 
-    	    	#ifdef DEBUG
-    	    	if (rank==0)
-    	    	    ferr<<residual<<std::endl;
-                #endif
-	    	}
+                const double AX1 = cNew + D*dt*lapWeight*uNew;
+                const double AX2 = uNew - contractive_dfdc(cNew) - K*lapWeight*cNew;
+
+                const double R1 = AX1 - B1;
+                const double R2 = AX2 - B2;
+
+                const double normBminusAX = pow(R1,2.0)/(2.0*gridSize) + pow(R2,2.0)/(2.0*gridSize); // "error"
+                residual += normBminusAX;
+                normB += pow(B1,2.0) + pow(B2,2.0);
+    		}
+
+   	    	#ifdef MPI_VERSION
+   	    	double localResidual=residual;
+       		MPI::COMM_WORLD.Allreduce(&localResidual, &residual, 1, MPI_DOUBLE, MPI_SUM);
+   	    	double localNormB=normB;
+       		MPI::COMM_WORLD.Allreduce(&localNormB, &normB, 1, MPI_DOUBLE, MPI_SUM);
+   	    	#endif
+
+   	    	#ifdef DEBUG
+   	    	if (rank==0)
+   	    	    ferr<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
+   	    	#endif
+
+   	    	residual = sqrt(residual)/(sqrt(2.0*gridSize)*sqrt(normB));
+
+   	    	#ifdef DEBUG
+   	    	if (rank==0)
+  	    	    ferr<<residual<<"\t\t"<<omega<<std::endl;
+            #endif
 
 	    	iter++;
         }
 
-        if (iter==max_iter)
-            std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" with residual="<<residual<<std::endl;
+        if (iter==max_iter && rank==0)
+                std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" with residual="<<residual<<std::endl;
 
 		oldGrid.copy(newGrid); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
 
