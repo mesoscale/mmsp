@@ -321,8 +321,21 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	        		const double cNew = (A22*B1 - B2*A12)/denom; // X1
     	    		const double uNew = (A11*B2 - B1*A21)/denom; // X2
 
-                    newGrid(n)[0] = cOld + omega*(cNew - cOld);
+                    //newGrid(n)[0] = cOld + omega*(cNew - cOld);
                     //newGrid(n)[1] = expansive_dfdc(cOld) + omega*(uNew - expansive_dfdc(cOld));
+                    //newGrid(n)[1] = uOld + omega*(uNew - uOld);
+
+                    const double AX1 = cNew + D*dt*lapWeight*uNew;
+                    const double AX2 = uNew - contractive_dfdc(cNew) - K*lapWeight*cNew;
+
+                    const double R1 = AX1 - B1;
+                    const double R2 = AX2 - B2;
+
+                    const double normBminusAX = pow(R1,2.0)/(2.0*gridSize) + pow(R2,2.0)/(2.0*gridSize); // "error"
+                    residual += normBminusAX;
+                    normB += pow(B1,2.0) + pow(B2,2.0);
+
+                    newGrid(n)[0] = cOld + omega*(cNew - cOld);
                     newGrid(n)[1] = uOld + omega*(uNew - uOld);
                 }
 
@@ -332,6 +345,8 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                 ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
             }
 
+
+       		/*
        		for (int n=0; n<nodes(oldGrid); n++) {
     		    MMSP::vector<int> x = position(oldGrid,n);
            		const double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
@@ -355,6 +370,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                 residual += normBminusAX;
                 normB += pow(B1,2.0) + pow(B2,2.0);
     		}
+    		*/
 
    	    	#ifdef MPI_VERSION
    	    	double localResidual=residual;
