@@ -281,7 +281,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     //const double jacobi_radius = (cos(2.0*M_PI/(g1(oldGrid,0)-g0(oldGrid,0)))  +  pow(dx(oldGrid,0)/dx(oldGrid,1),2)*cos(2.0*M_PI/(g1(oldGrid,1)-g0(oldGrid,1)))) /
     //                             (1.0+pow(dx(oldGrid,0)/dx(oldGrid,1),2)); // note: PI for Diriclet or Neumann, 2PI for periodic
 
-    const double omega = 0.99; // Successive Over-Relaxation relaxation parameter (w=1 is Gauss-Seidel)
+    const double omega = 1.0; // Successive Over-Relaxation relaxation parameter (w=1 is Gauss-Seidel)
 
 	for (int step=0; step<steps; step++) {
         double residual=1.0;
@@ -397,8 +397,11 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
         // Chebyshev acceleration of relaxation parameter
         // omega = (step==0) ? 1.0/(1.0-0.5*pow(jacobi_radius,2)) : 1.0/(1.0-0.25*omega*pow(jacobi_radius,2))  ;
 
-        if (iter==max_iter && rank==0)
+        if (iter==max_iter) {
+            if (rank==0)
                 std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" with residual="<<residual<<std::endl;
+            std::exit(-1);
+        }
 
 		oldGrid.copy(newGrid); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
 
