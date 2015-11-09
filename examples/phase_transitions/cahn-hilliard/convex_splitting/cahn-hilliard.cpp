@@ -101,7 +101,7 @@ const double CFL = 2.0;
 const double dt = pow(deltaX,4.0)*CFL/(32.0*D*K);
 // Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
 
-const double tolerance = 1.0e-10; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
+const double tolerance = 5.0e-10; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
 const unsigned int max_iter = 10000; // don't let the solver stagnate
 
 namespace MMSP {
@@ -194,8 +194,14 @@ void generate(int dim, const char* filename)
 		MPI::COMM_WORLD.Barrier();
 		#endif
 		output(grid,filename);
-		if (rank==0)
-			std::cout<<"Timestep is "<<dt<<" (Co="<<CFL<<"). Run "<<150000*0.005/dt<<" steps to match explicit dataset.\nIters\tEnergy\tMass"<<std::endl;
+		if (rank==0) {
+			std::cout<<"Timestep is "<<dt<<" (Co="<<CFL<<").";
+	    #ifdef VANILLA
+	        std::cout<<std::endl
+	    #else
+	     std::cout<<" Run "<<150000*0.005/dt<<" steps to match explicit dataset.\nIters\tEnergy\tMass"<<std::endl;
+	    #endif
+	    }
 
         double dV = 1.0;
         for (int d=0; d<dim; d++)
@@ -270,13 +276,16 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
         ferr.open("error.log", std::ofstream::out | std::ofstream::app);
     #endif
 
-    const double jacobi_radius = (cos(2.0*M_PI/(g1(oldGrid,0)-g0(oldGrid,0)))  +  pow(dx(oldGrid,0)/dx(oldGrid,1),2)*cos(2.0*M_PI/(g1(oldGrid,1)-g0(oldGrid,1)))) /
-                                 (1.0+pow(dx(oldGrid,0)/dx(oldGrid,1),2)); // note: PI for Diriclet or Neumann, 2PI for periodic
+    // From Numerical Recipes: the following Jacobi spectral radius only applies to the Laplace equation, which this code is not.
+    // Still, it's the hint of a direction for Chebyshev acceleration of omega.
+    //const double jacobi_radius = (cos(2.0*M_PI/(g1(oldGrid,0)-g0(oldGrid,0)))  +  pow(dx(oldGrid,0)/dx(oldGrid,1),2)*cos(2.0*M_PI/(g1(oldGrid,1)-g0(oldGrid,1)))) /
+    //                             (1.0+pow(dx(oldGrid,0)/dx(oldGrid,1),2)); // note: PI for Diriclet or Neumann, 2PI for periodic
+
+    const double omega = 0.99; // Successive Over-Relaxation relaxation parameter (w=1 is Gauss-Seidel)
 
 	for (int step=0; step<steps; step++) {
-        double residual=1000.0*tolerance;
+        double residual=1.0;
         unsigned int iter=0;
-        double omega = 1.0; // Successive Over-Relaxation relaxation parameter (w=1 is Gauss-Seidel)
 
         while (iter<max_iter && residual>tolerance) {
 
@@ -288,8 +297,6 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                 In 2-D and 3-D, if the sum of indices is even, then the tile is Red; else, Black.
             */
 
-            double normB = 0.0;
-            residual = 0.0;
     		for (int color=1; color>-1; color--) {
     		    // If color==1, skip BLACK tiles, which have Σx[d] odd
     		    // If color==0, skip RED tiles, which have Σx[d] even
@@ -302,7 +309,6 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	    		        continue; // if odd
 
 	    	    	const double cOld = oldGrid(n)[0];
-	    	    	const double uOld = oldGrid(n)[1];
 	        		const double cLast = newGrid(n)[0];
 
 	        		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
@@ -321,56 +327,49 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	        		const double cNew = (A22*B1 - B2*A12)/denom; // X1
     	    		const double uNew = (A11*B2 - B1*A21)/denom; // X2
 
-                    //newGrid(n)[0] = cOld + omega*(cNew - cOld);
-                    //newGrid(n)[1] = expansive_dfdc(cOld) + omega*(uNew - expansive_dfdc(cOld));
-                    //newGrid(n)[1] = uOld + omega*(uNew - uOld);
-
-                    const double AX1 = cNew + D*dt*lapWeight*uNew;
-                    const double AX2 = uNew - contractive_dfdc(cNew) - K*lapWeight*cNew;
-
-                    const double R1 = AX1 - B1;
-                    const double R2 = AX2 - B2;
-
-                    const double normBminusAX = pow(R1,2.0)/(2.0*gridSize) + pow(R2,2.0)/(2.0*gridSize); // "error"
-                    residual += normBminusAX;
-                    normB += pow(B1,2.0) + pow(B2,2.0);
-
-                    newGrid(n)[0] = cOld + omega*(cNew - cOld);
-                    newGrid(n)[1] = uOld + omega*(uNew - uOld);
+                    newGrid(n)[0] = cNew;
+                    newGrid(n)[1] = uNew;
                 }
-
-                // Chebyshev acceleration of relaxation parameter
-                //omega = (step==0) ? 1.0/(1.0-0.5*pow(jacobi_radius,2)) : 1.0/(1.0-0.25*omega*pow(jacobi_radius,2))  ;
-
                 ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
             }
 
+            /*
+                ==== RESIDUAL ====
+                The residual is computed from the original matrix form, AX=B:
+                any Old term goes into B, while any New term goes in AX.
+            */
 
-       		/*
+            double normB = 0.0;
+            residual = 0.0;
        		for (int n=0; n<nodes(oldGrid); n++) {
     		    MMSP::vector<int> x = position(oldGrid,n);
-           		const double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
-	       		const double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
+           		const double lapC = field_laplacian(newGrid, x, 0);
+	       		const double lapU = field_laplacian(newGrid, x, 1);
 
        	    	const double cOld = oldGrid(n)[0];
-       	    	const double uOld = oldGrid(n)[1];
-                const double cNew = newGrid(n)[0] - (1.0 - omega)*cOld;
-                const double uNew = newGrid(n)[1] - (1.0 - omega)*uOld;
+                const double cNew = newGrid(n)[0];
+                const double uOld = oldGrid(n)[1];
+                const double uNew = newGrid(n)[1];
 
-        		const double B1 = cOld + D*dt*lapU;
-	   		    const double B2 = expansive_dfdc(cOld) - K*lapC;
+        		const double B1 = cOld;
+	   		    const double B2 = expansive_dfdc(cOld);
 
-                const double AX1 = cNew + D*dt*lapWeight*uNew;
-                const double AX2 = uNew - contractive_dfdc(cNew) - K*lapWeight*cNew;
+                const double AX1 = cNew - D*dt*lapU;
+                const double AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
 
+                // Compute the Error from parts of the solution
                 const double R1 = AX1 - B1;
                 const double R2 = AX2 - B2;
 
-                const double normBminusAX = pow(R1,2.0)/(2.0*gridSize) + pow(R2,2.0)/(2.0*gridSize); // "error"
+                const double normBminusAX = pow(R1,2.0)/(2.0*gridSize) + pow(R2,2.0)/(2.0*gridSize);
                 residual += normBminusAX;
                 normB += pow(B1,2.0) + pow(B2,2.0);
+
+                //newGrid(n)[0] = B1 + omega*(cNew - B1);
+                //newGrid(n)[1] = B2 + omega*(uNew - B2);
+                newGrid(n)[0] = (1.0 - omega)*cOld + omega*cNew;
+                newGrid(n)[1] = (1.0 - omega)*uOld + omega*uNew;
     		}
-    		*/
 
    	    	#ifdef MPI_VERSION
    	    	double localResidual=residual;
@@ -384,15 +383,19 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
    	    	    ferr<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
    	    	#endif
 
-   	    	residual = sqrt(residual)/(sqrt(2.0*gridSize)*sqrt(normB));
+   	    	residual = sqrt(residual)/sqrt(2.0*gridSize*normB);
 
    	    	#ifdef DEBUG
    	    	if (rank==0)
-  	    	    ferr<<residual<<"\t\t"<<omega<<std::endl;
+  	    	    ferr<<residual<<std::endl;
+  	    	    //ferr<<residual<<"\t\t"<<omega<<std::endl;
             #endif
 
 	    	iter++;
         }
+
+        // Chebyshev acceleration of relaxation parameter
+        // omega = (step==0) ? 1.0/(1.0-0.5*pow(jacobi_radius,2)) : 1.0/(1.0-0.25*omega*pow(jacobi_radius,2))  ;
 
         if (iter==max_iter && rank==0)
                 std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" with residual="<<residual<<std::endl;
