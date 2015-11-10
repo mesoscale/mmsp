@@ -44,10 +44,10 @@ T expansive_dfdc(const T& C)
 // Parametric Cahn-Hilliard
 const double Ca = 0.05;
 const double Cb = 0.95;
-const double Cm = 0.5*(Ca + Cb);      // = 0.5
+const double Cm = 0.5*(Ca + Cb);   // = 0.5
 const double A = 2.0;
 const double B = A/pow(Ca-Cm,2.0); // = 9.8765
-const double D = 2.0/(Cb-Ca);         // = 2.2222
+const double D = 2.0/(Cb-Ca);      // = 2.2222
 const double K = 2.0;
 
 template<typename T> inline
@@ -95,13 +95,13 @@ T expansive_dfdc(const T& C)
 #endif
 
 
-const int edge = 96;
+const int edge = 200;
 const double deltaX = 1.0;
 const double CFL = 2.0;
 const double dt = pow(deltaX,4.0)*CFL/(32.0*D*K);
 // Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
 
-const double tolerance = 5.0e-10; // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- may not converge before your deadline.
+const double tolerance = 1.0e-12;    // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- but may not converge before your deadline.
 const unsigned int max_iter = 10000; // don't let the solver stagnate
 
 namespace MMSP {
@@ -159,13 +159,13 @@ void generate(int dim, const char* filename)
 	}
 
 	int rank=0;
+	int np=1;
 	#ifdef MPI_VERSION
 	rank = MPI::COMM_WORLD.Get_rank();
+	np = MPI::COMM_WORLD.Get_size();
 	#endif
 
-    #ifdef VANILLA
     srand(time(NULL)/(rank+2));
-    #endif
 
 	if (dim==2) {
 		MMSP::grid<2,vector<double> > grid(2,0,edge,0,edge); // field 0 is c, field 1 is mu
@@ -189,6 +189,19 @@ void generate(int dim, const char* filename)
 			MMSP::vector<int> x = position(grid,n);
 		    grid(n)[1] = full_dfdc(grid(n)[0]) - K*field_laplacian(grid, x, 0);
 		}
+
+        // Validate free energy functions, spliting, and linearization
+        for (int i=0; i<10000/np; i++) {
+            double c = 0.5 + 0.6*((double(rand())/RAND_MAX) - 0.5);
+            if (fabs(full_dfdc(c) - (contractive_dfdc(c) + expansive_dfdc(c))) > tolerance) {
+                std::cerr<<"ERROR: full derivative ft("<<c<<") ≠ fc + fe. Check functions."<<std::endl;
+                std::exit(-1);
+            }
+            if (fabs(contractive_dfdc(c) - nonlinear_coeff(c)*c) > tolerance) {
+                std::cerr<<"ERROR: contractive derivative fc("<<c<<") ≠ c*l(c). Check linearization."<<std::endl;
+                std::exit(-1);
+            }
+        }
 
 		#ifdef MPI_VERSION
 		MPI::COMM_WORLD.Barrier();
@@ -254,6 +267,15 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	for (int d=0; d<dim; d++) {
 		dx(oldGrid,d) = deltaX;
 		dx(newGrid,d) = deltaX;
+		/*
+		if (x0(oldGrid,d)==g0(oldGrid,d)) {
+		    b0(oldGrid,d)=Neumann;
+		    b0(newGrid,d)=Neumann;
+        } else if (x1(oldGrid,d)==g1(oldGrid,d)) {
+		    b1(oldGrid,d)=Neumann;
+		    b1(newGrid,d)=Neumann;
+		}
+		*/
 	}
 
     double gridSize = 1.0*nodes(oldGrid);
@@ -281,17 +303,21 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     //const double jacobi_radius = (cos(2.0*M_PI/(g1(oldGrid,0)-g0(oldGrid,0)))  +  pow(dx(oldGrid,0)/dx(oldGrid,1),2)*cos(2.0*M_PI/(g1(oldGrid,1)-g0(oldGrid,1)))) /
     //                             (1.0+pow(dx(oldGrid,0)/dx(oldGrid,1),2)); // note: PI for Diriclet or Neumann, 2PI for periodic
 
-    const double omega = 1.0; // Successive Over-Relaxation relaxation parameter (w=1 is Gauss-Seidel)
+    //const double omega = 1.0; // Successive Over-Relaxation relaxation parameter (w=1 is Gauss-Seidel)
 
 	for (int step=0; step<steps; step++) {
         double residual=1.0;
         unsigned int iter=0;
 
+        if (step%10==0)
+            for (int n=0; n<nodes(newGrid); n++) {
+                newGrid(n)[0] = 0.0;
+                newGrid(n)[1] = 0.0;
+            }
+
         while (iter<max_iter && residual>tolerance) {
 
-            /*
-                ==== RED-BLACK GAUSS SEIDEL ====
-
+            /*  ==== RED-BLACK GAUSS SEIDEL ====
                 Iterate over a checkerboard, updating first red then black tiles.
                 This method eliminates the third "guess" grid, and should converge faster.
                 In 2-D and 3-D, if the sum of indices is even, then the tile is Red; else, Black.
@@ -322,7 +348,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     	    		const double B1 = cOld + D*dt*lapU;
 	    		    const double B2 = expansive_dfdc(cOld) - K*lapC;
 
-                    // Solve AX=B using Cramer's rule
+                    // Solve the iteration system AX=B using Cramer's rule
 	        		const double denom = A11*A22 - A12*A21; // det|A|
 	        		const double cNew = (A22*B1 - B2*A12)/denom; // X1
     	    		const double uNew = (A11*B2 - B1*A21)/denom; // X2
@@ -333,10 +359,10 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                 ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
             }
 
-            /*
-                ==== RESIDUAL ====
-                The residual is computed from the original matrix form, AX=B:
-                any Old term goes into B, while any New term goes in AX.
+            /*  ==== RESIDUAL ====
+                The residual is computed from the original matrix form, Ax=b:
+                any Old term goes into B, while any New term goes in AX. Note that
+                this is not the iteration matrix, it is the original system of equations.
             */
 
             double normB = 0.0;
@@ -348,7 +374,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 
        	    	const double cOld = oldGrid(n)[0];
                 const double cNew = newGrid(n)[0];
-                const double uOld = oldGrid(n)[1];
+                //const double uOld = oldGrid(n)[1];
                 const double uNew = newGrid(n)[1];
 
         		const double B1 = cOld;
@@ -361,14 +387,13 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                 const double R1 = AX1 - B1;
                 const double R2 = AX2 - B2;
 
-                const double normBminusAX = pow(R1,2.0)/(2.0*gridSize) + pow(R2,2.0)/(2.0*gridSize);
-                residual += normBminusAX;
+                const double error = (pow(R1,2.0) + pow(R2,2.0))/(2.0*dV*gridSize);
+                residual += error;
                 normB += pow(B1,2.0) + pow(B2,2.0);
 
-                //newGrid(n)[0] = B1 + omega*(cNew - B1);
-                //newGrid(n)[1] = B2 + omega*(uNew - B2);
-                newGrid(n)[0] = (1.0 - omega)*cOld + omega*cNew;
-                newGrid(n)[1] = (1.0 - omega)*uOld + omega*uNew;
+                // (Don't) Apply relaxation
+                //newGrid(n)[0] = (1.0 - omega)*cOld + omega*cNew;
+                //newGrid(n)[1] = (1.0 - omega)*uOld + omega*uNew;
     		}
 
    	    	#ifdef MPI_VERSION
@@ -383,7 +408,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
    	    	    ferr<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
    	    	#endif
 
-   	    	residual = sqrt(residual)/sqrt(2.0*gridSize*normB);
+   	    	residual = sqrt(residual/normB);
 
    	    	#ifdef DEBUG
    	    	if (rank==0)
