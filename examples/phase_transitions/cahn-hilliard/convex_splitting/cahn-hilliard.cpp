@@ -95,13 +95,13 @@ T expansive_dfdc(const T& C)
 #endif
 
 
-const int edge = 200;
+const int edge = 102;
 const double deltaX = 1.0;
 const double CFL = 2.0;
 const double dt = pow(deltaX,4.0)*CFL/(32.0*D*K);
 // Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
 
-const double tolerance = 1.0e-12;    // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- but may not converge before your deadline.
+const double tolerance = 1.0e-6;     // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- but may not converge before your deadline.
 const unsigned int max_iter = 10000; // don't let the solver stagnate
 
 namespace MMSP {
@@ -150,7 +150,6 @@ T fringe_laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const
 
 void generate(int dim, const char* filename)
 {
-
     // Initial conditions after CHiMaD Phase Field Workshop benchmark problem (October 2015)
 
 	if (dim!=2) {
