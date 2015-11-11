@@ -96,12 +96,12 @@ T expansive_dfdc(const T& C)
 
 
 const int edge = 100;
-const double deltaX = 1.0;
-const double CFL = 2.0;
+const double deltaX = 0.25;
+const double CFL = 20.0;
 const double dt = pow(deltaX,4.0)*CFL/(32.0*D*K);
 // Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
 
-const double tolerance = 1.0e-12;     // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- but may not converge before your deadline.
+const double tolerance = 1.0e-10;     // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- but may not converge before your deadline.
 const unsigned int max_iter = 10000; // don't let the solver stagnate
 
 namespace MMSP {
@@ -211,7 +211,7 @@ void generate(int dim, const char* filename)
 	    #ifdef VANILLA
 	        std::cout<<std::endl
 	    #else
-	     std::cout<<" Run "<<150000*0.005/dt<<" steps to match explicit dataset.\nIters\tEnergy\tMass"<<std::endl;
+	     std::cout<</*" Run "<<150000*0.005/dt<<" steps to match explicit dataset.\nIters\tEnergy\tMass"<<*/std::endl;
 	    #endif
 	    }
 
@@ -340,7 +340,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                     newGrid(n)[0] = cNew;
                     newGrid(n)[1] = uNew;
                     /*
-                    double omega = 1.2;
+                    double omega = 1.0; // omega=1 is equivalent to Gauss-Seidel
 	    	    	const double uOld = oldGrid(n)[1];
                     newGrid(n)[0] = (1.0 - omega)*cOld + omega*cNew;
                     newGrid(n)[1] = (1.0 - omega)*uOld + omega*uNew;
@@ -376,7 +376,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                     const double R1 = AX1 - B1;
                     const double R2 = AX2 - B2;
 
-                    const double error = (pow(R1,2.0) + pow(R2,2.0))/(2.0*dV*gridSize);
+                    const double error = (pow(R1,2.0) + pow(R2,2.0))/(2.0*gridSize);
                     residual += error;
                     normB += pow(B1,2.0) + pow(B2,2.0);
             	}
