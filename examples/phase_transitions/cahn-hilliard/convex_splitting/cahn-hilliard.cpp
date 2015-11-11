@@ -95,13 +95,13 @@ T expansive_dfdc(const T& C)
 #endif
 
 
-const int edge = 102;
+const int edge = 100;
 const double deltaX = 1.0;
 const double CFL = 2.0;
 const double dt = pow(deltaX,4.0)*CFL/(32.0*D*K);
 // Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
 
-const double tolerance = 1.0e-6;     // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- but may not converge before your deadline.
+const double tolerance = 1.0e-12;     // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- but may not converge before your deadline.
 const unsigned int max_iter = 10000; // don't let the solver stagnate
 
 namespace MMSP {
@@ -266,15 +266,6 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	for (int d=0; d<dim; d++) {
 		dx(oldGrid,d) = deltaX;
 		dx(newGrid,d) = deltaX;
-		/*
-		if (x0(oldGrid,d)==g0(oldGrid,d)) {
-		    b0(oldGrid,d)=Neumann;
-		    b0(newGrid,d)=Neumann;
-        } else if (x1(oldGrid,d)==g1(oldGrid,d)) {
-		    b1(oldGrid,d)=Neumann;
-		    b1(newGrid,d)=Neumann;
-		}
-		*/
 	}
 
     double gridSize = 1.0*nodes(oldGrid);
@@ -302,17 +293,9 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     //const double jacobi_radius = (cos(2.0*M_PI/(g1(oldGrid,0)-g0(oldGrid,0)))  +  pow(dx(oldGrid,0)/dx(oldGrid,1),2)*cos(2.0*M_PI/(g1(oldGrid,1)-g0(oldGrid,1)))) /
     //                             (1.0+pow(dx(oldGrid,0)/dx(oldGrid,1),2)); // note: PI for Diriclet or Neumann, 2PI for periodic
 
-    //const double omega = 1.0; // Successive Over-Relaxation relaxation parameter (w=1 is Gauss-Seidel)
-
 	for (int step=0; step<steps; step++) {
         double residual=1.0;
         unsigned int iter=0;
-
-        if (step%10==0)
-            for (int n=0; n<nodes(newGrid); n++) {
-                newGrid(n)[0] = 0.0;
-                newGrid(n)[1] = 0.0;
-            }
 
         while (iter<max_iter && residual>tolerance) {
 
@@ -323,6 +306,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
             */
 
     		for (int color=1; color>-1; color--) {
+                ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
     		    // If color==1, skip BLACK tiles, which have Σx[d] odd
     		    // If color==0, skip RED tiles, which have Σx[d] even
         		for (int n=0; n<nodes(oldGrid); n++) {
@@ -352,10 +336,16 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	        		const double cNew = (A22*B1 - B2*A12)/denom; // X1
     	    		const double uNew = (A11*B2 - B1*A21)/denom; // X2
 
+                    // (Don't) Apply relaxation
                     newGrid(n)[0] = cNew;
                     newGrid(n)[1] = uNew;
+                    /*
+                    double omega = 1.2;
+	    	    	const double uOld = oldGrid(n)[1];
+                    newGrid(n)[0] = (1.0 - omega)*cOld + omega*cNew;
+                    newGrid(n)[1] = (1.0 - omega)*uOld + omega*uNew;
+                    */
                 }
-                ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
             }
 
             /*  ==== RESIDUAL ====
@@ -364,56 +354,53 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                 this is not the iteration matrix, it is the original system of equations.
             */
 
-            double normB = 0.0;
-            residual = 0.0;
-       		for (int n=0; n<nodes(oldGrid); n++) {
-    		    MMSP::vector<int> x = position(oldGrid,n);
-           		const double lapC = field_laplacian(newGrid, x, 0);
-	       		const double lapU = field_laplacian(newGrid, x, 1);
+            if (iter<5 || iter%10==0) {
+                double normB = 0.0;
+                residual = 0.0;
+       	        for (int n=0; n<nodes(oldGrid); n++) {
+        	    	MMSP::vector<int> x = position(oldGrid,n);
+            	    const double lapC = field_laplacian(newGrid, x, 0);
+    	       	    const double lapU = field_laplacian(newGrid, x, 1);
 
-       	    	const double cOld = oldGrid(n)[0];
-                const double cNew = newGrid(n)[0];
-                //const double uOld = oldGrid(n)[1];
-                const double uNew = newGrid(n)[1];
+           	     	const double cOld = oldGrid(n)[0];
+                    const double cNew = newGrid(n)[0];
+                    const double uNew = newGrid(n)[1];
 
-        		const double B1 = cOld;
-	   		    const double B2 = expansive_dfdc(cOld);
+        	  	    const double B1 = cOld;
+    	   	        const double B2 = expansive_dfdc(cOld);
 
-                const double AX1 = cNew - D*dt*lapU;
-                const double AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
+                    const double AX1 = cNew - D*dt*lapU;
+                    const double AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
 
-                // Compute the Error from parts of the solution
-                const double R1 = AX1 - B1;
-                const double R2 = AX2 - B2;
+                    // Compute the Error from parts of the solution
+                    const double R1 = AX1 - B1;
+                    const double R2 = AX2 - B2;
 
-                const double error = (pow(R1,2.0) + pow(R2,2.0))/(2.0*dV*gridSize);
-                residual += error;
-                normB += pow(B1,2.0) + pow(B2,2.0);
+                    const double error = (pow(R1,2.0) + pow(R2,2.0))/(2.0*dV*gridSize);
+                    residual += error;
+                    normB += pow(B1,2.0) + pow(B2,2.0);
+            	}
 
-                // (Don't) Apply relaxation
-                //newGrid(n)[0] = (1.0 - omega)*cOld + omega*cNew;
-                //newGrid(n)[1] = (1.0 - omega)*uOld + omega*uNew;
-    		}
+   	        	#ifdef MPI_VERSION
+   	            double localResidual=residual;
+           	    MPI::COMM_WORLD.Allreduce(&localResidual, &residual, 1, MPI_DOUBLE, MPI_SUM);
+           	    double localNormB=normB;
+           		MPI::COMM_WORLD.Allreduce(&localNormB, &normB, 1, MPI_DOUBLE, MPI_SUM);
+   	            #endif
 
-   	    	#ifdef MPI_VERSION
-   	    	double localResidual=residual;
-       		MPI::COMM_WORLD.Allreduce(&localResidual, &residual, 1, MPI_DOUBLE, MPI_SUM);
-   	    	double localNormB=normB;
-       		MPI::COMM_WORLD.Allreduce(&localNormB, &normB, 1, MPI_DOUBLE, MPI_SUM);
-   	    	#endif
+   	            #ifdef DEBUG
+           	    if (rank==0)
+   	        	    ferr<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
+   	            #endif
 
-   	    	#ifdef DEBUG
-   	    	if (rank==0)
-   	    	    ferr<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
-   	    	#endif
+   	            residual = sqrt(residual/normB);
 
-   	    	residual = sqrt(residual/normB);
-
-   	    	#ifdef DEBUG
-   	    	if (rank==0)
-  	    	    ferr<<residual<<std::endl;
-  	    	    //ferr<<residual<<"\t\t"<<omega<<std::endl;
-            #endif
+           	    #ifdef DEBUG
+   	        	if (rank==0)
+  	                ferr<<residual<<std::endl;
+  	                //ferr<<residual<<"\t\t"<<omega<<std::endl;
+                #endif
+            }
 
 	    	iter++;
         }
@@ -427,7 +414,9 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
             std::exit(-1);
         }
 
-		oldGrid.copy(newGrid); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
+		//oldGrid.copy(newGrid); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
+		swap(oldGrid,newGrid);
+		//ghostswap(oldGrid);
 
 		double energy = 0.0;
 		double mass = 0.0;
