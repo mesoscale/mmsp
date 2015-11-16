@@ -414,16 +414,16 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
             std::exit(-1);
         }
 
-		//oldGrid.copy(newGrid); // want to preserve the values in update for next iteration's first guess -- so don't swap, deep copy
-		swap(oldGrid,newGrid);
-		//ghostswap(oldGrid);
-
 		double energy = 0.0;
 		double mass = 0.0;
-		for (int n=0; n<nodes(oldGrid); n++) {
-			MMSP::vector<int> x = position(oldGrid,n);
-			const double C = oldGrid(x)[0];
-			energy += dV*energy_density(C);
+		for (int n=0; n<nodes(newGrid); n++) {
+			MMSP::vector<int> x = position(newGrid,n);
+			MMSP::vector<MMSP::vector<T> > gradC = grad(newGrid, x);
+            double magSqGradC = 0.0;
+            for (int d=0; d<dim; d++)
+                magSqGradC += pow(gradC[d][0],2.0);
+			const T C = newGrid(x)[0];
+			energy += dV*(energy_density(C) + 0.5*K*magSqGradC);
 			mass += dV*C;
 		}
 		#ifdef MPI_VERSION
@@ -441,6 +441,9 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	#endif
 	if (rank==0)
 		std::cout<<std::flush;
+
+
+	swap(oldGrid,newGrid);
 }
 
 } // MMSP
