@@ -1,6 +1,17 @@
-// cahn-hilliard.hpp
-// Algorithms for 2D Cahn-Hilliard model with semi-implicit convex splitting discretization
-// Questions/comments to trevor.keller@gmail.com (Trevor Keller)
+/** cahn-hilliard.hpp
+ ** Algorithms for 2D Cahn-Hilliard model with semi-implicit discretization by convex splitting.
+ ** Questions/comments to trevor.keller@gmail.com (Trevor Keller)
+ **
+ ** This code sets parameters for the evolution of two different energy configurations.
+ **
+ ** "Vanilla" solves the Cahn-Hilliard equations for the most-simple free energy density
+ ** producing spinodal decomposition, F(C)=0.25*C^4-0.5*C^2. To build this case, edit the Makefile
+ ** to specify -DVANILLA in the flags parameter.
+ **
+ ** Otherwise, the Cahn-Hilliard equation is solved for a simple binary phase diagram with parametrized
+ ** free energy density, F(C)=-0.5*A*(C-C0)^2 + 0.25*B*(C-C0)^4 + 0.25*Ca*(C-Ca)^4 + 0.25*Cb*(C-Cb)^4.
+ ** This case demonstrates stiffer numerics, so proceed with caution. To build, remove the -DVANILLA flag.
+ **/
 
 #ifndef CAHNHILLIARD_UPDATE
 #define CAHNHILLIARD_UPDATE
@@ -10,11 +21,32 @@
 #include"cahn-hilliard.hpp"
 
 #ifdef VANILLA
-// Vanilla Cahn-Hilliard
-#include<time.h>
-const double D = 1.0;
-const double K = 1.0;
+const double D = 1.0; // diffusivity
+const double K = 1.0; // gradient energy coefficient
+const double C0 = 0.5;// system composition
+#else
+const double Ca = 0.05; // alpha-phase solvus composition
+const double Cb = 0.95; // beta-phase solvus composition
+const double C0 = 0.45; // mean composition
+const double D = 2.0/(Cb-Ca);
+const double K = 2.0;
+#endif
 
+// Spatial constants
+const int edge = 128;
+const double deltaX = 32.0/double(edge-1); //~0.25 if edge=128;
+const double dt = 0.25/pow(D*K,4.0);
+const double CFL = 32.0*dt*D*K/pow(deltaX,4.0); // to judge improvement w.r.t. explicit discretization
+// Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
+
+// Numerical constants
+const double tolerance = 1.0e-12;     // Choose wisely. 1e-5 is poor, 1e-8 fair: mass is not conserved. 1e-12 is good, mass is conserved. YMMV depending on coefficients.
+const unsigned int max_iter = 10000; // don't let the solver stagnate
+const double omega = 1.0;
+
+#ifdef VANILLA
+// Vanilla energetics
+#include<time.h>
 template<typename T> inline
 T energy_density(const T& C)
 {
@@ -41,36 +73,19 @@ T expansive_dfdc(const T& C)
     return -C;
 }
 #else
-// Parametric Cahn-Hilliard
-const double Ca = 0.05;
-const double Cb = 0.95;
-const double Cm = 0.5*(Ca + Cb);   // = 0.5
+// Parametric energetics
 const double A = 2.0;
-const double B = A/pow(Ca-Cm,2.0); // = 9.8765
-const double D = 2.0/(Cb-Ca);      // = 2.2222
-const double K = 2.0;
-
-template<typename T> inline
-double energydensity(const T& C)
-{
-        return -0.5*A*pow(C-Cm,2.0) + 0.25*B*pow(C-Cm,4.0) + 0.25*Ca*pow(C-Ca,4.0) + 0.25*Cb*pow(C-Cb,4.0);
-}
-
-template<typename T> inline
-double dfdc(const T& C)
-{
-    return -A*(C-Cm) + B*pow(C-Cm, 3) + Ca*pow(C-Ca, 3) + Cb*pow(C-Cb, 3);
-}
+const double B = A/pow(Ca-C0,2.0); // = 9.8765
 
 const double AA = B + Ca + Cb;
-const double BB = 3.0*(B*Cm + pow(Ca,2.0) + pow(Cb,2.0));
-const double CC = 3.0*(B*pow(Cm,2.0) + pow(Ca,3.0) + pow(Cb,3.0)) - A;
-const double DD = B*pow(Cm,3.0) + pow(Ca,4.0) + pow(Cb,4.0) - A*Cm;
+const double BB = 3.0*(B*C0 + pow(Ca,2.0) + pow(Cb,2.0));
+const double CC = 3.0*(B*pow(C0,2.0) + pow(Ca,3.0) + pow(Cb,3.0)) - A;
+const double DD = B*pow(C0,3.0) + pow(Ca,4.0) + pow(Cb,4.0) - A*C0;
 
 template<typename T> inline
 T energy_density(const T& C)
 {
-    return -0.5*A*pow(C-Cm,2.0) + 0.25*B*pow(C-Cm,4.0) + 0.25*Ca*pow(C-Ca,4.0) + 0.25*Cb*pow(C-Cb,4.0);
+    return -0.5*A*pow(C-C0,2.0) + 0.25*B*pow(C-C0,4.0) + 0.25*Ca*pow(C-Ca,4.0) + 0.25*Cb*pow(C-Cb,4.0);
 }
 template<typename T> inline
 T full_dfdc(const T& C)
@@ -94,15 +109,6 @@ T expansive_dfdc(const T& C)
 }
 #endif
 
-
-const int edge = 100;
-const double deltaX = 0.25;
-const double CFL = 20.0;
-const double dt = pow(deltaX,4.0)*CFL/(32.0*D*K);
-// Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
-
-const double tolerance = 1.0e-10;     // Choose wisely. 1e-5 is poor, 1e-8 fair, 1e-12 publication-quality -- but may not converge before your deadline.
-const unsigned int max_iter = 10000; // don't let the solver stagnate
 
 namespace MMSP {
 
@@ -166,6 +172,21 @@ void generate(int dim, const char* filename)
 
     srand(time(NULL)/(rank+2));
 
+    #ifdef DEBUG
+    // Validate free energy functions, splitting, and linearization
+    for (int i=0; i<10000/np; i++) {
+        double c = 0.5 + 0.6*((double(rand())/RAND_MAX) - 0.5);
+        if (fabs(full_dfdc(c) - (contractive_dfdc(c) + expansive_dfdc(c))) > tolerance) {
+            std::cerr<<"ERROR: full derivative ft("<<c<<") ≠ fc + fe. Check functions."<<std::endl;
+            std::exit(-1);
+        }
+        if (fabs(contractive_dfdc(c) - nonlinear_coeff(c)*c) > tolerance) {
+            std::cerr<<"ERROR: contractive derivative fc("<<c<<") ≠ c*l(c). Check linearization."<<std::endl;
+            std::exit(-1);
+        }
+    }
+    #endif
+
 	if (dim==2) {
 		MMSP::grid<2,vector<double> > grid(2,0,edge,0,edge); // field 0 is c, field 1 is mu
 		for (int d=0; d<dim; d++)
@@ -173,12 +194,13 @@ void generate(int dim, const char* filename)
 
 		#ifdef VANILLA
     	for (int n=0; n<nodes(grid); n++)
-		    grid(n)[0] = 0.45 + 0.02 * ((double(rand())/RAND_MAX) - 0.5);
+		    grid(n)[0] = C0*(1.0 + 0.1 * double(rand())/RAND_MAX);
 		#else
         const double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)}; // produces stipes oriented 45 degrees to horizontal
 		for (int n=0; n<nodes(grid); n++) {
 			MMSP::vector<int> x = position(grid,n);
-			grid(n)[0] = 0.45 + 0.01 * std::cos(x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1]);
+			double wave = x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1];
+			grid(n)[0] = C0*(1.0 + 0.1 * std::cos(wave));
 		}
         #endif
 
@@ -189,31 +211,12 @@ void generate(int dim, const char* filename)
 		    grid(n)[1] = full_dfdc(grid(n)[0]) - K*field_laplacian(grid, x, 0);
 		}
 
-        // Validate free energy functions, spliting, and linearization
-        for (int i=0; i<10000/np; i++) {
-            double c = 0.5 + 0.6*((double(rand())/RAND_MAX) - 0.5);
-            if (fabs(full_dfdc(c) - (contractive_dfdc(c) + expansive_dfdc(c))) > tolerance) {
-                std::cerr<<"ERROR: full derivative ft("<<c<<") ≠ fc + fe. Check functions."<<std::endl;
-                std::exit(-1);
-            }
-            if (fabs(contractive_dfdc(c) - nonlinear_coeff(c)*c) > tolerance) {
-                std::cerr<<"ERROR: contractive derivative fc("<<c<<") ≠ c*l(c). Check linearization."<<std::endl;
-                std::exit(-1);
-            }
-        }
-
 		#ifdef MPI_VERSION
 		MPI::COMM_WORLD.Barrier();
 		#endif
 		output(grid,filename);
-		if (rank==0) {
-			std::cout<<"Timestep is "<<dt<<" (Co="<<CFL<<").";
-	    #ifdef VANILLA
-	        std::cout<<std::endl
-	    #else
-	     std::cout<</*" Run "<<150000*0.005/dt<<" steps to match explicit dataset.\nIters\tEnergy\tMass"<<*/std::endl;
-	    #endif
-	    }
+		if (rank==0)
+			std::cout<<"Timestep is "<<dt<<" (Co="<<CFL<<")."<<std::endl;
 
         double dV = 1.0;
         for (int d=0; d<dim; d++)
@@ -223,8 +226,12 @@ void generate(int dim, const char* filename)
 		double mass = 0.0;
 		for (int n=0; n<nodes(grid); n++) {
 			MMSP::vector<int> x = position(grid,n);
+			MMSP::vector<MMSP::vector<double> > gradC = grad(grid, x);
+            double magSqGradC = 0.0;
+            for (int d=0; d<dim; d++)
+                magSqGradC += pow(gradC[d][0],2.0);
 			const double C = grid(x)[0];
-			energy += dV*energy_density(C);
+			energy += dV*(energy_density(C) + 0.5*K*magSqGradC);
 			mass += dV*C;
 		}
 		#ifdef MPI_VERSION
@@ -260,7 +267,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 
 	MMSP::grid<dim,vector<T> > newGrid(oldGrid);   // new values at each point and initial guess for iteration
 
-    newGrid.copy(oldGrid); // deep copy: includes data and ghost cells
+    newGrid.copy(oldGrid); // deep copy: includes data and ghost cells. Expensive.
 
 	// Make sure the grid spacing is correct. Modify at will.
 	for (int d=0; d<dim; d++) {
@@ -268,7 +275,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		dx(newGrid,d) = deltaX;
 	}
 
-    double gridSize = 1.0*nodes(oldGrid);
+    double gridSize = static_cast<double>(nodes(oldGrid));
 	#ifdef MPI_VERSION
     double localGridSize = gridSize;
     MPI::COMM_WORLD.Barrier();
@@ -285,13 +292,8 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     #ifdef DEBUG
     std::ofstream ferr;
     if (rank==0)
-        ferr.open("error.log", std::ofstream::out | std::ofstream::app);
+        ferr.open("error.log", std::ofstream::app);
     #endif
-
-    // From Numerical Recipes: the following Jacobi spectral radius only applies to the Laplace equation, which this code is not.
-    // Still, it's the hint of a direction for Chebyshev acceleration of omega.
-    //const double jacobi_radius = (cos(2.0*M_PI/(g1(oldGrid,0)-g0(oldGrid,0)))  +  pow(dx(oldGrid,0)/dx(oldGrid,1),2)*cos(2.0*M_PI/(g1(oldGrid,1)-g0(oldGrid,1)))) /
-    //                             (1.0+pow(dx(oldGrid,0)/dx(oldGrid,1),2)); // note: PI for Diriclet or Neumann, 2PI for periodic
 
 	for (int step=0; step<steps; step++) {
         double residual=1.0;
@@ -306,7 +308,6 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
             */
 
     		for (int color=1; color>-1; color--) {
-                ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
     		    // If color==1, skip BLACK tiles, which have Σx[d] odd
     		    // If color==0, skip RED tiles, which have Σx[d] even
         		for (int n=0; n<nodes(oldGrid); n++) {
@@ -315,37 +316,35 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	        		for (int d=0; d<dim; d++)
 	        		    x_sum += x[d];
     	    		if (x_sum%2 == color)
-	    		        continue; // if odd
+	    		        continue;
 
-	    	    	const double cOld = oldGrid(n)[0];
-	        		const double cLast = newGrid(n)[0];
+	    	    	const T cOld = oldGrid(n)[0];
+	        		const T cLast = newGrid(n)[0];
 
 	        		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
-    	    		const double A11 = 1.0;                                   const double A12 = dt*D*lapWeight;
-	    		    const double A21 = -nonlinear_coeff(cLast) - K*lapWeight; const double A22 = 1.0;
+    	    		//const double A11 = 1.0;
+    	    		const double A12 = dt*D*lapWeight;
+	    		    const double A21 = -nonlinear_coeff(cLast) - K*lapWeight;
+	    		    //const double A22 = 1.0;
 
 	    	    	// B is defined by the last value, stored in oldGrid(x), and the last guess, stored in newGrid(x). It is a 2x1 column.
-	        		const double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
-	        		const double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
+	        		const T lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
+	        		const T lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
 
-    	    		const double B1 = cOld + D*dt*lapU;
-	    		    const double B2 = expansive_dfdc(cOld) - K*lapC;
+    	    		const T B1 = cOld + D*dt*lapU;
+	    		    const T B2 = expansive_dfdc(cOld) - K*lapC;
 
                     // Solve the iteration system AX=B using Cramer's rule
-	        		const double denom = A11*A22 - A12*A21; // det|A|
-	        		const double cNew = (A22*B1 - B2*A12)/denom; // X1
-    	    		const double uNew = (A11*B2 - B1*A21)/denom; // X2
+	        		const double detA = 1.0 - A12*A21; // det|A|
+	        		const T cNew = (B1 - B2*A12)/detA; // X1
+    	    		const T uNew = (B2 - B1*A21)/detA; // X2
 
                     // (Don't) Apply relaxation
-                    newGrid(n)[0] = cNew;
-                    newGrid(n)[1] = uNew;
-                    /*
-                    double omega = 1.0; // omega=1 is equivalent to Gauss-Seidel
-	    	    	const double uOld = oldGrid(n)[1];
+	    	    	const T uOld = oldGrid(n)[1];
                     newGrid(n)[0] = (1.0 - omega)*cOld + omega*cNew;
                     newGrid(n)[1] = (1.0 - omega)*uOld + omega*uNew;
-                    */
                 }
+                ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
             }
 
             /*  ==== RESIDUAL ====
@@ -354,29 +353,29 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                 this is not the iteration matrix, it is the original system of equations.
             */
 
-            if (iter<5 || iter%10==0) {
+            if (iter<5 || (iter<100 && iter%10==0) || iter%100==0) {
                 double normB = 0.0;
                 residual = 0.0;
        	        for (int n=0; n<nodes(oldGrid); n++) {
         	    	MMSP::vector<int> x = position(oldGrid,n);
-            	    const double lapC = field_laplacian(newGrid, x, 0);
-    	       	    const double lapU = field_laplacian(newGrid, x, 1);
+            	    const T lapC = field_laplacian(newGrid, x, 0);
+    	       	    const T lapU = field_laplacian(newGrid, x, 1);
 
-           	     	const double cOld = oldGrid(n)[0];
-                    const double cNew = newGrid(n)[0];
-                    const double uNew = newGrid(n)[1];
+           	     	const T cOld = oldGrid(n)[0];
+                    const T cNew = newGrid(n)[0];
+                    const T uNew = newGrid(n)[1];
 
-        	  	    const double B1 = cOld;
-    	   	        const double B2 = expansive_dfdc(cOld);
+        	  	    const T B1 = cOld;
+    	   	        const T B2 = expansive_dfdc(cOld);
 
-                    const double AX1 = cNew - D*dt*lapU;
-                    const double AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
+                    const T AX1 = cNew - D*dt*lapU;
+                    const T AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
 
                     // Compute the Error from parts of the solution
-                    const double R1 = AX1 - B1;
-                    const double R2 = AX2 - B2;
+                    const T R1 = AX1 - B1;
+                    const T R2 = AX2 - B2;
 
-                    const double error = (pow(R1,2.0) + pow(R2,2.0))/(2.0*gridSize);
+                    const double error = pow(R1,2.0) + pow(R2,2.0);
                     residual += error;
                     normB += pow(B1,2.0) + pow(B2,2.0);
             	}
@@ -393,24 +392,24 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
    	        	    ferr<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
    	            #endif
 
-   	            residual = sqrt(residual/normB);
+   	            residual = sqrt(residual/normB)/(2.0*gridSize);
 
            	    #ifdef DEBUG
    	        	if (rank==0)
   	                ferr<<residual<<std::endl;
-  	                //ferr<<residual<<"\t\t"<<omega<<std::endl;
                 #endif
             }
 
 	    	iter++;
         }
 
-        // Chebyshev acceleration of relaxation parameter
-        // omega = (step==0) ? 1.0/(1.0-0.5*pow(jacobi_radius,2)) : 1.0/(1.0-0.25*omega*pow(jacobi_radius,2))  ;
-
         if (iter==max_iter) {
             if (rank==0)
-                std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" with residual="<<residual<<std::endl;
+                std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" iterations with residual="<<residual<<std::endl;
+            std::exit(-1);
+        } else if (!std::isfinite(residual) || std::isnan(residual)) {
+            if (rank==0)
+                std::cerr<<"    Numerical error on step "<<step<<" after "<<iter<<" iterations"<<std::endl;
             std::exit(-1);
         }
 
@@ -419,11 +418,11 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		for (int n=0; n<nodes(newGrid); n++) {
 			MMSP::vector<int> x = position(newGrid,n);
 			MMSP::vector<MMSP::vector<T> > gradC = grad(newGrid, x);
-            double magSqGradC = 0.0;
+            double gradCsq = 0.0;
             for (int d=0; d<dim; d++)
-                magSqGradC += pow(gradC[d][0],2.0);
+                gradCsq += pow(gradC[d][0],2.0);
 			const T C = newGrid(x)[0];
-			energy += dV*(energy_density(C) + 0.5*K*magSqGradC);
+			energy += dV*(energy_density(C) + 0.5*K*gradCsq);
 			mass += dV*C;
 		}
 		#ifdef MPI_VERSION
@@ -435,15 +434,16 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		#endif
 		if (rank==0)
 			std::cout<<iter<<'\t'<<energy<<'\t'<<mass<<std::endl;
+
+    	swap(oldGrid,newGrid);
+    	ghostswap(oldGrid);
+
 	}
    	#ifdef DEBUG
 	ferr.close();
 	#endif
 	if (rank==0)
 		std::cout<<std::flush;
-
-
-	swap(oldGrid,newGrid);
 }
 
 } // MMSP

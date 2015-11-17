@@ -8,7 +8,7 @@ incdir = ../../../../include
 # compilers/flags
 compiler = icc
 gompiler = icc
-flags = -O3 -Wall -DDEBUG -I $(incdir)
+flags = -O3 -Wall -std=c++11 -DDEBUG -I $(incdir)
 gflags = -g -pg -Wall -O2 -I $(incdir)
 pcompiler = mpic++
 ccompiler = mpic++.mpich2

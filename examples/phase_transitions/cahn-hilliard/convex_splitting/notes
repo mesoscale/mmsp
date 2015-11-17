@@ -8,8 +8,13 @@ Send questions or comments to trevor.keller@gmail.com (Trevor Keller)
 
 References:
 
-1. JW Cahn and JE Hilliard, "Free energy of a nonuniform system. I. Interfacial free energy," J. Chem. Phys. 28:2;258 (1958). http://dx.doi.org/10.1063/1.1744102
-2. DJ Eyre, "Unconditionally Gradient Stable Time Marching the Cahn-Hilliard Equation," MRS Proceedings 529:BB;39-46 (1998). http://dx.doi.org/10.1557/PROC-529-39
-3. BP Vollmayr-Lee and AD Rutenberg, "Fast and accurate coarsening simulation with an unconditionally stable time step," Phys. Rev. E 68:6;066703 (2003). http://dx.doi.org/10.1103/PhysRevE.68.066703
-4. E de Mello and OT da Silveira Filho, "Numerical study of the Cahn-Hilliard equation in one, two and three dimensions," Physica A 347;429-443 (2005). http://dx.doi.org/10.1016/j.physa.2004.08.076
-5. A. baskaran, Z. Guan, and J. Lowengrub, "Energy stable multigrid method for local and non-local hydrodynamic models for freezing," Comput. Methods Appl. Mech. Eng. (in press). http://dx.doi.org/10.1016/j.cma.2015.10.011
+1. JW Cahn and JE Hilliard, "Free energy of a nonuniform system. I. Interfacial free energy,"
+   J. Chem. Phys. 28:2;258 (1958). http://dx.doi.org/10.1063/1.1744102
+2. DJ Eyre, "Unconditionally Gradient Stable Time Marching the Cahn-Hilliard Equation,"
+   MRS Proceedings 529:BB;39-46 (1998). http://dx.doi.org/10.1557/PROC-529-39
+3. BP Vollmayr-Lee and AD Rutenberg, "Fast and accurate coarsening simulation with an unconditionally stable time step,"
+   Phys. Rev. E 68:6;066703 (2003). http://dx.doi.org/10.1103/PhysRevE.68.066703
+4. E de Mello and OT da Silveira Filho, "Numerical study of the Cahn-Hilliard equation in one, two and three dimensions,"
+   Physica A 347;429-443 (2005). http://dx.doi.org/10.1016/j.physa.2004.08.076
+5. A Baskaran, Z Guan, and J Lowengrub, "Energy stable multigrid method for local and non-local hydrodynamic models for freezing,"
+   Comput. Methods Appl. Mech. Eng. (in press). http://dx.doi.org/10.1016/j.cma.2015.10.011
