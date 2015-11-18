@@ -1,8 +1,16 @@
 /** cahn-hilliard.hpp
  ** Algorithms for 2D Cahn-Hilliard model with semi-implicit discretization by convex splitting.
  ** Questions/comments to trevor.keller@gmail.com (Trevor Keller)
- **
- ** This code sets parameters for the evolution of two different energy configurations.
+ **/
+
+#ifndef CAHNHILLIARD_UPDATE
+#define CAHNHILLIARD_UPDATE
+#include"MMSP.hpp"
+#include<cmath>
+#include<fstream>
+#include"cahn-hilliard.hpp"
+
+/** This code sets parameters for the evolution of two different energy configurations.
  **
  ** "Vanilla" solves the Cahn-Hilliard equations for the most-simple free energy density
  ** producing spinodal decomposition, F(C)=0.25*C^4-0.5*C^2. To build this case, edit the Makefile
@@ -12,13 +20,6 @@
  ** free energy density, F(C)=-0.5*A*(C-C0)^2 + 0.25*B*(C-C0)^4 + 0.25*Ca*(C-Ca)^4 + 0.25*Cb*(C-Cb)^4.
  ** This case demonstrates stiffer numerics, so proceed with caution. To build, remove the -DVANILLA flag.
  **/
-
-#ifndef CAHNHILLIARD_UPDATE
-#define CAHNHILLIARD_UPDATE
-#include"MMSP.hpp"
-#include<cmath>
-#include<fstream>
-#include"cahn-hilliard.hpp"
 
 #ifdef VANILLA
 const double D = 1.0; // diffusivity
@@ -32,17 +33,20 @@ const double D = 2.0/(Cb-Ca);
 const double K = 2.0;
 #endif
 
+
 // Spatial constants
-const int edge = 128;
+const int edge = 150;
 const double deltaX = 32.0/double(edge-1); //~0.25 if edge=128;
-const double dt = 0.25/pow(D*K,4.0);
+const double dt = 0.1/pow(D*K,4.0);
 const double CFL = 32.0*dt*D*K/pow(deltaX,4.0); // to judge improvement w.r.t. explicit discretization
 // Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
 
 // Numerical constants
 const double tolerance = 1.0e-12;     // Choose wisely. 1e-5 is poor, 1e-8 fair: mass is not conserved. 1e-12 is good, mass is conserved. YMMV depending on coefficients.
-const unsigned int max_iter = 10000; // don't let the solver stagnate
+const unsigned int max_iter = 5000; // don't let the solver stagnate
 const double omega = 1.0;
+const unsigned int res_step = 1; // number of iterations between residual computations
+
 
 #ifdef VANILLA
 // Vanilla energetics
@@ -164,28 +168,11 @@ void generate(int dim, const char* filename)
 	}
 
 	int rank=0;
-	int np=1;
 	#ifdef MPI_VERSION
 	rank = MPI::COMM_WORLD.Get_rank();
-	np = MPI::COMM_WORLD.Get_size();
 	#endif
 
     srand(time(NULL)/(rank+2));
-
-    #ifdef DEBUG
-    // Validate free energy functions, splitting, and linearization
-    for (int i=0; i<10000/np; i++) {
-        double c = 0.5 + 0.6*((double(rand())/RAND_MAX) - 0.5);
-        if (fabs(full_dfdc(c) - (contractive_dfdc(c) + expansive_dfdc(c))) > tolerance) {
-            std::cerr<<"ERROR: full derivative ft("<<c<<") ≠ fc + fe. Check functions."<<std::endl;
-            std::exit(-1);
-        }
-        if (fabs(contractive_dfdc(c) - nonlinear_coeff(c)*c) > tolerance) {
-            std::cerr<<"ERROR: contractive derivative fc("<<c<<") ≠ c*l(c). Check linearization."<<std::endl;
-            std::exit(-1);
-        }
-    }
-    #endif
 
 	if (dim==2) {
 		MMSP::grid<2,vector<double> > grid(2,0,edge,0,edge); // field 0 is c, field 1 is mu
@@ -199,7 +186,8 @@ void generate(int dim, const char* filename)
         const double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)}; // produces stipes oriented 45 degrees to horizontal
 		for (int n=0; n<nodes(grid); n++) {
 			MMSP::vector<int> x = position(grid,n);
-			double wave = x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1];
+			//double wave = x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1];
+			double wave = x[0]*q[0] + x[1]*q[1];
 			grid(n)[0] = C0*(1.0 + 0.1 * std::cos(wave));
 		}
         #endif
@@ -230,7 +218,7 @@ void generate(int dim, const char* filename)
             double magSqGradC = 0.0;
             for (int d=0; d<dim; d++)
                 magSqGradC += pow(gradC[d][0],2.0);
-			const double C = grid(x)[0];
+			double C = grid(x)[0];
 			energy += dV*(energy_density(C) + 0.5*K*magSqGradC);
 			mass += dV*C;
 		}
@@ -273,6 +261,15 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	for (int d=0; d<dim; d++) {
 		dx(oldGrid,d) = deltaX;
 		dx(newGrid,d) = deltaX;
+		// Set zero-flux boundary conditions
+		if (x0(oldGrid,d)==g0(oldGrid,d)) {
+		    b0(oldGrid,d)=Neumann;
+		    b0(newGrid,d)=Neumann;
+		}
+		if (x1(oldGrid,d)==g1(oldGrid,d)) {
+		    b1(oldGrid,d)=Neumann;
+		    b1(newGrid,d)=Neumann;
+		}
 	}
 
     double gridSize = static_cast<double>(nodes(oldGrid));
@@ -300,6 +297,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
         unsigned int iter=0;
 
         while (iter<max_iter && residual>tolerance) {
+        //while (iter<max_iter) {
 
             /*  ==== RED-BLACK GAUSS SEIDEL ====
                 Iterate over a checkerboard, updating first red then black tiles.
@@ -318,29 +316,45 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     	    		if (x_sum%2 == color)
 	    		        continue;
 
-	    	    	const T cOld = oldGrid(n)[0];
-	        		const T cLast = newGrid(n)[0];
+	    	    	double cOld = oldGrid(n)[0];
+	        		double cLast = newGrid(n)[0];
+	    	    	double uOld = oldGrid(n)[1];
 
 	        		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
-    	    		//const double A11 = 1.0;
-    	    		const double A12 = dt*D*lapWeight;
-	    		    const double A21 = -nonlinear_coeff(cLast) - K*lapWeight;
-	    		    //const double A22 = 1.0;
+    	    		//double A11 = 1.0;
+    	    		double A12 = dt*D*lapWeight;
+	    		    double A21 = -1.0*(nonlinear_coeff(cLast) + K*lapWeight);
+	    		    //double A22 = 1.0;
 
 	    	    	// B is defined by the last value, stored in oldGrid(x), and the last guess, stored in newGrid(x). It is a 2x1 column.
-	        		const T lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
-	        		const T lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
+	        		double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
+	        		double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
 
-    	    		const T B1 = cOld + D*dt*lapU;
-	    		    const T B2 = expansive_dfdc(cOld) - K*lapC;
+                    #ifdef DEBUG
+                    if ((!std::isnormal(lapC)) ||  (!std::isnormal(lapU))) {
+                        std::cerr<<"Rank "<<rank<<": Numerical error at ("<<x[0]<<','<<x[1]<<") on step "<<step<<" after "<<iter<<" iterations"<<std::endl;
+                        std::cerr<<"      ∇²c=("<<lapC<<"),  ∇²μ=("<<lapU<<")"<<std::endl;
+                        std::exit(-1);
+                    }
+                    #endif
+
+    	    		double B1 = cOld + (D*dt*lapU);
+	    		    double B2 = expansive_dfdc(cOld) - (K*lapC);
 
                     // Solve the iteration system AX=B using Cramer's rule
-	        		const double detA = 1.0 - A12*A21; // det|A|
-	        		const T cNew = (B1 - B2*A12)/detA; // X1
-    	    		const T uNew = (B2 - B1*A21)/detA; // X2
+	        		double detA = 1.0 - (A12*A21); // det|A|
+	        		double cNew = B1/detA - (B2*A12/detA); // X1
+    	    		double uNew = B2/detA - (B1*A21/detA); // X2
+
+                    #ifdef DEBUG
+                    if ((!std::isnormal(cNew)) ||  (!std::isnormal(uNew))) {
+                        std::cerr<<"Rank "<<rank<<": Numerical error at ("<<x[0]<<','<<x[1]<<") on step "<<step<<" after "<<iter<<" iterations"<<std::endl;
+                        std::cerr<<"      R1=("<<B1<<" - ("<<B2<<")("<<A12<<")/"<<detA<<", R2=("<<B2<<" - ("<<A21<<")("<<B1<<")/"<<detA<<std::endl;
+                        std::exit(-1);
+                    }
+                    #endif
 
                     // (Don't) Apply relaxation
-	    	    	const T uOld = oldGrid(n)[1];
                     newGrid(n)[0] = (1.0 - omega)*cOld + omega*cNew;
                     newGrid(n)[1] = (1.0 - omega)*uOld + omega*uNew;
                 }
@@ -353,29 +367,29 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                 this is not the iteration matrix, it is the original system of equations.
             */
 
-            if (iter<5 || (iter<100 && iter%10==0) || iter%100==0) {
+            if (iter<res_step || iter%res_step==0) {
                 double normB = 0.0;
                 residual = 0.0;
        	        for (int n=0; n<nodes(oldGrid); n++) {
         	    	MMSP::vector<int> x = position(oldGrid,n);
-            	    const T lapC = field_laplacian(newGrid, x, 0);
-    	       	    const T lapU = field_laplacian(newGrid, x, 1);
+            	    double lapC = field_laplacian(newGrid, x, 0);
+    	       	    double lapU = field_laplacian(newGrid, x, 1);
 
-           	     	const T cOld = oldGrid(n)[0];
-                    const T cNew = newGrid(n)[0];
-                    const T uNew = newGrid(n)[1];
+           	     	double cOld = oldGrid(n)[0];
+                    double cNew = newGrid(n)[0];
+                    double uNew = newGrid(n)[1];
 
-        	  	    const T B1 = cOld;
-    	   	        const T B2 = expansive_dfdc(cOld);
+        	  	    double B1 = cOld;
+    	   	        double B2 = expansive_dfdc(cOld);
 
-                    const T AX1 = cNew - D*dt*lapU;
-                    const T AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
+                    double AX1 = cNew - D*dt*lapU;
+                    double AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
 
                     // Compute the Error from parts of the solution
-                    const T R1 = AX1 - B1;
-                    const T R2 = AX2 - B2;
+                    double R1 = AX1 - B1;
+                    double R2 = AX2 - B2;
 
-                    const double error = pow(R1,2.0) + pow(R2,2.0);
+                    double error = pow(R1,2.0) + pow(R2,2.0);
                     residual += error;
                     normB += pow(B1,2.0) + pow(B2,2.0);
             	}
@@ -403,11 +417,11 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	    	iter++;
         }
 
-        if (iter==max_iter) {
+        /*if (iter==max_iter) {
             if (rank==0)
                 std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" iterations with residual="<<residual<<std::endl;
             std::exit(-1);
-        } else if (!std::isfinite(residual) || std::isnan(residual)) {
+        } else*/ if (!std::isnormal(residual)) {
             if (rank==0)
                 std::cerr<<"    Numerical error on step "<<step<<" after "<<iter<<" iterations"<<std::endl;
             std::exit(-1);
@@ -421,7 +435,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
             double gradCsq = 0.0;
             for (int d=0; d<dim; d++)
                 gradCsq += pow(gradC[d][0],2.0);
-			const T C = newGrid(x)[0];
+			double C = newGrid(x)[0];
 			energy += dV*(energy_density(C) + 0.5*K*gradCsq);
 			mass += dV*C;
 		}
