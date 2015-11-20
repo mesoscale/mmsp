@@ -1,18 +1,17 @@
 # Makefile
-# GNU makefile for example Cahn-Hilliard model code
-# Questions/comments to gruberja@gmail.com (Jason Gruber)
+# GNU makefile for example Cahn-Hilliard model with
+# convex splitting and successive over-relaxation
+# Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
 # includes
 incdir = ../../../../include
 
 # compilers/flags
 compiler = icc
-gompiler = icc
-flags = -O3 -Wall -ffast-math -std=c++11 -DDEBUG -DVANILLA -I $(incdir)
-#flags = -O3 -Wall -ffast-math -std=c++11 -DDEBUG -I $(incdir)
-gflags = -g -pg -Wall -O2 -I $(incdir)
+#flags = -O3 -Wall -std=c++11 -DDEBUG -DVANILLA -I $(incdir)
+flags = -O3 -Wall -std=c++11 -DDEBUG -I $(incdir)
+gflags = -pg -O2 -Wall -std=c++11 -DDEBUG -DVANILLA -I $(incdir)
 pcompiler = mpic++
-ccompiler = mpic++.mpich2
 pflags = $(flags) -include mpi.h
 
 # dependencies
@@ -27,12 +26,9 @@ cahn-hilliard: cahn-hilliard.cpp $(core)
 parallel: cahn-hilliard.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
-# for profiling and leak checking
+# for profiling
 debug: cahn-hilliard.cpp $(core)
-	$(gompiler) $(gflags) $< -o $@ -lz
-
-tarball:
-	tar -cvzf cahn-hilliard.tar.gz cahn-hilliard.cpp cahn-hilliard.hpp Makefile notes
+	$(compiler) $(gflags) $< -o $@ -lz
 
 clean:
-	rm -f cahn-hilliard parallel debug cahn-hilliard.tar.gz
+	rm -f cahn-hilliard parallel debug

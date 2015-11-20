@@ -7,7 +7,9 @@
 #define CAHNHILLIARD_UPDATE
 #include"MMSP.hpp"
 #include<cmath>
+#include<cfloat>
 #include<fstream>
+#include<random>
 #include"cahn-hilliard.hpp"
 
 /** This code sets parameters for the evolution of two different energy configurations.
@@ -21,32 +23,34 @@
  ** This case demonstrates stiffer numerics, so proceed with caution. To build, remove the -DVANILLA flag.
  **/
 
+// Spatial constants
+const int edge = 256;
+const double deltaX = 0.25; //32.0/double(edge-1); //~0.25 if edge=128;
+
 #ifdef VANILLA
-const double D = 1.0; // diffusivity
-const double K = 1.0; // gradient energy coefficient
-const double C0 = 0.5;// system composition
+const double C0 = 0.5; // system composition
+const double D  = 1.0; // diffusivity
+const double K  = 1.0; // gradient energy coefficient
 #else
+const double C0 = 0.45; // mean composition
 const double Ca = 0.05; // alpha-phase solvus composition
 const double Cb = 0.95; // beta-phase solvus composition
-const double C0 = 0.45; // mean composition
-const double D = 2.0/(Cb-Ca);
-const double K = 2.0;
+const double D  = 2.0/(Cb-Ca);
+const double K  = 2.0;
 #endif
 
-
-// Spatial constants
-const int edge = 150;
-const double deltaX = 32.0/double(edge-1); //~0.25 if edge=128;
-const double dt = 0.1/pow(D*K,4.0);
-const double CFL = 32.0*dt*D*K/pow(deltaX,4.0); // to judge improvement w.r.t. explicit discretization
 // Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
+const double dt = 0.5/pow(D*K,2.0); // timestep
+const double CFL = 32.0*dt*D*K/pow(deltaX,4.0); // to judge improvement w.r.t. explicit discretization
 
 // Numerical constants
-const double tolerance = 1.0e-12;     // Choose wisely. 1e-5 is poor, 1e-8 fair: mass is not conserved. 1e-12 is good, mass is conserved. YMMV depending on coefficients.
-const unsigned int max_iter = 5000; // don't let the solver stagnate
-const double omega = 1.0;
-const unsigned int res_step = 1; // number of iterations between residual computations
-
+const double tolerance = 1.0e-10;    // Choose wisely. 1e-10 is the minimum toloerance for which mass is conserved.
+                                     // Tighter tolerance is better, but increases runtime.
+const unsigned int res_step = 10;    // number of iterations between residual computations
+const unsigned int max_iter = 10000; // don't let the solver stagnate
+const double omega = 1.2;            // relaxation parameter for SOR. omega=1 is stock Gauss-Seidel.
+                                     //                               omega<1 is under-relaxation (slower convergence, better conservation),
+                                     //                               omega>1 is over-relaxation (faster convergence).
 
 #ifdef VANILLA
 // Vanilla energetics
@@ -81,10 +85,11 @@ T expansive_dfdc(const T& C)
 const double A = 2.0;
 const double B = A/pow(Ca-C0,2.0); // = 9.8765
 
-const double AA = B + Ca + Cb;
-const double BB = 3.0*(B*C0 + pow(Ca,2.0) + pow(Cb,2.0));
-const double CC = 3.0*(B*pow(C0,2.0) + pow(Ca,3.0) + pow(Cb,3.0)) - A;
-const double DD = B*pow(C0,3.0) + pow(Ca,4.0) + pow(Cb,4.0) - A*C0;
+// Define the set of quartic coefficients Qi
+const double QA = B + Ca + Cb;
+const double QB = 3.0*(B*C0 + Ca*Ca + Cb*Cb);
+const double QC = 3.0*(B*C0*C0 + pow(Ca,3.0) + pow(Cb,3.0));
+const double QD = B*pow(C0,3.0) + pow(Ca,4.0) + pow(Cb,4.0);
 
 template<typename T> inline
 T energy_density(const T& C)
@@ -94,22 +99,22 @@ T energy_density(const T& C)
 template<typename T> inline
 T full_dfdc(const T& C)
 {
-    return AA*pow(C,3.0) - BB*pow(C,2.0) + CC*C - DD;
+    return -A*(C-C0) + B*pow(C-C0,3.0) + Ca*pow(C-Ca,3.0) + Cb*pow(C-Cb,3.0);
 }
 template<typename T> inline
 T contractive_dfdc(const T& C)
 {
-    return AA*pow(C,3.0) - BB*pow(C,2.0);
+    return QA*pow(C,3.0) + QC*C;
 }
 template<typename T> inline
 T nonlinear_coeff(const T& C)
 {
-    return AA*pow(C,2.0) - BB*C;
+    return QA*pow(C,2.0) + QC;
 }
 template<typename T> inline
 T expansive_dfdc(const T& C)
 {
-    return CC*C - DD;
+    return -A*(C-C0) - QB*pow(C,2.0) - QD;
 }
 #endif
 
@@ -117,10 +122,10 @@ T expansive_dfdc(const T& C)
 namespace MMSP {
 
 // Define a Laplacian function for a specific field
-template<int dim, typename T>
-T field_laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field)
+template<int dim, typename T> inline
+double field_laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field)
 {
-  T laplacian = 0.0;
+  double laplacian = 0.0;
   vector<int> s = x;
 
   const T& y = GRID(x)[field];
@@ -139,10 +144,10 @@ T field_laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const 
 }
 
 // Define a Laplacian function missing the central value, for implicit source terms
-template<int dim, typename T>
-T fringe_laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field)
+template<int dim, typename T> inline
+double fringe_laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field)
 {
-  T laplacian(0.0);
+  double laplacian = 0.0;
   vector<int> s = x;
 
   for (int i=0; i<dim; i++) {
@@ -172,7 +177,11 @@ void generate(int dim, const char* filename)
 	rank = MPI::COMM_WORLD.Get_rank();
 	#endif
 
-    srand(time(NULL)/(rank+2));
+	#ifdef VANILLA
+    // Call the Mersenne Twister. ***NOTE: Requires C++11 (or a compatible MT19937_64 include)***
+    std::mt19937_64 mt_rand(time(NULL)+rank);
+    std::uniform_real_distribution<double> real_gen(0,1);
+    #endif
 
 	if (dim==2) {
 		MMSP::grid<2,vector<double> > grid(2,0,edge,0,edge); // field 0 is c, field 1 is mu
@@ -181,13 +190,13 @@ void generate(int dim, const char* filename)
 
 		#ifdef VANILLA
     	for (int n=0; n<nodes(grid); n++)
-		    grid(n)[0] = C0*(1.0 + 0.1 * double(rand())/RAND_MAX);
+    	    grid(n)[0] = C0*(1.0 + 0.1*real_gen(mt_rand));
 		#else
         const double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)}; // produces stipes oriented 45 degrees to horizontal
 		for (int n=0; n<nodes(grid); n++) {
 			MMSP::vector<int> x = position(grid,n);
-			//double wave = x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1];
-			double wave = x[0]*q[0] + x[1]*q[1];
+			double wave = x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1];
+			//double wave = x[0]*q[0] + x[1]*q[1];
 			grid(n)[0] = C0*(1.0 + 0.1 * std::cos(wave));
 		}
         #endif
@@ -199,16 +208,13 @@ void generate(int dim, const char* filename)
 		    grid(n)[1] = full_dfdc(grid(n)[0]) - K*field_laplacian(grid, x, 0);
 		}
 
-		#ifdef MPI_VERSION
-		MPI::COMM_WORLD.Barrier();
-		#endif
-		output(grid,filename);
-		if (rank==0)
-			std::cout<<"Timestep is "<<dt<<" (Co="<<CFL<<")."<<std::endl;
-
         double dV = 1.0;
         for (int d=0; d<dim; d++)
             dV *= dx(grid,d);
+
+		output(grid,filename);
+		if (rank==0)
+			std::cout<<"Timestep is "<<dt<<" (explicit Co="<<CFL<<")."<<std::endl;
 
 		double energy = 0.0;
 		double mass = 0.0;
@@ -218,12 +224,11 @@ void generate(int dim, const char* filename)
             double magSqGradC = 0.0;
             for (int d=0; d<dim; d++)
                 magSqGradC += pow(gradC[d][0],2.0);
-			double C = grid(x)[0];
+			double C = grid(n)[0];
 			energy += dV*(energy_density(C) + 0.5*K*magSqGradC);
 			mass += dV*C;
 		}
 		#ifdef MPI_VERSION
-		MPI::COMM_WORLD.Barrier();
 		double localEnergy = energy;
 		double localMass = mass;
 		MPI::COMM_WORLD.Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0);
@@ -261,6 +266,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	for (int d=0; d<dim; d++) {
 		dx(oldGrid,d) = deltaX;
 		dx(newGrid,d) = deltaX;
+		/*
 		// Set zero-flux boundary conditions
 		if (x0(oldGrid,d)==g0(oldGrid,d)) {
 		    b0(oldGrid,d)=Neumann;
@@ -270,12 +276,12 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		    b1(oldGrid,d)=Neumann;
 		    b1(newGrid,d)=Neumann;
 		}
+		*/
 	}
 
     double gridSize = static_cast<double>(nodes(oldGrid));
 	#ifdef MPI_VERSION
     double localGridSize = gridSize;
-    MPI::COMM_WORLD.Barrier();
 	MPI::COMM_WORLD.Allreduce(&localGridSize, &gridSize, 1, MPI_DOUBLE, MPI_SUM);
 	#endif
 
@@ -296,8 +302,10 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
         double residual=1.0;
         unsigned int iter=0;
 
+    	ghostswap(oldGrid);
+    	ghostswap(newGrid);
+
         while (iter<max_iter && residual>tolerance) {
-        //while (iter<max_iter) {
 
             /*  ==== RED-BLACK GAUSS SEIDEL ====
                 Iterate over a checkerboard, updating first red then black tiles.
@@ -317,46 +325,32 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	    		        continue;
 
 	    	    	double cOld = oldGrid(n)[0];
-	        		double cLast = newGrid(n)[0];
-	    	    	double uOld = oldGrid(n)[1];
+	    	    	double cGuess = newGrid(n)[0]; // value from last "guess" iteration
+	    	    	double uGuess = newGrid(n)[1];
 
-	        		// A is defined by the last guess, stored in newGrid(x). It is a 2x2 matrix.
-    	    		//double A11 = 1.0;
-    	    		double A12 = dt*D*lapWeight;
-	    		    double A21 = -1.0*(nonlinear_coeff(cLast) + K*lapWeight);
-	    		    //double A22 = 1.0;
-
-	    	    	// B is defined by the last value, stored in oldGrid(x), and the last guess, stored in newGrid(x). It is a 2x1 column.
 	        		double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
 	        		double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
 
-                    #ifdef DEBUG
-                    if ((!std::isnormal(lapC)) ||  (!std::isnormal(lapU))) {
-                        std::cerr<<"Rank "<<rank<<": Numerical error at ("<<x[0]<<','<<x[1]<<") on step "<<step<<" after "<<iter<<" iterations"<<std::endl;
-                        std::cerr<<"      ∇²c=("<<lapC<<"),  ∇²μ=("<<lapU<<")"<<std::endl;
-                        std::exit(-1);
-                    }
-                    #endif
+	        		// A is defined by the last guess, stored in newGrid(n). It is a 2x2 matrix.
+    	    		//double A11 = 1.0;
+    	    		double A12 = dt*D*lapWeight;
+	    		    double A21 = -nonlinear_coeff(newGrid(n)[0]) - K*lapWeight;
+	    		    //double A22 = 1.0;
 
+	        		double detA = 1.0 - (A12*A21); // determinant of A
+
+	    	    	// B is defined by the last value, stored in oldGrid(n), and the last guess, stored in newGrid(n). It is a 2x1 column.
     	    		double B1 = cOld + (D*dt*lapU);
 	    		    double B2 = expansive_dfdc(cOld) - (K*lapC);
 
                     // Solve the iteration system AX=B using Cramer's rule
-	        		double detA = 1.0 - (A12*A21); // det|A|
-	        		double cNew = B1/detA - (B2*A12/detA); // X1
-    	    		double uNew = B2/detA - (B1*A21/detA); // X2
-
-                    #ifdef DEBUG
-                    if ((!std::isnormal(cNew)) ||  (!std::isnormal(uNew))) {
-                        std::cerr<<"Rank "<<rank<<": Numerical error at ("<<x[0]<<','<<x[1]<<") on step "<<step<<" after "<<iter<<" iterations"<<std::endl;
-                        std::cerr<<"      R1=("<<B1<<" - ("<<B2<<")("<<A12<<")/"<<detA<<", R2=("<<B2<<" - ("<<A21<<")("<<B1<<")/"<<detA<<std::endl;
-                        std::exit(-1);
-                    }
-                    #endif
+	        		double cNew = (B1 - B2*A12)/detA; // X1
+    	    		double uNew = (B2 - B1*A21)/detA; // X2
 
                     // (Don't) Apply relaxation
-                    newGrid(n)[0] = (1.0 - omega)*cOld + omega*cNew;
-                    newGrid(n)[1] = (1.0 - omega)*uOld + omega*uNew;
+                    newGrid(n)[0] = omega*cNew + (1.0 - omega)*cGuess;
+                    newGrid(n)[1] = omega*uNew + (1.0 - omega)*uGuess;
+
                 }
                 ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
             }
@@ -386,12 +380,12 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                     double AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
 
                     // Compute the Error from parts of the solution
-                    double R1 = AX1 - B1;
-                    double R2 = AX2 - B2;
+                    double R1 = B1 - AX1;
+                    double R2 = B2 - AX2;
 
-                    double error = pow(R1,2.0) + pow(R2,2.0);
+                    double error = R1*R1 + R2*R2;
                     residual += error;
-                    normB += pow(B1,2.0) + pow(B2,2.0);
+                    normB += B1*B1 + B2*B2;
             	}
 
    	        	#ifdef MPI_VERSION
@@ -412,18 +406,15 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
    	        	if (rank==0)
   	                ferr<<residual<<std::endl;
                 #endif
+
             }
 
 	    	iter++;
         }
 
-        /*if (iter==max_iter) {
+        if (iter==max_iter) {
             if (rank==0)
                 std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" iterations with residual="<<residual<<std::endl;
-            std::exit(-1);
-        } else*/ if (!std::isnormal(residual)) {
-            if (rank==0)
-                std::cerr<<"    Numerical error on step "<<step<<" after "<<iter<<" iterations"<<std::endl;
             std::exit(-1);
         }
 
@@ -435,12 +426,11 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
             double gradCsq = 0.0;
             for (int d=0; d<dim; d++)
                 gradCsq += pow(gradC[d][0],2.0);
-			double C = newGrid(x)[0];
+			double C = newGrid(n)[0];
 			energy += dV*(energy_density(C) + 0.5*K*gradCsq);
 			mass += dV*C;
 		}
 		#ifdef MPI_VERSION
-		MPI::COMM_WORLD.Barrier();
 		double localEnergy = energy;
 		double localMass = mass;
 		MPI::COMM_WORLD.Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0);
@@ -450,8 +440,6 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 			std::cout<<iter<<'\t'<<energy<<'\t'<<mass<<std::endl;
 
     	swap(oldGrid,newGrid);
-    	ghostswap(oldGrid);
-
 	}
    	#ifdef DEBUG
 	ferr.close();
