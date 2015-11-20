@@ -24,31 +24,31 @@
  **/
 
 // Spatial constants
-const int edge = 256;
-const double deltaX = 0.25; //32.0/double(edge-1); //~0.25 if edge=128;
+int edge = 200;
+double deltaX = 1.0; //32.0/double(edge-1); //~0.25 if edge=128;
 
 #ifdef VANILLA
-const double C0 = 0.5; // system composition
-const double D  = 1.0; // diffusivity
-const double K  = 1.0; // gradient energy coefficient
+double C0 = 0.5; // system composition
+double D  = 1.0; // diffusivity
+double K  = 1.0; // gradient energy coefficient
 #else
-const double C0 = 0.45; // mean composition
-const double Ca = 0.05; // alpha-phase solvus composition
-const double Cb = 0.95; // beta-phase solvus composition
-const double D  = 2.0/(Cb-Ca);
-const double K  = 2.0;
+double C0 = 0.45; // mean composition
+double Ca = 0.05; // alpha-phase solvus composition
+double Cb = 0.95; // beta-phase solvus composition
+double D  = 2.0/(Cb-Ca);
+double K  = 2.0;
 #endif
 
 // Max. semi-implicit timestep should be timestep = pow(deltaX,2.0)/(32.0*D*K)
-const double dt = 0.5/pow(D*K,2.0); // timestep
-const double CFL = 32.0*dt*D*K/pow(deltaX,4.0); // to judge improvement w.r.t. explicit discretization
+double dt = pow(deltaX,2.0)/(D*K); //0.5/pow(D*K,2.0); // timestep
+double CFL = 32.0*dt*D*K/pow(deltaX,4.0); // to judge improvement w.r.t. explicit discretization
 
 // Numerical constants
-const double tolerance = 1.0e-10;    // Choose wisely. 1e-10 is the minimum toloerance for which mass is conserved.
+double tolerance = 1.0e-14;    // Choose wisely. 1e-10 is the minimum toloerance for which mass is conserved.
                                      // Tighter tolerance is better, but increases runtime.
-const unsigned int res_step = 10;    // number of iterations between residual computations
-const unsigned int max_iter = 10000; // don't let the solver stagnate
-const double omega = 1.2;            // relaxation parameter for SOR. omega=1 is stock Gauss-Seidel.
+unsigned int residual_step = 10;    // number of iterations between residual computations
+unsigned int max_iter = 10000; // don't let the solver stagnate
+double omega = 1.2;            // relaxation parameter for SOR. omega=1 is stock Gauss-Seidel.
                                      //                               omega<1 is under-relaxation (slower convergence, better conservation),
                                      //                               omega>1 is over-relaxation (faster convergence).
 
@@ -82,14 +82,14 @@ T expansive_dfdc(const T& C)
 }
 #else
 // Parametric energetics
-const double A = 2.0;
-const double B = A/pow(Ca-C0,2.0); // = 9.8765
+double A = 2.0;
+double B = A/pow(Ca-C0,2.0); // = 9.8765
 
 // Define the set of quartic coefficients Qi
-const double QA = B + Ca + Cb;
-const double QB = 3.0*(B*C0 + Ca*Ca + Cb*Cb);
-const double QC = 3.0*(B*C0*C0 + pow(Ca,3.0) + pow(Cb,3.0));
-const double QD = B*pow(C0,3.0) + pow(Ca,4.0) + pow(Cb,4.0);
+double QA = B + Ca + Cb;
+double QB = 3.0*(B*C0 + Ca*Ca + Cb*Cb);
+double QC = 3.0*(B*C0*C0 + pow(Ca,3.0) + pow(Cb,3.0));
+double QD = B*pow(C0,3.0) + pow(Ca,4.0) + pow(Cb,4.0);
 
 template<typename T> inline
 T energy_density(const T& C)
@@ -122,7 +122,7 @@ T expansive_dfdc(const T& C)
 namespace MMSP {
 
 // Define a Laplacian function for a specific field
-template<int dim, typename T> inline
+template<int dim, typename T>
 double field_laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field)
 {
   double laplacian = 0.0;
@@ -144,7 +144,7 @@ double field_laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, c
 }
 
 // Define a Laplacian function missing the central value, for implicit source terms
-template<int dim, typename T> inline
+template<int dim, typename T>
 double fringe_laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field)
 {
   double laplacian = 0.0;
@@ -192,11 +192,10 @@ void generate(int dim, const char* filename)
     	for (int n=0; n<nodes(grid); n++)
     	    grid(n)[0] = C0*(1.0 + 0.1*real_gen(mt_rand));
 		#else
-        const double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)}; // produces stipes oriented 45 degrees to horizontal
+        double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)}; // produces stripes oriented 45 degrees to horizontal
 		for (int n=0; n<nodes(grid); n++) {
 			MMSP::vector<int> x = position(grid,n);
 			double wave = x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1];
-			//double wave = x[0]*q[0] + x[1]*q[1];
 			grid(n)[0] = C0*(1.0 + 0.1 * std::cos(wave));
 		}
         #endif
@@ -256,27 +255,12 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	rank = MPI::COMM_WORLD.Get_rank();
 	#endif
 
-    ghostswap(oldGrid);
+	MMSP::grid<dim,vector<T> > newGrid = oldGrid;   // construct and copy old values as initial guess
 
-	MMSP::grid<dim,vector<T> > newGrid(oldGrid);   // new values at each point and initial guess for iteration
-
-    newGrid.copy(oldGrid); // deep copy: includes data and ghost cells. Expensive.
-
-	// Make sure the grid spacing is correct. Modify at will.
+	// Make sure the grid spacing is correct.
 	for (int d=0; d<dim; d++) {
 		dx(oldGrid,d) = deltaX;
 		dx(newGrid,d) = deltaX;
-		/*
-		// Set zero-flux boundary conditions
-		if (x0(oldGrid,d)==g0(oldGrid,d)) {
-		    b0(oldGrid,d)=Neumann;
-		    b0(newGrid,d)=Neumann;
-		}
-		if (x1(oldGrid,d)==g1(oldGrid,d)) {
-		    b1(oldGrid,d)=Neumann;
-		    b1(newGrid,d)=Neumann;
-		}
-		*/
 	}
 
     double gridSize = static_cast<double>(nodes(oldGrid));
@@ -316,6 +300,10 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     		for (int color=1; color>-1; color--) {
     		    // If color==1, skip BLACK tiles, which have Σx[d] odd
     		    // If color==0, skip RED tiles, which have Σx[d] even
+        		#ifndef MPI_VERSION
+        		// OpenMP parallel loop over nodes
+        		#pragma omp parallel for schedule(dynamic)
+        		#endif
         		for (int n=0; n<nodes(oldGrid); n++) {
 	    		    MMSP::vector<int> x = position(oldGrid,n);
 	    	    	int x_sum=0;
@@ -324,28 +312,25 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
     	    		if (x_sum%2 == color)
 	    		        continue;
 
-	    	    	double cOld = oldGrid(n)[0];
-	    	    	double cGuess = newGrid(n)[0]; // value from last "guess" iteration
-	    	    	double uGuess = newGrid(n)[1];
-
-	        		double lapC = fringe_laplacian(newGrid, x, 0); // excludes central term
-	        		double lapU = fringe_laplacian(newGrid, x, 1); // excludes central term
+	    	    	T cOld = oldGrid(n)[0];
+	    	    	T cGuess = newGrid(n)[0]; // value from last "guess" iteration
+	    	    	T uGuess = newGrid(n)[1];
 
 	        		// A is defined by the last guess, stored in newGrid(n). It is a 2x2 matrix.
-    	    		//double A11 = 1.0;
-    	    		double A12 = dt*D*lapWeight;
-	    		    double A21 = -nonlinear_coeff(newGrid(n)[0]) - K*lapWeight;
-	    		    //double A22 = 1.0;
+    	    		//T A11 = 1.0;
+    	    		T A12 = dt*D*lapWeight;
+	    		    T A21 = -nonlinear_coeff(newGrid(n)[0]) - K*lapWeight;
+	    		    //T A22 = 1.0;
 
-	        		double detA = 1.0 - (A12*A21); // determinant of A
+	        		T detA = 1.0 - (A12*A21); // determinant of A
 
 	    	    	// B is defined by the last value, stored in oldGrid(n), and the last guess, stored in newGrid(n). It is a 2x1 column.
-    	    		double B1 = cOld + (D*dt*lapU);
-	    		    double B2 = expansive_dfdc(cOld) - (K*lapC);
+    	    		T B1 = cOld + D*dt*fringe_laplacian(newGrid, x, 1);
+	    		    T B2 = expansive_dfdc(cOld) - K*fringe_laplacian(newGrid, x, 0);
 
                     // Solve the iteration system AX=B using Cramer's rule
-	        		double cNew = (B1 - B2*A12)/detA; // X1
-    	    		double uNew = (B2 - B1*A21)/detA; // X2
+	        		T cNew = (B1 - B2*A12)/detA; // X1
+    	    		T uNew = (B2 - B1*A21)/detA; // X2
 
                     // (Don't) Apply relaxation
                     newGrid(n)[0] = omega*cNew + (1.0 - omega)*cGuess;
@@ -353,6 +338,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 
                 }
                 ghostswap(newGrid);   // fill in the ghost cells; does nothing in serial
+
             }
 
             /*  ==== RESIDUAL ====
@@ -361,31 +347,42 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
                 this is not the iteration matrix, it is the original system of equations.
             */
 
-            if (iter<res_step || iter%res_step==0) {
+            if (iter<residual_step || iter%residual_step==0) {
                 double normB = 0.0;
                 residual = 0.0;
+        		#ifndef MPI_VERSION
+        		// OpenMP parallel loop over nodes
+        		#pragma omp parallel for schedule(dynamic)
+        		#endif
        	        for (int n=0; n<nodes(oldGrid); n++) {
         	    	MMSP::vector<int> x = position(oldGrid,n);
-            	    double lapC = field_laplacian(newGrid, x, 0);
-    	       	    double lapU = field_laplacian(newGrid, x, 1);
+            	    T lapC = field_laplacian(newGrid, x, 0);
+    	       	    T lapU = field_laplacian(newGrid, x, 1);
 
-           	     	double cOld = oldGrid(n)[0];
-                    double cNew = newGrid(n)[0];
-                    double uNew = newGrid(n)[1];
+           	     	T cOld = oldGrid(n)[0];
+                    T cNew = newGrid(n)[0];
+                    T uNew = newGrid(n)[1];
 
-        	  	    double B1 = cOld;
-    	   	        double B2 = expansive_dfdc(cOld);
+        	  	    T B1 = cOld;
+    	   	        T B2 = expansive_dfdc(cOld);
 
-                    double AX1 = cNew - D*dt*lapU;
-                    double AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
+                    T AX1 = cNew - D*dt*lapU;
+                    T AX2 = uNew - contractive_dfdc(cNew) + K*lapC;
 
                     // Compute the Error from parts of the solution
                     double R1 = B1 - AX1;
                     double R2 = B2 - AX2;
 
                     double error = R1*R1 + R2*R2;
+                    #ifndef MPI_VERSION
+                    #pragma omp critical
+                    {
+                    #endif
                     residual += error;
                     normB += B1*B1 + B2*B2;
+                    #ifndef MPI_VERSION
+                    }
+                    #endif
             	}
 
    	        	#ifdef MPI_VERSION

@@ -8,9 +8,9 @@ incdir = ../../../../include
 
 # compilers/flags
 compiler = icc
-#flags = -O3 -Wall -std=c++11 -DDEBUG -DVANILLA -I $(incdir)
-flags = -O3 -Wall -std=c++11 -DDEBUG -I $(incdir)
-gflags = -pg -O2 -Wall -std=c++11 -DDEBUG -DVANILLA -I $(incdir)
+#flags = -O3 -Wall -std=c++11 -DVANILLA -I $(incdir)
+flags = -O3 -Wall -std=c++11 -I $(incdir)
+gflags = -pg -O2 -Wall -std=c++11 -DVANILLA -I $(incdir)
 pcompiler = mpic++
 pflags = $(flags) -include mpi.h
 
@@ -21,7 +21,7 @@ core = $(incdir)/MMSP.main.hpp \
 
 # the program
 cahn-hilliard: cahn-hilliard.cpp $(core)
-	$(compiler) $(flags) $< -o $@ -lz
+	$(compiler) $(flags) -fopenmp $< -o $@ -lz
 
 parallel: cahn-hilliard.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
