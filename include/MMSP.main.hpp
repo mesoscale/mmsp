@@ -280,8 +280,8 @@ int main(int argc, char* argv[]) {
 				}
 
 				char filename[FILENAME_MAX] = {}; // initialize null characters
-				for (unsigned int i=0; i<outstr.str().length(); i++)
-					filename[i]=outstr.str()[i];
+				for (unsigned int j=0; j<outstr.str().length(); j++)
+					filename[j]=outstr.str()[j];
 
 				// write grid output to file
 				MMSP::output(grid, filename);
@@ -306,8 +306,8 @@ int main(int argc, char* argv[]) {
 				}
 
 				char filename[FILENAME_MAX] = {}; // initialize null characters
-				for (unsigned int i=0; i<outstr.str().length(); i++)
-					filename[i]=outstr.str()[i];
+				for (unsigned int j=0; j<outstr.str().length(); j++)
+					filename[j]=outstr.str()[j];
 
 				// write grid output to file
 				MMSP::output(grid, filename);
@@ -331,8 +331,8 @@ int main(int argc, char* argv[]) {
 					n = outstr.str().length();
 				}
 				char filename[FILENAME_MAX] = {}; // initialize null characters
-				for (unsigned int i=0; i<outstr.str().length(); i++)
-					filename[i]=outstr.str()[i];
+				for (unsigned int j=0; j<outstr.str().length(); j++)
+					filename[j]=outstr.str()[j];
 
 				// write grid output to file
 				MMSP::output(grid, filename);
