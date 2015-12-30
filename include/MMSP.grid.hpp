@@ -397,8 +397,10 @@ public:
 			}
 
 			// clean up
-			delete [] factors;
-			factors=NULL;
+			if (factors!=NULL) {
+				delete [] factors;
+				factors=NULL;
+			}
 
 			// compute slice sizes
 			for (int i=0; i<dim; i++) {
@@ -496,8 +498,10 @@ public:
 	// destructor
 	~grid()
 	{
-		delete [] data;
-		data=NULL;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 	}
 
 
@@ -1369,8 +1373,10 @@ public:
 		#endif
 
 		// setup grid parameters
-		delete [] data;
-		data=NULL;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 		setup(SINGLE);
 
 		// read cell spacing
@@ -1601,6 +1607,7 @@ public:
 				MPI_File_sync(output);
 				header_offset+=sizeof(np);
 				delete [] header;
+				header=NULL;
 			}
 			MPI::COMM_WORLD.Barrier();
 			MPI_File_sync(output);

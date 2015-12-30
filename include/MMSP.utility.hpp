@@ -265,7 +265,10 @@ template <typename T> T global(T& value, const char* operation) {
 			char* buffer = new char[size];
 			MPI::COMM_WORLD.Recv(buffer, size, MPI_CHAR, i, 200);
 			from_buffer(temp, buffer);
-			delete [] buffer;
+			if (buffer != NULL) {
+				delete [] buffer;
+				buffer=NULL;
+			}
 
 			// perform operation
 			if (std::string(operation)=="add" or std::string(operation)=="sum")
@@ -283,7 +286,10 @@ template <typename T> T global(T& value, const char* operation) {
 			char* buffer = new char[size];
 			to_buffer(global, buffer);
 			MPI::COMM_WORLD.Send(buffer, size, MPI_CHAR, i, 400);
-			delete [] buffer;
+			if (buffer != NULL) {
+				delete [] buffer;
+				buffer=NULL;
+			}
 		}
 	}
 
@@ -294,14 +300,20 @@ template <typename T> T global(T& value, const char* operation) {
 		char* buffer = new char[size];
 		to_buffer(value, buffer);
 		MPI::COMM_WORLD.Send(buffer, size, MPI_CHAR, 0, 200);
-		delete [] buffer;
+		if (buffer != NULL) {
+			delete [] buffer;
+			buffer=NULL;
+		}
 
 		// receive global value
 		MPI::COMM_WORLD.Recv(&size, 1, MPI_INT, 0, 300);
 		buffer = new char[size];
 		MPI::COMM_WORLD.Recv(buffer, size, MPI_CHAR, 0, 400);
 		from_buffer(global, buffer);
-		delete [] buffer;
+		if (buffer != NULL) {
+			delete [] buffer;
+			buffer=NULL;
+		}
 	}
 
 	MPI::COMM_WORLD.Barrier();
@@ -313,10 +325,22 @@ template <typename T> T global(T& value, const char* operation) {
 } // namespace MMSP
 
 /*
-void print_progress(const int step, const int steps, const int iterations) {
+	Prints timestamps and a 20-point progress bar to stdout.
+	Call once inside the update function (or equivalent).
+
+	for (int step=0; step<steps; step++) {
+		print_progress(step, steps);
+		...
+		for (int n=0; n<nodes(grid); n++) {
+			...
+		}
+	}
+*/
+void print_progress(const int step, const int steps) {
   char* timestring;
   static unsigned long tstart;
   struct tm* timeinfo;
+  static int iterations = 0;
 
   if (step==0) {
     tstart = time(NULL);
@@ -325,14 +349,13 @@ void print_progress(const int step, const int steps, const int iterations) {
     timeinfo = std::localtime( &rawtime );
     timestring = std::asctime(timeinfo);
     timestring[std::strlen(timestring)-1] = '\0';
-    std::cout<<"Pass "<<std::setw(3)<<std::right<<iterations<<": "<<timestring<<" ["<<std::flush;
+    std::cout<<"No. "<<1+iterations/steps<<":\t"<<timestring<<" ["<<std::flush;
   } else if (step==steps-1) {
     unsigned long deltat = time(NULL)-tstart;
     std::cout<<"•] "<<std::setw(2)<<std::right<<deltat/3600<<"h:"
                     <<std::setw(2)<<std::right<<(deltat%3600)/60<<"m:"
-                    <<std::setw(2)<<std::right<<deltat%60<<"s"
-                    <<" (File "<<std::setw(5)<<std::right<<iterations*steps<<")."<<std::endl;
+                    <<std::setw(2)<<std::right<<deltat%60<<"s"<<std::endl;
   } else if ((20 * step) % steps == 0) std::cout<<"• "<<std::flush;
+  iterations++;
 }
-*/
 #endif
