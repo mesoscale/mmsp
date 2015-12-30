@@ -224,8 +224,8 @@ void generate(int dim, const char* filename)
             for (int d=0; d<dim; d++)
                 magSqGradC += pow(gradC[d][0],2.0);
 			double C = grid(n)[0];
-			energy += dV*(energy_density(C) + 0.5*K*magSqGradC);
-			mass += dV*C;
+			energy += (energy_density(C) + 0.5*K*magSqGradC);
+			mass += C;
 		}
 		#ifdef MPI_VERSION
 		double localEnergy = energy;
@@ -233,8 +233,9 @@ void generate(int dim, const char* filename)
 		MPI::COMM_WORLD.Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0);
 		MPI::COMM_WORLD.Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0);
 		#endif
+		std::cout<<std::setprecision(12);
 		if (rank==0)
-			std::cout<<'0'<<'\t'<<energy<<'\t'<<mass<<std::endl;
+			std::cout<<'0'<<'\t'<<dV*energy<<'\t'<<dV*mass<<std::endl;
 
         #ifdef DEBUG
         std::ofstream ferr;
@@ -255,9 +256,13 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 	rank = MPI::COMM_WORLD.Get_rank();
 	#endif
 
-	MMSP::grid<dim,vector<T> > newGrid = oldGrid;   // construct and copy old values as initial guess
+    ghostswap(oldGrid);
 
-	// Make sure the grid spacing is correct.
+	MMSP::grid<dim,vector<T> > newGrid(oldGrid);   // new values at each point and initial guess for iteration
+
+    newGrid.copy(oldGrid); // deep copy: includes data and ghost cells. Expensive.
+
+	// Make sure the grid spacing is correct. Modify at will.
 	for (int d=0; d<dim; d++) {
 		dx(oldGrid,d) = deltaX;
 		dx(newGrid,d) = deltaX;
@@ -424,8 +429,8 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
             for (int d=0; d<dim; d++)
                 gradCsq += pow(gradC[d][0],2.0);
 			double C = newGrid(n)[0];
-			energy += dV*(energy_density(C) + 0.5*K*gradCsq);
-			mass += dV*C;
+			energy += (energy_density(C) + 0.5*K*gradCsq);
+			mass += C;
 		}
 		#ifdef MPI_VERSION
 		double localEnergy = energy;
@@ -433,8 +438,9 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		MPI::COMM_WORLD.Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0);
 		MPI::COMM_WORLD.Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0);
 		#endif
+		std::cout<<std::setprecision(12);
 		if (rank==0)
-			std::cout<<iter<<'\t'<<energy<<'\t'<<mass<<std::endl;
+			std::cout<<iter<<'\t'<<dV*energy<<'\t'<<dV*mass<<std::endl;
 
     	swap(oldGrid,newGrid);
 	}
