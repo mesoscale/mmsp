@@ -8,9 +8,8 @@ incdir = ../../../../include
 
 # compilers/flags
 compiler = icc
-#flags = -O3 -Wall -std=c++11 -DVANILLA -I $(incdir)
-flags = -O3 -Wall -std=c++11 -I $(incdir)
-gflags = -pg -O2 -Wall -std=c++11 -DVANILLA -I $(incdir)
+flags = -O3 -DVANILLA -Wall -std=c++11 -I $(incdir)
+gflags = -pg -O2 -DVANILLA -Wall -std=c++11 -I $(incdir)
 pcompiler = mpic++
 pflags = $(flags) -include mpi.h
 

@@ -2,7 +2,7 @@
 
 \chapter{Advanced \MMSP\ Examples}\label{ch:advanced}
 
-\section{Convex Splitting}
+\section{Cahn-Hilliard}
 	\emph{This section describes the mathematical foundations of the example code in }
 	{\tt MMSP/examples/phase\_transitions/cahn\_hilliard/convex\_splitting}.
 
@@ -22,6 +22,7 @@
 	antagonistic initial conditions with improperly discretized equations of motion
 	will increase the system energy, which is not physical.
 	
+	\subsection{Convex splitting}
 	Convex splitting aims to guarantee energy stability $\left(\frac{\mathrm{d}\mathcal{F}}{\mathrm{d}t}\leq 0\right)$
 	by discretizing the equation semi-implicitly, evaluating contractive terms at the next timestep (index $n+1$)
 	and expansive terms at the old timestep (index $n$):
@@ -41,7 +42,8 @@
 	\label{eqn:convexeom}
 	\end{align}
 	
-	Next, let's prepare to solve the system of equations iteratively.
+	\subsection{Semi-implicit discretization}
+	Let's prepare to solve the system of equations iteratively.
 	In the Jacobi method, elements along the matrix diagonal (i.e., the grid point of interest) are evaluated at
 	the next guess (index $l+1$), and off-diagonal elements belong to the last guess (index $l$).
 	The nonlinear source term $C^3$ is linearized, so
@@ -61,8 +63,8 @@
 	Finally, we have the semi-implicit discretization properly indexed for iteration:
 	\begin{align}
 	\begin{split}
-		C_{l+1}^{n+1} + \frac{2dkD}{h^2}\mu_{l+1}^{n+1} &= C_l^n + kD\Delta_\circ\mu_l^{n+1}\\
-		-\frac{2d\kappa}{h^2}C_{l+1}^{n+1} - \ell_c(C_l^{n+1})C_{l+1}^{n+1} + \mu_{l+1}^{n+1} &= f_e(C_l^n) - \kappa\Delta_\circ C_l^{n+1},
+		C_{l+1}^{n+1} + \frac{2dkD}{h^2}\mu_{l+1}^{n+1} &= C^n + kD\Delta_\circ\mu_l^{n+1}\\
+		-\frac{2d\kappa}{h^2}C_{l+1}^{n+1} - \ell_c(C_l^{n+1})C_{l+1}^{n+1} + \mu_{l+1}^{n+1} &= f_e(C^n) - \kappa\Delta_\circ C_l^{n+1},
 	\end{split}
 	\label{eqn:jacobieom}
 	\end{align}
@@ -78,8 +80,8 @@
 		\end{bmatrix}
 		=
 		\begin{bmatrix}
-			C_l^n + kD\Delta_\circ\mu_l^{n+1}\\[0.5em]
-			f_e(C_l^n) - \kappa\Delta_\circ C_l^{n+1}\\
+			C^n + kD\Delta_\circ\mu_l^{n+1}\\[0.5em]
+			f_e(C^n) - \kappa\Delta_\circ C_l^{n+1}\\
 		\end{bmatrix}.
 	\]
 
@@ -90,13 +92,13 @@
 	\]
 	For clarity, the code implementing Cramer's rule for the equations of motion retains the $a_{ij}$, $x_i$, $b_i$ notation.		
 
-	To determine $C^{n+1}$ and $\mu^{n+1}$, seed the matrix using $C^n$ and $\mu^n$, then iterate until the relative error
-	between new guesses	$C_{l+1}^{n+1}$ and $\mu_{l+1}^{n+1}$ and old guesses $C_l^{n+1}$ and $\mu_l^{n+1}$ falls below a
-	threshold value:
-	\[\eta = \frac{||\mathrm{b}' - \left(\mathbf{A}\mathrm{x}\right)'||}{2N_xN_y||\mathrm{b}'||},\]
-	where $||\cdot||$ represents the $L_2$ vector norm, $N_xN_y$ is the grid size and $2$ is the number of unknown variables to determine at each grid point.\footnote{
-	Alternatively, the absolute error $\eta = ||\mathrm{b}' - \left(\mathbf{A}\mathrm{x}\right)'||$ can be used. In 3-D, use $2N_xN_yN_z$.}
-	The matrix terms are dashed $(')$ for a reason: the residual does not depend on the iteration scheme chosen, so $\left(\mathbf{A}\mathrm{x}\right)'=\mathrm{b}'$ 
+	\subsection{Jacobi iteration}
+	To determine values for the next timestep $C^{n+1}$ and $\mu^{n+1}$, seed the matrix using the old values $C^n$ and $\mu^n$,
+	then iterate until the system of equations is true, meaning the error
+	\[\eta = ||\mathrm{b}' - \left(\mathbf{A}\mathrm{x}\right)'||,\]
+	using the $L_2$ vector norm $||\cdot ||$, falls tolerably close to zero.
+	The matrix terms are dashed $(')$ for a reason:
+	the residual does not depend on the iteration scheme chosen, so $\left(\mathbf{A}\mathrm{x}\right)'=\mathrm{b}'$ 
 	represents the equations of motion prior to $l$-indexing for Jacobi iteration, Eqn.~\ref{eqn:convexeom} rather than Eqn.~\ref{eqn:jacobieom}:
 	\begin{align*}
 		\begin{split}
@@ -107,8 +109,8 @@
 			\end{bmatrix}\\
 			\mathrm{b} &=
 			\begin{bmatrix}
-				C_l^n + kD\Delta_\circ\mu_l^{n+1}\\[0.5em]
-				f_e(C_l^n) - \kappa\Delta_\circ C_l^{n+1}\\
+				C^n + kD\Delta_\circ\mu_l^{n+1}\\[0.5em]
+				f_e(C^n) - \kappa\Delta_\circ C_l^{n+1}\\
 			\end{bmatrix}
 		\end{split},
 		&
@@ -125,5 +127,56 @@
 			\end{bmatrix}
 		\end{split}.
 	\end{align*}
-	Calculating the residual is therefore rather expensive, and is done at regular intervals rather than after each iteration.
+	Note that $\left(\mathbf{A}\mathrm{x}\right)'=\mathrm{b}'$ depends only on the old \emph{value} and the latest \emph{guess}.
+	
+	Since the values at $n+1$ are interdependent, the local errors are gathered up in the residual:
+	\[r = \sqrt{\sum\limits_{N}\frac{||\mathrm{b}' - \left(\mathbf{A}\mathrm{x}\right)'||}{2N||\mathrm{b}'||}},\]
+	in which $N$ is the number of nodes in the grid and $2$ is the number of equations being solved at each node.
+	Calculating the residual is as expensive as a full iteration, and is done at regular intervals rather than after each iteration.
+	An appropriate tolerance for convergence is $r_{tol}\leq10^{-14}$: if $r>r_{tol}$, guess again.
 
+	\subsection{Gauss-Seidel iteration}
+	Jacobi iteration requires allocating an extra grid to store intermediate guesses.
+	In the interests of speed and memory footprint, red-black Gauss-Seidel is a better choice.
+	In this scheme, the grid points are labeled according to a checkerboard pattern with alternating ``red" and ``black" tiles.
+	The new guess is calculated on each red tile first, using the previous guess stored in adjacent black tiles;
+	then the new guess is calculated on each black tiles, using the new guess stored in adjacent red tiles.
+	This scheme also enables seamless switching between serial and parallel architectures, since cells adjacent
+	across parallel boundaries can never be both red or both black.
+	
+	Note that the change from Jacobi to Gauss-Seidel modifies the order in which the guesses are made,
+	with minimal effect on the values computed.
+	
+	\subsection{Successive Over-Relaxation}
+	Successive over-relaxation increases the rate of convergence of Gauss-Seidel iteration by weighted averaging
+	the outcome of Cramer's rule (representing the new guess) with the last guess.
+	Instead of
+	\begin{align*}
+		C_{l+1}^{n+1} &= x_1\\
+		\mu_{l+1}^{n+1} &= x_2,
+	\end{align*}
+	we record
+	\begin{align*}
+		C_{l+1}^{n+1} &= \omega x_1 + (1-\omega)C_l^{n+1} \\
+		\mu_{l+1}^{n+1} &= \omega x_2 + (1-\omega)\mu_l^{n+1}.
+	\end{align*}
+	The relaxation parameter $\omega$ must necessarily satisfy $0<\omega<2$ for convergence.
+	Successive over-relaxation requires $\omega>1$, and $\omega=1.2$ is recommended for this specific system.
+	$\omega=1$ recovers Gauss-Seidel, and $\omega<1$ is \emph{successive under-relaxation}, which is not recommended.
+
+	
+	\subsection{Pros and Cons}
+	This example is intended to show that \MMSP\ can handle numerical schemes far beyond forward Euler.
+	The allure of implicit schemes lies in the larger timesteps available:
+	stability analysis of the explicit scheme requires 
+	\[\Delta t < \frac{(\Delta x)^4}{16\kappa D},\]
+	while the scheme presented here is limited by error propagation to 
+	\[\Delta t < \frac{\Delta x}{16\kappa D}.\]
+	
+	The computational expense of taking larger timesteps is considerable:
+	convex splitting guarantees energy stability, not speed, and the propagation of error can easily overwhelm the
+	system.
+	The example implementation specifies residual tolerance $r_{tol}=10^{-14}$ because the error propagated with a higher tolerance
+	($10^{-12}$) undermines mass conservation.
+	With this tolerance and $\Delta x=1$, no combination of $\omega$ and $\Delta t$ integrated the system to $t=250$ with less computational
+	expense than the explicit method -- which is an exactly mass-conservative scheme.
