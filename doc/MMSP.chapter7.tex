@@ -1,0 +1,129 @@
+% MMSP.chapter7.tex
+
+\chapter{Advanced \MMSP\ Examples}\label{ch:advanced}
+
+\section{Convex Splitting}
+	\emph{This section describes the mathematical foundations of the example code in }
+	{\tt MMSP/examples/phase\_transitions/cahn\_hilliard/convex\_splitting}.
+
+	Spinodal decomposition is readily modeled using the Helmholtz free energy functional
+	\[\mathcal{F} = \int\left[F(C) + \kappa|\nabla C|^2\right]\mathrm{d}V,\]
+	with free energy density
+	\[F(C) = \frac{C^4}{4} - \frac{C^2}{2}.\]
+	The first derivative
+	\[f(C) = \frac{\mathrm{d}F}{\mathrm{d}C} = C^3 - C^2\]
+	has two terms, one of which is convex in its arguments $\left(\left.\frac{\mathrm{d}^2(C^3)}{\mathrm{d}C^2}\right|_{C\geq0}\geq0\right)$
+	and the other concave $\left(\frac{\mathrm{d}^2(-C^2)}{\mathrm{d}C^2}<0\right)$.
+	From a numerical perspective, the convex term tends to smooth, while the concave term
+	amplifies discontinuity:
+	the convex term is contractive in $C$, the concave expansive.
+	When used in the Cahn-Hilliard equation of motion,
+	\[\frac{\partial C}{\partial t} = D\nabla^2\left[f(C) - \kappa\nabla^2C\right],\]
+	antagonistic initial conditions with improperly discretized equations of motion
+	will increase the system energy, which is not physical.
+	
+	Convex splitting aims to guarantee energy stability $\left(\frac{\mathrm{d}\mathcal{F}}{\mathrm{d}t}\leq 0\right)$
+	by discretizing the equation semi-implicitly, evaluating contractive terms at the next timestep (index $n+1$)
+	and expansive terms at the old timestep (index $n$):
+	\begin{align*}
+		f_c(C) &= C^3\\
+		f_e(C) &= -C^2\\
+		C^{n+1} &= C^n + kD\Delta_h\mu^{n+1}\\
+		\mu^{n+1} &= f_c(C^{n+1}) + f_e(C^n) - \kappa\Delta_hC^{n+1},
+	\end{align*}
+	with common symbolic substitutions for timestep $(k=\Delta t)$ and discrete Laplacian operator $(\Delta_h)$
+	with grid spacing $h=\Delta x$.	Collecting old and new terms,
+	\begin{align}
+	\begin{split}
+		C^{n+1} - kD\Delta_h\mu^{n+1} &= C^n\\
+		\kappa\Delta_hC^{n+1} - f_c(C^{n+1}) + \mu^{n+1} &= f_e(C^n).
+	\end{split}
+	\label{eqn:convexeom}
+	\end{align}
+	
+	Next, let's prepare to solve the system of equations iteratively.
+	In the Jacobi method, elements along the matrix diagonal (i.e., the grid point of interest) are evaluated at
+	the next guess (index $l+1$), and off-diagonal elements belong to the last guess (index $l$).
+	The nonlinear source term $C^3$ is linearized, so
+	\begin{align*}
+		\ell_c(C_l^{n+1}) &= \left(C_l^{n+1}\right)^2\\
+		f_c(C) &= \ell_c(C_l^{n+1})C^{n+1}_{l+1}.
+	\end{align*}
+	Let's separate the discrete Laplacian $\Delta_h$ into its central (matrix-diagonal) and fringe (off-diagonal) components. The $d$-dimensional
+	formula is readily generalized from the 5-point stencil in 2-dimensions given $\Delta x=\Delta y=h$:
+	\begin{align*}
+		\Delta_hC(x,y)	&= \frac{C(x+1,y)-2C(x,y)+C(x-1,y)+C(x,y+1)-2C(x,y)+C(x,y-1)}{h^2}\\
+						&= \frac{-4C(x,y)}{h^2}+\frac{C(x+1,y)+C(x-1,y)+C(x,y+1)+C(x,y-1)}{h^2}\\
+		\Delta_hC(\vec{x})	&= \frac{-2dC(\vec{x})}{h^2} + \Delta_\circ C(\vec{x}),
+	\end{align*}
+	with the ``fringe Laplacian" operator $\Delta_\circ$ introduced as convenient shorthand.
+
+	Finally, we have the semi-implicit discretization properly indexed for iteration:
+	\begin{align}
+	\begin{split}
+		C_{l+1}^{n+1} + \frac{2dkD}{h^2}\mu_{l+1}^{n+1} &= C_l^n + kD\Delta_\circ\mu_l^{n+1}\\
+		-\frac{2d\kappa}{h^2}C_{l+1}^{n+1} - \ell_c(C_l^{n+1})C_{l+1}^{n+1} + \mu_{l+1}^{n+1} &= f_e(C_l^n) - \kappa\Delta_\circ C_l^{n+1},
+	\end{split}
+	\label{eqn:jacobieom}
+	\end{align}
+	or in matrix form
+	\[
+		\begin{bmatrix}
+			1	&	\frac{2dkD}{h^2}\\[0.5em]
+			-\frac{2d\kappa}{h^2} - \ell_c\left(C_l^{n+1}\right) & 1\\
+		\end{bmatrix}
+		\begin{bmatrix}
+			C_{l+1}^{n+1} \\[0.5em]
+			\mu_{l+1}^{n+1}\\
+		\end{bmatrix}
+		=
+		\begin{bmatrix}
+			C_l^n + kD\Delta_\circ\mu_l^{n+1}\\[0.5em]
+			f_e(C_l^n) - \kappa\Delta_\circ C_l^{n+1}\\
+		\end{bmatrix}.
+	\]
+
+	This system of linear equations is solved using Cramer's rule for $2\times 2$ systems $\mathbf{A}\mathrm{x}=\mathrm{b}$:
+	\[
+		x_1 = \frac{b_1a_{22} - b_2a_{12}}{a_{11}a_{22} - a_{21}a_{12}}, \
+		\hspace{1em}x_2 = \frac{a_{11}b_2 - a_{21}b_1}{a_{11}a_{22} - a_{21}a_{12}}.
+	\]
+	For clarity, the code implementing Cramer's rule for the equations of motion retains the $a_{ij}$, $x_i$, $b_i$ notation.		
+
+	To determine $C^{n+1}$ and $\mu^{n+1}$, seed the matrix using $C^n$ and $\mu^n$, then iterate until the relative error
+	between new guesses	$C_{l+1}^{n+1}$ and $\mu_{l+1}^{n+1}$ and old guesses $C_l^{n+1}$ and $\mu_l^{n+1}$ falls below a
+	threshold value:
+	\[\eta = \frac{||\mathrm{b}' - \left(\mathbf{A}\mathrm{x}\right)'||}{2N_xN_y||\mathrm{b}'||},\]
+	where $||\cdot||$ represents the $L_2$ vector norm, $N_xN_y$ is the grid size and $2$ is the number of unknown variables to determine at each grid point.\footnote{
+	Alternatively, the absolute error $\eta = ||\mathrm{b}' - \left(\mathbf{A}\mathrm{x}\right)'||$ can be used. In 3-D, use $2N_xN_yN_z$.}
+	The matrix terms are dashed $(')$ for a reason: the residual does not depend on the iteration scheme chosen, so $\left(\mathbf{A}\mathrm{x}\right)'=\mathrm{b}'$ 
+	represents the equations of motion prior to $l$-indexing for Jacobi iteration, Eqn.~\ref{eqn:convexeom} rather than Eqn.~\ref{eqn:jacobieom}:
+	\begin{align*}
+		\begin{split}
+			\mathbf{A}\mathrm{x} &=
+			\begin{bmatrix}
+				C_{l+1}^{n+1} + \frac{2dkD}{h^2}\mu_{l+1}^{n+1}\\[0.5em]
+				-\frac{2d\kappa}{h^2}C_{l+1}^{n+1} - \ell_c(C_l^{n+1})C_{l+1}^{n+1} + \mu_{l+1}^{n+1}\\
+			\end{bmatrix}\\
+			\mathrm{b} &=
+			\begin{bmatrix}
+				C_l^n + kD\Delta_\circ\mu_l^{n+1}\\[0.5em]
+				f_e(C_l^n) - \kappa\Delta_\circ C_l^{n+1}\\
+			\end{bmatrix}
+		\end{split},
+		&
+		\begin{split}
+			\left(\mathbf{A}\mathrm{x}\right)' &=
+			\begin{bmatrix}
+				C_{l+1}^{n+1} - kD\Delta_h\mu_{l+1}^{n+1}\\[0.5em]
+				        \kappa\Delta_hC_{l+1}^{n+1} - f_c(C_{l+1}^{n+1}) + \mu_{l+1}^{n+1}\\
+			\end{bmatrix}\\
+			\mathrm{b}' &=
+			\begin{bmatrix}
+				C^n\\[0.5em]
+				f_e(C^n)\\
+			\end{bmatrix}
+		\end{split}.
+	\end{align*}
+	Calculating the residual is therefore rather expensive, and is done at regular intervals rather than after each iteration.
+

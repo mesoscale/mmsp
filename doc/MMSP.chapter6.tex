@@ -9,5 +9,88 @@
 	writing efficient \MMSP\ code and to provide starting points for your
 	research. These examples are documented as clearly as possible in the
 	{\tt c++} files themselves, with references to academic research papers
-	for further details. 
+	for further details.
+	
+	\MMSP\ provides a common back-end for solving partial differential equations
+	on spatial domains. Writing the equation of motion is up to the user: \MMSP\ 
+	itself is agnostic to your realm of inquiry or numerical techniques. Example
+	folder may contain several related approaches: kinetic Monte Carlo vs. phase
+	field, isotropic vs. anisotropic, vector vs. sparse data types.
+	
+	These scripts are intended to showcase \MMSP, not to test the physics \emph{per se}.
+	You are encouraged to adapt an example for your research purposes, but
+	check our work against the literature. For consistency, every example compiles
+	against {\tt MMSP/include/MMSP.main.hpp}, which serves as a useful template for
+	your own {\tt main()} function.
+	
+
+\section{Algorithms}
+	The folder {\tt MMSP/algorithms} contains miscellaneous algorithms
+	for intializing and analyzing simulation domains, especially for grain
+	growth models. Some highlights include:
+	\begin{itemize}
+		\item[{\tt tessellate.hpp}] Algorithms to initialize an empty grid with
+		a Poisson-Voronoi tessellation, a commonly used starting point for grain
+		growth simulations.
+		\item[{\tt grainsize.hpp}] Algorithms to compute grainsize.
+		\item[{\tt topology}] Algorithms to extract discrete topological
+		properties from diffuse interfaces.
+	\end{itemize}
+	
+\section{Beginner's Diffusion}
+	Solves the canonical diffusion-type equation,
+	\[\frac{\partial C}{\partial t} = -D\nabla^2C.\]
+
+\section{Coarsening}
+	\subsection{Grain growth}
+		\subsubsection{Phase field}
+			Evolves co-existing sub-domains $\phi_i\in\vec{\phi}$ according to non-conserved
+			Allen-Cahn dynamics with mobility $L$,
+			\begin{align*}
+				\frac{\delta\mathcal{F}}{\delta\phi_i} &= -\epsilon^2\nabla^2\phi_i + \phi_i^3 - \phi_i^2 + \phi_i\sum\limits_{j\neq i}\phi_j^2 \
+			    	                                    = -\epsilon^2\nabla^2\phi_i - \phi_i^2 + \phi_i\sum\limits_{j=1}^N\phi_j^2\\
+				\frac{\partial\phi_i}{\partial t} &= -L\frac{\delta\mathcal{F}}{\delta\phi_i}.
+			\end{align*}
+		
+	\subsection{Ostwald ripening}
+		Evolves coupled equations for non-conserved (phase $\phi$) and conserved
+		(composition $c$) quantities.
+		Due to surface curvature, larger domains consume smaller ones to reduce the
+		total system energy.
+
+	\subsection{Zener pinning}
+
+\section{Phase Transitions}
+	\subsection{Allen-Cahn}
+	\subsection{Cahn-Hilliard}
+		Applies Cahn-Hilliard dynamics to the spinodal defined by 
+		\[f(c) = \frac{C^4}{4} - \frac{C^2}{2},\]
+		producing a fourth-order PDE:
+		\[\frac{\partial C}{\partial t} = D\nabla^2\left(\frac{\partial f}{\partial C} - \epsilon^2\nabla^2 C\right).\]
+
+		\subsubsection{Explicit}
+			Discretizes the Cahn-Hilliard equation explicitly, coupling two second-order equations
+			in the old value $(C^n)$ and new value $(C^{n+1})$ to recover the fourth-order dynamics:
+			\begin{align*}
+				\mu &= \frac{\partial f}{\partial C^n} - \epsilon^2\nabla^2 C^n\\
+				C^{n+1} &= C^n + D\Delta t\nabla^2\mu
+			\end{align*}
+
+		\subsubsection{Convex splitting}
+			This advanced example is discussed in Chapter~\ref{ch:advanced}.
+			
+
+	\subsection{Model A}
+	\subsection{Model B}
+	\subsection{Solidification}
+	\subsection{Spinodal}
+
+
+\section{Differential Equations}
+	\subsection{Poisson}
+
+\section{Statistical Mechanics}
+	\subsection{Heisenberg}
+	\subsection{Ising}
+	\subsection{Potts}
 
