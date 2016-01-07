@@ -37,7 +37,7 @@ int edge = 200;
 double deltaX = 1.0;
 
 #ifdef VANILLA
-double C0 = 0.5; // system composition
+double C0 = 0.0; // system composition
 double D  = 1.0; // diffusivity
 double K  = 1.0; // gradient energy coefficient
 #else
@@ -55,18 +55,20 @@ double CFL = 32.0*dt*D*K/pow(deltaX,4.0);	// to judge improvement w.r.t. explici
 // Numerical constants
 double tolerance = 1.0e-14;		// Choose wisely. 1e-10 is the minimum toloerance for which mass is conserved.
 								// Tighter tolerance is better, but increases runtime.
-unsigned int residual_step = 10;// number of iterations between residual computations
+unsigned int residual_step = 5;	// number of iterations between residual computations
 unsigned int max_iter = 10000;	// don't let the solver stagnate
-double omega = 1.2;				// relaxation parameter for SOR. omega=1 is stock Gauss-Seidel.
-								//                               omega<1 is under-relaxation (slower convergence, better conservation),
-								//                               omega>1 is over-relaxation (faster convergence).
 
 #ifdef VANILLA
+double omega = 1.0;				// relaxation parameter for SOR. omega=1 is stock Gauss-Seidel.
+								//                               omega<1 is under-relaxation (slower convergence, not recommended),
+								//                               omega>1 is over-relaxation (faster convergence), stagnates above omega=1.1.
+
 // Vanilla energetics
 #include<time.h>
 template<typename T> inline
 T energy_density(const T& C)
 {
+	// Minima at C = +/- 1, local maximum at C=0
 	return 0.25*pow(C,4.0) - 0.5*pow(C,2.0);
 }
 template<typename T> inline
@@ -90,6 +92,8 @@ T expansive_dfdc(const T& C)
 	return -C;
 }
 #else
+double omega = 1.2;				// parametric equations are more forgiving, stagnates above omega=1.67.
+
 // Parametric energetics
 double A = 2.0;
 double B = A/pow(Ca-C0,2.0); // = 9.8765
@@ -103,6 +107,7 @@ double QD = B*pow(C0,3.0) + pow(Ca,4.0) + pow(Cb,4.0);
 template<typename T> inline
 T energy_density(const T& C)
 {
+	// Minima at C = 0 and 1
 	return -0.5*A*pow(C-C0,2.0) + 0.25*B*pow(C-C0,4.0) + 0.25*Ca*pow(C-Ca,4.0) + 0.25*Cb*pow(C-Cb,4.0);
 }
 template<typename T> inline
@@ -200,7 +205,7 @@ void generate(int dim, const char* filename)
 
 		#ifdef VANILLA
 		for (int n=0; n<nodes(grid); n++)
-			grid(n)[0] = C0*(1.0 + 0.1*real_gen(mt_rand));
+			grid(n)[0] = C0 + 0.25*real_gen(mt_rand) - 0.125; // produces noise with amplitude 0.125 about C=C0
 		#else
 		double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)}; // produces stripes oriented 45 degrees to horizontal
 		for (int n=0; n<nodes(grid); n++) {
@@ -356,6 +361,8 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 
 			}
 
+			iter++;
+
 			/*  ==== RESIDUAL ====
 			    The residual is computed from the original matrix form, Ax=b:
 			    any Old term goes into B, while any New term goes in AX. Note that
@@ -421,7 +428,6 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 
 			}
 
-			iter++;
 		}
 
 		if (iter==max_iter) {
