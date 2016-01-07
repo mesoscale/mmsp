@@ -1,11 +1,11 @@
 % MMSP.chapter3.tex
 
-\chapter{\MMSP tutorials}
-The following sections present a few short tutorials on writing, compiling, and running simple \MMSP programs.  For those totally confused by the syntax of the examples presented here we suggest consulting an introductory {\tt c++} text first.
+\chapter{\MMSP\ tutorials}
+The following sections present a few short tutorials on writing, compiling, and running simple \MMSP\ programs.  For those totally confused by the syntax of the examples presented here we suggest consulting an introductory {\tt c++} text first.
 
 \section{A quick tutorial}
 \subsection{The {\tt Hello MMSP!} program}
-Because every good programming language or interface tutorial starts with a ``Hello World!'' example program, we'll do the same.  For most \MMSP applications, we include a header file named {\tt MMSP.hpp}.  Then we need a {\tt main()} program and a few lines to print out our message.  Here it is:
+Because every good programming language or interface tutorial starts with a ``Hello World!'' example program, we'll do the same.  For most \MMSP\ applications, we include a header file named {\tt MMSP.hpp}.  Then we need a {\tt main()} program and a few lines to print out our message.  Here it is:
 \begin{shadebox}
 \begin{verbatim}
     #include"MMSP.hpp"
@@ -36,7 +36,7 @@ and
 \end{shadebox}
 What do these lines do?  For single processor programs, they do absolutely nothing -- they could actually be removed without any consequences.  However, for programs that use the message passing interface (MPI), they act as wrappers for the similarly named {\tt MPI::Init} and {\tt MPI::Finalize} commands.  It's useful to include them here because they'll allow us to write programs that may be compiled for both single or multiple processor environments.
 
-Programmers familiar with {\tt c++} will notice that there's obviously some \MMSP namespace being used here.  For those less familiar, namespaces are a somewhat recent addition to {\tt c++} that are used as a means of avoiding naming conflicts.  We can avoid using namespace resolution so frequently if we use an appropriate {\tt using} statement, i.e. 
+Programmers familiar with {\tt c++} will notice that there's obviously some \MMSP\ namespace being used here.  For those less familiar, namespaces are a somewhat recent addition to {\tt c++} that are used as a means of avoiding naming conflicts.  We can avoid using namespace resolution so frequently if we use an appropriate {\tt using} statement, i.e. 
 \begin{shadebox}
 \begin{verbatim}
     #include"MMSP.hpp"
@@ -54,13 +54,13 @@ The observant reader may notice that we've used some of the stream input/output 
 So that's it as far as the code goes.  This is a source file that may be compiled for both single and parallel simulations of... nothing.  In a moment we will move on to code that actually does something, but for now we should say a few words about compiling the code and running the executable.
 
 \subsection{Compiling and running {\tt Hello MMSP!}}
-Compiling code is a task that is, unfortunately, fairly platform dependent.  While \MMSP programs should compile easily on any platform, the required steps to do so may not look like the method shown here.  That said, let's look at how we would compile the previous example for a typical Linux or Unix setup.  Suppose the above code has been saved to a file named {\tt hello.cpp}, and that \MMSP has been extracted to the same directory.  A typical Linux machine will have at the least the GNU family of compilers installed, in which case we would type the command 
+Compiling code is a task that is, unfortunately, fairly platform dependent.  While \MMSP\ programs should compile easily on any platform, the required steps to do so may not look like the method shown here.  That said, let's look at how we would compile the previous example for a typical Linux or Unix setup.  Suppose the above code has been saved to a file named {\tt hello.cpp}, and that \MMSP\ has been extracted to the same directory.  A typical Linux machine will have at the least the GNU family of compilers installed, in which case we would type the command 
 \begin{shadebox}
 \begin{verbatim}
     g++ -I MMSP/include hello.cpp -o hello
 \end{verbatim}
 \end{shadebox}
-which produces an executable file named {\tt hello}.  The compiler option {\tt -I ...} suggests a directory to search for non-standard headers; if your \MMSP headers reside somewhere else, you'll need to make the appropriate change.  To run the program, we type
+which produces an executable file named {\tt hello}.  The compiler option {\tt -I ...} suggests a directory to search for non-standard headers; if your \MMSP\ headers reside somewhere else, you'll need to make the appropriate change.  To run the program, we type
 \begin{shadebox}
 \begin{verbatim}
     ./hello
@@ -83,7 +83,7 @@ which again produces an executable named {\tt hello}.  This time, however, we ne
 which in this case produces our message four times.  The author sincerely hopes that your experience is this straightforward, but don't count on it!
 
 \section{A {\tt grid} class example}
-In this section, we look at an example that uses the \MMSP {\tt grid} template class, and actually resembles part of a program you might actually use:
+In this section, we look at an example that uses the \MMSP\ {\tt grid} template class, and actually resembles part of a program you might actually use:
 \begin{shadebox}
 \begin{verbatim}
     #include"MMSP.hpp"
@@ -119,7 +119,7 @@ Several new features have been introduced in this example.  First, the line
     grid<2,int> GRID(1,0,100,0,100);
 \end{verbatim}
 \end{shadebox}
-constructs the {\tt grid} object.  Objects of the {\tt grid} class take two template arguments (those arguments within {\tt < >}), the first being the dimension ({\tt 2}) and the second being the data type ({\tt int}).  In {\tt MMSP}, the dimension of a {\tt grid} can be any (constant) integer greater than zero, while the data type can be any of {\tt c++}'s built-in types or any of the \MMSP data types (to be discussed later).  In other words, \MMSP allows for simulations in arbitrary spatial dimensions, and the type of data stored at each {\tt grid} point is quite flexible.
+constructs the {\tt grid} object.  Objects of the {\tt grid} class take two template arguments (those arguments within {\tt < >}), the first being the dimension ({\tt 2}) and the second being the data type ({\tt int}).  In {\tt MMSP}, the dimension of a {\tt grid} can be any (constant) integer greater than zero, while the data type can be any of {\tt c++}'s built-in types or any of the \MMSP\ data types (to be discussed later).  In other words, \MMSP\ allows for simulations in arbitrary spatial dimensions, and the type of data stored at each {\tt grid} point is quite flexible.
 
 The name of the {\tt grid} comes next, which in this case is ({\tt GRID}), and is followed by constructor arguments in parentheses.  These arguments indicate the total number of fields to create at each node (relevant only for vector-like data types) and the lower and upper limits in the {\tt x} and {\tt y} directions, respectively.  Like for {\tt c++} arrays, lower {\tt grid} limits are inclusive and upper limits are exclusive, so in this case we have that $0\leq x,y<100$, and a total number of $100$ nodes along each coordinate axis.  Unlike {\tt c++} arrays, the limits may be either positive or negative, as long as the upper limit is always larger than the lower limit.  Note that these limits are the {\em global} limits; they define the size of the entire {\tt grid} object.  The portion of a {\tt grid} that is actually stored on a given machine is usually smaller than this in parallel programs.
 
@@ -138,7 +138,7 @@ Returning to the example code, the next lines iterate through the nodes of the {
         for (int y=y0(GRID); y<y1(GRID); y++)
 \end{verbatim}
 \end{shadebox}
-The functions {\tt x0}, {\tt x1} and {\tt y0}, {\tt y1} have been invoked to retrieve the {\em local} limits in each direction.  As suggested above, the local grid size in a parallel program is typically smaller than the global grid size because parallelization in \MMSP is achieved through spatial decomposition.  Use of these functions ensures that we iterate only through the nodes stored by the local process.  While it isn't strictly necessary to use these functions in code meant to be run on a single processor, using them now will make parallelization completely trivial.
+The functions {\tt x0}, {\tt x1} and {\tt y0}, {\tt y1} have been invoked to retrieve the {\em local} limits in each direction.  As suggested above, the local grid size in a parallel program is typically smaller than the global grid size because parallelization in \MMSP\ is achieved through spatial decomposition.  Use of these functions ensures that we iterate only through the nodes stored by the local process.  While it isn't strictly necessary to use these functions in code meant to be run on a single processor, using them now will make parallelization completely trivial.
 
 The line
 \begin{shadebox}
@@ -146,7 +146,7 @@ The line
     GRID[x][y] = GRID[x+1][y]-GRID[x-1][y];
 \end{verbatim}
 \end{shadebox}
-uses subscript operators {\tt [ ]} to set and retrieve data stored at nodes of the {\tt grid}.  The usage of the subscript operator should look familiar to anyone who has programmed in {\tt c}-style languages, and it has the expected effect -- the subscript operator works the same way for \MMSP grid objects as it does for subscripted arrays.  However, we will later see that the \MMSP subscript operators are ``smarter'' in the sense that they're cognizant of boundary conditions and adjust appropriately for calls made to nodes that are out of bounds.  There are also more advanced ways to access {\tt grid} data which we will discuss later.
+uses subscript operators {\tt [ ]} to set and retrieve data stored at nodes of the {\tt grid}.  The usage of the subscript operator should look familiar to anyone who has programmed in {\tt c}-style languages, and it has the expected effect -- the subscript operator works the same way for \MMSP\ grid objects as it does for subscripted arrays.  However, we will later see that the \MMSP\ subscript operators are ``smarter'' in the sense that they're cognizant of boundary conditions and adjust appropriately for calls made to nodes that are out of bounds.  There are also more advanced ways to access {\tt grid} data which we will discuss later.
 
 Finally, the line 
 \begin{shadebox}
@@ -171,11 +171,11 @@ As a point of reference, let's now look at how we might do something similar to 
     }
 \end{verbatim}
 \end{shadebox}
-This may look considerably simpler, but consider the following: how do we run this code as a parallel process?  The immediate answer is that we introduce MPI funtion calls, but then we also need to decide how to subdivide the grid, how to deal with boundary conditions, how to put the pieces back together when we're done, etc.  Then again, what if we want to change the number of processors or number of nodes in each direction and maintain an optimal subdivision scheme?  And what about boundary conditions?  As written, the code will attempt to access data that is out of the bounds of the array.  This will probably lead to runtime errors, or at least some unintentional results.  Additional code needs to be written to remedy this problem.  Starting from scratch, these operations all require a great deal of code development, whereas all of these are done by \MMSP automatically.
+This may look considerably simpler, but consider the following: how do we run this code as a parallel process?  The immediate answer is that we introduce MPI funtion calls, but then we also need to decide how to subdivide the grid, how to deal with boundary conditions, how to put the pieces back together when we're done, etc.  Then again, what if we want to change the number of processors or number of nodes in each direction and maintain an optimal subdivision scheme?  And what about boundary conditions?  As written, the code will attempt to access data that is out of the bounds of the array.  This will probably lead to runtime errors, or at least some unintentional results.  Additional code needs to be written to remedy this problem.  Starting from scratch, these operations all require a great deal of code development, whereas all of these are done by \MMSP\ automatically.
 
 
 \section{More examples}
-This section provides a number of additional examples demonstrating typical \MMSP operations.
+This section provides a number of additional examples demonstrating typical \MMSP\ operations.
 
 \subsection{Accessing node data}
 In the previous section, we saw how data within a {\tt grid} object may be accessed through the subscript operator, e.g.
@@ -250,7 +250,7 @@ Input and output of {\tt grid} data to a file are performed as follows:
     output(GRID,filename);
 \end{verbatim}
 \end{shadebox}
-Note that the second argument to the {\tt input} and {\tt output} functions is a character array of type {\tt char*}.  Error checking does occur when a {\tt grid} is input from a file; attempts to input a {\tt grid} of the wrong dimension or data type will cause \MMSP to produce a error message and exit the code.
+Note that the second argument to the {\tt input} and {\tt output} functions is a character array of type {\tt char*}.  Error checking does occur when a {\tt grid} is input from a file; attempts to input a {\tt grid} of the wrong dimension or data type will cause \MMSP\ to produce a error message and exit the code.
 
 To be sure, there's probably only rare occasions when we want to use {\tt input} to overwrite an existing {\tt grid}.  Quite often, though, we want to create a new {\tt grid} object from {\tt grid} data contained within a file.  In this case, we use the {\tt grid} constructor,
 \begin{shadebox}
@@ -271,13 +271,13 @@ In a later chapter, we discuss the {\tt grid} class in more detail, and in parti
     GRID.output(filename);
 \end{verbatim}
 \end{shadebox}
-The first case uses typical {\tt C} style syntax, while the second case uses the class member function syntax of {\tt C++}.  For now, note that almost all functions that operate on the {\tt grid} class or other \MMSP data classes may be called both ways.
+The first case uses typical {\tt C} style syntax, while the second case uses the class member function syntax of {\tt C++}.  For now, note that almost all functions that operate on the {\tt grid} class or other \MMSP\ data classes may be called both ways.
 
 In case you were wondering, all of the code shown above can be used in a parallel program.  In this case, the functions {\tt input} and {\tt output} automatically coordinate I/O tasks over all processors.  The {\tt grid} constructor and the {\tt input} function also perform the task of determining the optimal\footnote{``Optimal'' here means that the subdivision is chosen such that it will produce the fewest number of ghost cells possible, while maintaining as evenly balanced a load as possible.} {\tt grid} subdivision scheme.  
 
 
 \subsection{Boundary conditions}
-Boundary conditions in \MMSP are handled automatically.  To show what this means, consider the following:
+Boundary conditions in \MMSP\ are handled automatically.  To show what this means, consider the following:
 \begin{shadebox}
 \begin{verbatim}
     grid<2,double> f(1,0,100,0,100);
@@ -289,11 +289,11 @@ Boundary conditions in \MMSP are handled automatically.  To show what this means
         }
 \end{verbatim}
 \end{shadebox}
-This code traverses each node in the {\tt grid}, computing the derivative along the $x$ axis, among a number of other possible operations.  This is simple enough, but what happens at the {\tt grid} boundaries?  If similar code was written using built-in arrays, it would typically fail with a segmentation fault, and in any case, it certainly wouldn't produce the desired results.  However, with {\tt MMSP} {\tt grid} objects, this isn't a problem; all of the data access operators in \MMSP are cognizant of domain boundaries and always enforce the chosen boundary conditions.
+This code traverses each node in the {\tt grid}, computing the derivative along the $x$ axis, among a number of other possible operations.  This is simple enough, but what happens at the {\tt grid} boundaries?  If similar code was written using built-in arrays, it would typically fail with a segmentation fault, and in any case, it certainly wouldn't produce the desired results.  However, with {\tt MMSP} {\tt grid} objects, this isn't a problem; all of the data access operators in \MMSP\ are cognizant of domain boundaries and always enforce the chosen boundary conditions.
 
 For the code example above, periodic boundary conditions are used.  This is the default boundary condition in \MMSP.  A number of other boundary conditions are possible, including Dirichlet, Neumann, and mirror boundaries.  Parallel processor boundaries are another special type of boundary condition which is not explicitly set by the user.
 
-To change the boundary conditions used for a {\tt grid}, one might use\footnote{Note, as usual, the boundary conditions and ``set'' functions all belong to namespace \MMSP and must be used in the absence of a {\tt using} statement.}
+To change the boundary conditions used for a {\tt grid}, one might use\footnote{Note, as usual, the boundary conditions and ``set'' functions all belong to namespace \MMSP\ and must be used in the absence of a {\tt using} statement.}
 \begin{shadebox}
 \begin{verbatim}
     grid<2,double> GRID(1,0,100,0,100);
@@ -310,8 +310,8 @@ To change the boundary conditions used for a {\tt grid}, one might use\footnote{
 This example demonstrates that the boundary conditions may not only be set independently for each coordinate axis, but that it's also possible to independently set the conditions at the upper and lower boundaries (within reason).
 
 
-\section{The prototypical \MMSP program}
-\MMSP was created with the intent that it would be used for mesoscale microstructure simulation.  So let's look at how we would typically write code to do just that.
+\section{The prototypical \MMSP\ program}
+\MMSP\ was created with the intent that it would be used for mesoscale microstructure simulation.  So let's look at how we would typically write code to do just that.
 \begin{shadebox}
 \begin{verbatim}
     // prototype.cpp
@@ -332,7 +332,7 @@ This example demonstrates that the boundary conditions may not only be set indep
     }
 \end{verbatim}
 \end{shadebox}
-In this example, in addition to the usual \MMSP boilerplate code, we have a {\tt grid} constructor that reads from a file with a name specified by {\tt argv[1]}, a call to some function called {\tt update} (more on this in a moment), and a call to {\tt output} the {\tt grid} object to a file with a name specified by {\tt argv[2]}. After compiling this program, we would run it with the command line
+In this example, in addition to the usual \MMSP\ boilerplate code, we have a {\tt grid} constructor that reads from a file with a name specified by {\tt argv[1]}, a call to some function called {\tt update} (more on this in a moment), and a call to {\tt output} the {\tt grid} object to a file with a name specified by {\tt argv[2]}. After compiling this program, we would run it with the command line
 \begin{shadebox}
 \begin{verbatim}
     ./program initial.PF final.PF 100
@@ -393,7 +393,7 @@ Using a forward Euler time step, the above would be discretized as
 \phi^{t+\Delta t} = \phi^t -\Delta t\, M(-r\phi^t+u(\phi^t)3-\kappa\Delta \phi^t).
 \end{equation}
 
-Now, let's look at an \MMSP code representation of the above.  Suppose we aim to write an {\tt update} function, similar to what was shown in the previous section.  This time, we'll additionally use the {\tt c++} template syntax to write a code that will work for {\tt grid} objects of any dimension (and any scalar data type):
+Now, let's look at an \MMSP\ code representation of the above.  Suppose we aim to write an {\tt update} function, similar to what was shown in the previous section.  This time, we'll additionally use the {\tt c++} template syntax to write a code that will work for {\tt grid} objects of any dimension (and any scalar data type):
 \begin{shadebox}
 \begin{verbatim}
 template <int dim, typename T>
@@ -428,7 +428,7 @@ update(i) = phi-dt*M*(-r*phi+u*pow(phi,3)-K*laplacian(grid,i));
 \end{shadebox}
 The reader will notice that this looks nearly identical to the pseudocode given above.  Here, the {\tt c++} math library function {\tt pow} is used to compute $\phi^3$ and the {\tt grid} class {\tt laplacian} operator is used to compute $\Delta \phi$.
 
-The Allen-Cahn equation is a fairly simple model, yet it demonstrates many of the powerful features that \MMSP offers.  Note that, with only a few unique lines of {\tt c++}, we have produced a code that
+The Allen-Cahn equation is a fairly simple model, yet it demonstrates many of the powerful features that \MMSP\ offers.  Note that, with only a few unique lines of {\tt c++}, we have produced a code that
 \begin{enumerate}
 \item{Solves a realistic physical problem with minimal software development.}
 \item{Works for {\tt grid}s of arbitrary spatial dimension.}

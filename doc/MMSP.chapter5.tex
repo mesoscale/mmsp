@@ -1,10 +1,11 @@
-% MMSP.chapter3.tex
+% MMSP.chapter5.tex
 
 \chapter{The {\tt grid} class}
 
 The MMSP base class grid is defined in the header MMSP.grid.hpp. The derived template classes grid1D, grid2D, and grid3D provide the base for the high level grid objects associated with various simulation methods. The template parameters for each grid object are a point data structure and a fundamental numeric type. The grid objects contain a large number of inherited methods (member functions) that perform common tasks such as file I/O, data storage and retrieval, etc. Member data for the grid classes determine the grid size, boundary conditions and point spacing along each coordinate axis. 
 High level grid objects usually have a name that indicates both their intended use as well as their dimensionality, e.g. PFgrid3D and MCgrid2D. These are the grid objects that are used in performing simulations or other computations. Detailed information about each existing grid class is given in the reference section of this page. See also the source distribution. 
 MMSP grid classes are designed so that programming with them is as intuitive as possible. For example, data can be accessed by subscript operators in exactly the same way we would use data stored in a subscripted array 
+\begin{verbatim}
     // First create a grid object.
     PFgrid2D grid(100,100,2);
 
@@ -13,8 +14,11 @@ MMSP grid classes are designed so that programming with them is as intuitive as 
 
     // Use a value from the grid in a computation.
     float value = grid[10][20][1];
+\end{verbatim}
 Because of this, C/C++ code that performs computations using "hard-coded" arrays automatically works for the corresponding MMSP grid object. This makes it trivial to insert MMSP grid objects into existing grid generation, simulation, or analysis code. 
 Each grid object also provides a neighbor() function that returns a grid data structure using coordinates relative to a given position (x,y[,z]) 
+\begin{verbatim}
+
     // First create a grid object.
     MCgrid2D grid(100,100);
 
@@ -23,6 +27,7 @@ Each grid object also provides a neighbor() function that returns a grid data st
 
     // Access the value using the neighbor() function.
     int spin = grid.neighbor(9,22,1,-2);
+\end{verbatim}
 The neighbor function automatically accounts for the grid boundary conditions set by the user. See the next subsection for more details on programming with the grid classes. 
 Finally, let's consider using grid objects in a parallel computing setting. In single processor programs, we typically create a single grid object within the main() function. This grid object is considered to be the entire simulation domain. In parallel programs, however, the grid object declared within main() is a subgrid of a larger, global simulation domain. MMSP can automatically decompose (or recompose) a global grid object into local subgrid "slabs" with cuts perpendicular to the x axis, a method which has a consistent (and simple) implementation regardless of grid dimension. MMSP allows the user to chose the number of ghost cells retained in each subgrid, and the boundary conditions of the global grid object are satisfied when the neighbor() function is used. The implementation of parallel grid functionality is contained within a separate header MMSP.grid.parallel.hpp for the convenience of users without a local MPI distribution. 
 
@@ -153,4 +158,19 @@ int main(int argc, char* argv[])
 \subsection{Accessing {\tt grid} parameters}
 \subsection{Reading to and writing from files}
 \subsection{Using {\tt grid} in a parallel program}
+
+% MMSP.chapter4.tex
+
+\section{Specialized grid classes}
+
+\subsection{{\tt CAgrid}}
+
+\subsection{{\tt FDgrid}}
+
+\subsection{{\tt MCgrid}}
+
+\subsection{{\tt PFgrid}}
+
+\subsection{{\tt sparsePF}}
+
 

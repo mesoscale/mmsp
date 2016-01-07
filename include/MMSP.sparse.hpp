@@ -33,12 +33,18 @@ public:
 		memcpy(data, x.data, size * sizeof(item<T>));
 	}
 	~sparse() {
-		if (data!=NULL) delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 	}
 
 	// assignment operator
 	sparse& operator=(const sparse& x) {
-		if (data!=NULL) delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 		size = x.length();
 		data = new item<T>[size];
 		//memcpy(data, x.data, size * sizeof(item<T>));
@@ -49,7 +55,10 @@ public:
 		return *this;
 	}
 	template <typename U> sparse& operator=(const sparse<U>& x) {
-		if (data!=NULL) delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 		size = x.length();
 		data = new item<T>[size];
 		for (int i = 0; i < size; i++) {
@@ -67,10 +76,16 @@ public:
 
 		item<T>* temp = new item<T>[size];
 		memcpy(temp, data, size * sizeof(item<T>));
-		if (data!=NULL) delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 		data = new item<T>[size + 1];
 		memcpy(data, temp, size * sizeof(item<T>));
-		delete [] temp;
+		if (temp!=NULL){
+			delete [] temp;
+			temp=NULL;
+		}
 		size += 1;
 		data[size - 1].index = index;
 		data[size - 1].value = static_cast<T>(0);
@@ -127,7 +142,10 @@ public:
 	}
 	int from_buffer(const char* buffer) {
 		memcpy(&size, buffer, sizeof(size));
-		if (data!=NULL)	delete [] data;
+		if (data!=NULL)	{
+			delete [] data;
+			data=NULL;
+		}
 		data = new item<T>[size];
 		memcpy(data, buffer + sizeof(size), size * sizeof(item<T>));
 		return sizeof(size) + size * sizeof(item<T>);
@@ -140,7 +158,10 @@ public:
 	}
 	void read(std::ifstream& file) {
 		file.read(reinterpret_cast<char*>(&size), sizeof(size));
-		if (data!=NULL) delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 		data = new item<T>[size];
 		file.read(reinterpret_cast<char*>(data), size * sizeof(item<T>));
 	}
@@ -152,7 +173,10 @@ public:
 	void resize(int n) {}
 	void copy(const sparse& s) {
 		size = s.size;
-		if (data!=NULL) delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 		data = new item<T>[size];
 		memcpy(data, s.data, size * sizeof(item<T>));
 	}

@@ -38,7 +38,10 @@ public:
 			data[i] = static_cast<T>(value);
 	}
 	~vector() {
-		delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 	}
 
 	// data access operators
@@ -56,7 +59,10 @@ public:
 		return *this;
 	}
 	vector& operator=(const vector& v) {
-		delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 		size = v.length();
 		data = new T[size];
 		for (int i = 0; i < size; i++)
@@ -69,7 +75,10 @@ public:
 		return *this;
 	}
 	template <typename U> vector& operator=(const vector<U>& v) {
-		delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 		size = v.length();
 		data = new T[size];
 		for (int i = 0; i < size; i++)
@@ -87,7 +96,10 @@ public:
 		return sizeof(size) + size * sizeof(T);
 	}
 	int from_buffer(const char* buffer) {
-		delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 		memcpy(&size, buffer, sizeof(size));
 		data = new T[size];
 		memcpy(data, buffer + sizeof(size), size * sizeof(T));
@@ -113,23 +125,38 @@ public:
 		} else if (N > size) {
 			T* temp = new T[N];
 			memcpy(temp, data, size * sizeof(T));
-			delete [] data;
+			if (data!=NULL) {
+				delete [] data;
+				data=NULL;
+			}
 			size = N;
 			data = new T[size];
 			memcpy(data, temp, size * sizeof(T));
-			delete [] temp;
+			if (temp!=NULL) {
+				delete [] temp;
+				temp=NULL;
+			}
 		} else if (N < size) {
 			T* temp = new T[N];
 			memcpy(temp, data, N * sizeof(T));
-			delete [] data;
+			if (data!=NULL) {
+				delete [] data;
+				data=NULL;
+			}
 			size = N;
 			data = new T[size];
 			memcpy(data, temp, N * sizeof(T));
-			delete [] temp;
+			if (temp!=NULL) {
+				delete [] temp;
+				temp=NULL;
+			}
 		}
 	}
 	void copy(const vector& v) {
-		delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 		size = v.size;
 		data = new T[size];
 		memcpy(data, v.data, size * sizeof(T));
@@ -145,22 +172,34 @@ public:
 	template <typename U> void append(const U& value) {
 		T* temp = new T[size];
 		memcpy(temp, data, size * sizeof(T));
-		delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 		size += 1;
 		data = new T[size];
 		memcpy(data, temp, size * sizeof(T));
-		delete [] temp;
+		if (temp!=NULL) {
+			delete [] temp;
+			temp=NULL;
+		}
 		data[size - 1] = static_cast<T>(value);
 	}
 	template <typename U> void append(const vector<U>& v) {
 		int N = size;
 		T* temp = new T[size];
 		memcpy(temp, data, size * sizeof(T));
-		delete [] data;
+		if (data!=NULL) {
+			delete [] data;
+			data=NULL;
+		}
 		size += v.length();
 		data = new T[size];
 		memcpy(data, temp, size * sizeof(T));
-		delete [] temp;
+		if (temp!=NULL) {
+			delete [] temp;
+			temp=NULL;
+		}
 		for (int i = N; i < size; i++)
 			data[i] = static_cast<T>(v[i - N]);
 	}

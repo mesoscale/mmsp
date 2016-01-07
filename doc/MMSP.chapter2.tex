@@ -4,7 +4,7 @@
 The following sections provide the necessary information for new users to obtain and set up \MMSP.  Typically, this involves downloading a source code archive, unpacking it, and running a few tests.  Developers or those interested in maintaining an up-to-date version of the code should consider checking out a copy from the {\tt git} repository.
 
 \section{Download}
-The source code for \MMSP is available through a {\tt git} repository, hosted on \href{https://github.com/mesoscale/mmsp}{GitHub}.  This requires the \href{http://www.git-scm.com}{\tt git} version control software to be installed on the target machine, as well as a working internet connection.  From the command line, type
+The source code for \MMSP\ is available through a {\tt git} repository, hosted on \href{https://github.com/mesoscale/mmsp}{GitHub}.  This requires the \href{http://www.git-scm.com}{\tt git} version control software to be installed on the target machine, as well as a working internet connection.  From the command line, type
 \begin{shadebox}
 \begin{verbatim}
     git clone https://github.org/mesoscale/mmsp.git MMSP
@@ -12,19 +12,19 @@ The source code for \MMSP is available through a {\tt git} repository, hosted on
 \end{shadebox}
 If the checkout is successful, then there is no need to perform the steps for intstallation described below, and the user should move on to setup.
 
-Having a local copy of \MMSP makes it simple to keep your code up-to-date.  From the root folder, simply type
+Having a local copy of \MMSP\ makes it simple to keep your code up-to-date.  From the root folder, simply type
 \begin{shadebox}
 \begin{verbatim}
     git pull
 \end{verbatim}
 \end{shadebox}
-to update a working copy with the latest version of the \MMSP source code.  See the {\tt git} documentation for more details on version control.
+to update a working copy with the latest version of the \MMSP\ source code.  See the {\tt git} documentation for more details on version control.
 
 \section{Installation}
-After an appropriate source code archive is obtained as described above, the next step is to install \MMSP.  This should be as simple as unpacking the archive.  Users with administrator priveledges may choose to install the \MMSP header files in a location that will be searched by their compiler's preprocessor, but we do not describe how to do this here.  The following paragraphs provide platform-specific instructions for a local installation.
+After an appropriate source code archive is obtained as described above, the next step is to install \MMSP.  This should be as simple as unpacking the archive.  Users with administrator priveledges may choose to install the \MMSP\ header files in a location that will be searched by their compiler's preprocessor, but we do not describe how to do this here.  The following paragraphs provide platform-specific instructions for a local installation.
 
 \paragraph{Linux/Unix}
-Local installation for Linux users should simply involve unpacking the archive.  As most Linux systems have means to unpack both tarballs and zip files, there is likely no reason to prefer either.  After downloading the archive file, move it to the directory where you want \MMSP to reside, making sure that you have read access to the file as well as write access to the directory.  Then issue a command to unpack the archive, e.g.
+Local installation for Linux users should simply involve unpacking the archive.  As most Linux systems have means to unpack both tarballs and zip files, there is likely no reason to prefer either.  After downloading the archive file, move it to the directory where you want \MMSP\ to reside, making sure that you have read access to the file as well as write access to the directory.  Then issue a command to unpack the archive, e.g.
 \begin{shadebox}
 \begin{verbatim}
     tar zxf MMSP.3.0.6.tar.gz
@@ -42,18 +42,18 @@ This will unpack the contents of the archive into a folder named \MMSP.  Next, t
     ls MMSP
 \end{verbatim}
 \end{shadebox}
-which should indicate that folders such as {\tt MMSP/doc}, {\tt MMSP/examples}, etc.~have been created.  If either command fails or the folder \MMSP is not created, check the {\tt tar} or {\tt unzip} documentation.
+which should indicate that folders such as {\tt MMSP/doc}, {\tt MMSP/examples}, etc.~have been created.  If either command fails or the folder \MMSP\ is not created, check the {\tt tar} or {\tt unzip} documentation.
 
 \paragraph{Mac OS}
 Mac OS users will follow much of the same procedure as Linux users, so it is advisible to read the previous section on Linux installation.  For those uninitiated, or who have never had any previous reason to use it, the {\tt Terminal} application can be found under {\tt Applications/Utilities}.  Again, all steps described above for Linux installation should apply here as well.
 
 \paragraph{Windows}
-For those who insist on using Windows, it is still possible to use \MMSP.  The preferred way to do this is to use the \href{http://www.cygwin.com}{cygwin} environment.  To use {\tt cygwin} with \MMSP, it is necessary that appropriate packages, such as {\tt gcc} (the GNU compiler) and {\tt make} (the GNU make utility), have been installed.  These are optional packages that must be chosen manually during installation.  If {\tt cygwin} has been installed properly, \MMSP may be installed by following the steps described above for Linux installations.
+For those who insist on using Windows, it is still possible to use \MMSP.  The preferred way to do this is to use the \href{http://www.cygwin.com}{cygwin} environment.  To use {\tt cygwin} with \MMSP, it is necessary that appropriate packages, such as {\tt gcc} (the GNU compiler) and {\tt make} (the GNU make utility), have been installed.  These are optional packages that must be chosen manually during installation.  If {\tt cygwin} has been installed properly, \MMSP\ may be installed by following the steps described above for Linux installations.
 
-It is also possible to compile \MMSP source code within a code development environment such as Visual Studio, however, \MMSP code is typically so simple that any code management beyond command line or makefile compilation is only a hinderance.
+It is also possible to compile \MMSP\ source code within a code development environment such as Visual Studio, however, \MMSP\ code is typically so simple that any code management beyond command line or makefile compilation is only a hinderance.
 
 \section{Setup}
-Once \MMSP has been installed, there are a few useful tests and utility programs that should be generated.  First, enter the {\tt MMSP/test} directory and type
+Once \MMSP\ has been installed, there are a few useful tests and utility programs that should be generated.  First, enter the {\tt MMSP/test} directory and type
 \begin{shadebox}
 \begin{verbatim}
     make test
@@ -81,7 +81,7 @@ Next, enter the directory {\tt MMSP/utility} and type
     make utility
 \end{verbatim}
 \end{shadebox}
-This will produce a number of conversion programs.  In particular, it will produce several programs such as {\tt mmsp2vti} which can be used to convert \MMSP grid data files into formats that can be read by visualization software such as \href{http://www.paraview.org}{\tt ParaView}.  Because the programs provided in this directory are used so often, \MMSP users may wish to add the {\tt MMSP/utility} directory to their command path.  This can be achieved by adding the following lines to their {\tt \$HOME/.bashrc} file,
+This will produce a number of conversion programs.  In particular, it will produce several programs such as {\tt mmsp2vti} which can be used to convert \MMSP\ grid data files into formats that can be read by visualization software such as \href{http://www.paraview.org}{\tt ParaView}.  Because the programs provided in this directory are used so often, \MMSP\ users may wish to add the {\tt MMSP/utility} directory to their command path.  This can be achieved by adding the following lines to their {\tt \$HOME/.bashrc} file,
 \begin{shadebox}
 \begin{verbatim}
     PATH=$PATH:MMSP/utility
@@ -96,7 +96,7 @@ for users of the {\tt bash} shell, or
 \end{shadebox}
 for users of the {\tt tcsh} shell.
 
-Finally, those who plan to use \MMSP with the MPI (Message Passing Interface) libraries should also take this opportunity to test their MPI configuration.  To do this, return to the directory {\tt MMSP/test} and type
+Finally, those who plan to use \MMSP\ with the MPI (Message Passing Interface) libraries should also take this opportunity to test their MPI configuration.  To do this, return to the directory {\tt MMSP/test} and type
 \begin{shadebox}
 \begin{verbatim}
     make parallel
@@ -111,5 +111,5 @@ which, if successful, produces a parallel version of the test program.  Once the
 Note that for successful compilation, the MPI distribution is expected to provide a compilation script named {\tt mpic++} and a the header file named {\tt mpi.h}.  If the program fails to compile, it may be that the user's MPI distribution provides {\tt mpicxx}, {\tt mpiCC}, or the like instead of {\tt mpic++}, or that it provides {\tt mpicxx.h} or something similar instead of {\tt mpi.h}.  In this case, the user should edit the {\tt Makefile} accordingly.  Likewise, the appropriate command to run the compiled program may differ depending on the MPI distribution.  This may take the form of, e.g.\ {\tt mpiexec}, instead of {\tt mpirun}.  Unfortunately, MPI distributions do not adhere to a single standard with respect to compiling and running parallel programs, and so it is largely left to the user to determine what must be done for their particular system.
 
 \section{Support}
-\MMSP is not commercial code and there are no guarantees or claims, stated or implied, pertaining to its fitness for any purpose.  \MMSP is intended soley for use in non-profit scientific research.  In spite of this, the \MMSP team is devoted to producing a quality product that addresses the needs of the scientific community.  Please do not hesitate to contact our development team with any questions or suggestions.  Contact information can be found on the \MMSP page at \href{https://github.com/mesoscale}{GitHub}.
+\MMSP\ is not commercial code and there are no guarantees or claims, stated or implied, pertaining to its fitness for any purpose.  \MMSP\ is intended soley for use in non-profit scientific research.  In spite of this, the \MMSP\ team is devoted to producing a quality product that addresses the needs of the scientific community.  Please do not hesitate to contact our development team with any questions or suggestions.  Contact information can be found on the \MMSP\ page at \href{https://github.com/mesoscale}{GitHub}.
 
