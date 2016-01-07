@@ -147,7 +147,7 @@
 	Note that the change from Jacobi to Gauss-Seidel modifies the order in which the guesses are made,
 	with minimal effect on the values computed.
 	
-	\subsection{Successive Over-Relaxation}
+	\subsection{Successive over-relaxation}
 	Successive over-relaxation increases the rate of convergence of Gauss-Seidel iteration by weighted averaging
 	the outcome of Cramer's rule (representing the new guess) with the last guess.
 	Instead of
@@ -161,22 +161,24 @@
 		\mu_{l+1}^{n+1} &= \omega x_2 + (1-\omega)\mu_l^{n+1}.
 	\end{align*}
 	The relaxation parameter $\omega$ must necessarily satisfy $0<\omega<2$ for convergence.
-	Successive over-relaxation requires $\omega>1$, and $\omega=1.2$ is recommended for this specific system.
+	Successive over-relaxation requires $\omega>1$, and $\omega=1.1$ is recommended for this specific system.
 	$\omega=1$ recovers Gauss-Seidel, and $\omega<1$ is \emph{successive under-relaxation}, which is not recommended.
 
 	
-	\subsection{Pros and Cons}
+	\subsection{Numerical performance}
 	This example is intended to show that \MMSP\ can handle numerical schemes far beyond forward Euler.
-	The allure of implicit schemes lies in the larger timesteps available:
-	stability analysis of the explicit scheme requires 
-	\[\Delta t < \frac{(\Delta x)^4}{16\kappa D},\]
-	while the scheme presented here is limited by error propagation to 
-	\[\Delta t < \frac{\Delta x}{16\kappa D}.\]
+	Stability analysis of the explicit scheme requires 
+	\[\Delta t_\mathrm{E} < \frac{(\Delta x)^4}{16\kappa D}\mathrm{Co},\]
+	with Courant-Friedrichs-Lewy number $\mathrm{Co}\ll 1$.
+	Taking $\mathrm{Co}=1/4$ and $\kappa=D=1$, we have $\Delta t_\mathrm{E}=1/64$, and
+	integration to $t=50,\!000$ (adequate time to reach equilibrium) takes $3.2\times10^6$ explicit steps.
 	
-	The computational expense of taking larger timesteps is considerable:
-	convex splitting guarantees energy stability, not speed, and the propagation of error can easily overwhelm the
-	system.
-	The example implementation specifies residual tolerance $r_{tol}=10^{-14}$ because the error propagated with a higher tolerance
-	($10^{-12}$) undermines mass conservation.
-	With this tolerance and $\Delta x=1$, no combination of $\omega$ and $\Delta t$ integrated the system to $t=250$ with less computational
-	expense than the explicit method -- which is an exactly mass-conservative scheme.
+	The semi-implicit scheme discussed here is unconditionally numerically stable, but the larger the step, the more iterations are necessary to converge.
+	Early on, when the system is rapidly evolving from initial conditions, the convex splitting scheme can be much more
+	expensive than forward Euler.
+	As the simulation approaches equilibrium, however, convergence is achieved in many fewer iterations per timestep.
+	With $\Delta t=1$ and $\omega=1$, the semi-implicit code takes $2.6\times10^6$ iterations in total to reach $t=50,\!000$.
+	Assuming one semi-implicit iteration incurs the same computational cost as one explicit step, this means Gauss-Seidel gives us $1.2\times$ speedup.
+	Successive over-relaxation with $\omega=1.1$ does a little better, with a $1.4\times$ boost.
+
+	% Include and discuss contour plot of Work vs (time,omega) when available	
