@@ -9,31 +9,29 @@
 	Spinodal decomposition is readily modeled using the Helmholtz free energy functional
 	\[\mathcal{F} = \int\left[F(C) + \kappa|\nabla C|^2\right]\mathrm{d}V,\]
 	with free energy density
-	\[F(C) = \frac{C^4}{4} - \frac{C^2}{2}.\]
+	\[F(C) = \frac{C^4}{4} - \frac{C^2}{2} + \kappa|\nabla C|^2.\]
 	The first derivative
-	\[f(C) = \frac{\mathrm{d}F}{\mathrm{d}C} = C^3 - C^2\]
-	has two terms, one of which is convex in its arguments $\left(\left.\frac{\mathrm{d}^2(C^3)}{\mathrm{d}C^2}\right|_{C\geq0}\geq0\right)$
-	and the other concave $\left(\frac{\mathrm{d}^2(-C^2)}{\mathrm{d}C^2}<0\right)$.
-	From a numerical perspective, the convex term tends to smooth, while the concave term
-	amplifies discontinuity:
-	the convex term is contractive in $C$, the concave expansive.
+	\[f(C) = \frac{\mathrm{d}F}{\mathrm{d}C} = C^3 - C - \kappa\nabla^2 C\]
+	has three terms, two of which are convex in their arguments $\left(\left.\frac{\mathrm{d}(C^3 - \kappa\nabla^2 C)}{\mathrm{d}C}\right|_{C\geq0}\geq0\right)$
+	and the other concave $\left(\frac{\mathrm{d}(-C)}{\mathrm{d}C}<0\right)$.
+	From a numerical perspective, the convex term tends to smooth perturbations in the solution, and is called contractive, while the concave term
+	amplifies perturbations, and is expansive.
 	When used in the Cahn-Hilliard equation of motion,
-	\[\frac{\partial C}{\partial t} = D\nabla^2\left[f(C) - \kappa\nabla^2C\right],\]
-	antagonistic initial conditions with improperly discretized equations of motion
-	will increase the system energy, which is not physical.
+	\[\frac{\partial C}{\partial t} = D\nabla^2\left[C^3 - C - \kappa\nabla^2C\right],\]
+	improperly discretized equations of motion may increase the system energy, which is not physical.
 	
 	\subsection{Convex splitting}
-	Convex splitting aims to guarantee energy stability $\left(\frac{\mathrm{d}\mathcal{F}}{\mathrm{d}t}\leq 0\right)$
+	Convex splitting aims to guarantee energy stability $\left(\frac{\Delta\mathcal{F}}{\Delta t}\leq 0\right)$
 	by discretizing the equation semi-implicitly, evaluating contractive terms at the next timestep (index $n+1$)
 	and expansive terms at the old timestep (index $n$):
 	\begin{align*}
-		f_c(C) &= C^3\\
-		f_e(C) &= -C^2\\
+		f_c(C) &= C^3 - \kappa\Delta_hC\\
+		f_e(C) &= -C\\
 		C^{n+1} &= C^n + kD\Delta_h\mu^{n+1}\\
-		\mu^{n+1} &= f_c(C^{n+1}) + f_e(C^n) - \kappa\Delta_hC^{n+1},
+		\mu^{n+1} &= f_c(C^{n+1}) + f_e(C^n),
 	\end{align*}
 	with common symbolic substitutions for timestep $(k=\Delta t)$ and discrete Laplacian operator $(\Delta_h)$
-	with grid spacing $h=\Delta x$.	Collecting old and new terms,
+	with grid spacing $h=\Delta x=\Delta y$. Collecting old and new terms,
 	\begin{align}
 	\begin{split}
 		C^{n+1} - kD\Delta_h\mu^{n+1} &= C^n\\
@@ -46,10 +44,10 @@
 	Let's prepare to solve the system of equations iteratively.
 	In the Jacobi method, elements along the matrix diagonal (i.e., the grid point of interest) are evaluated at
 	the next guess (index $l+1$), and off-diagonal elements belong to the last guess (index $l$).
-	The nonlinear source term $C^3$ is linearized, so
+	The nonlinear source term $\left(C_{l+1}^{n+1}\right)^3$ is linearized so that
 	\begin{align*}
-		\ell_c(C_l^{n+1}) &= \left(C_l^{n+1}\right)^2\\
-		f_c(C) &= \ell_c(C_l^{n+1})C^{n+1}_{l+1}.
+		\ell_c(C) &= \left(C_l^{n+1}\right)^2\\
+		f_c(C) &= \ell_c(C_l^{n+1})C_{l+1}^{n+1} - \kappa\Delta_hC_{l+1}^{n+1}.
 	\end{align*}
 	Let's separate the discrete Laplacian $\Delta_h$ into its central (matrix-diagonal) and fringe (off-diagonal) components. The $d$-dimensional
 	formula is readily generalized from the 5-point stencil in 2-dimensions given $\Delta x=\Delta y=h$:
