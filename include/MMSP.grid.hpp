@@ -1555,6 +1555,7 @@ public:
 		unsigned int np = MPI::COMM_WORLD.Get_size();
 		MPI_Request request;
 		MPI_Status status;
+		int mpi_err;
 
 		// Read filesystem block size (using statvfs). Default to 4096 B.
 		struct statvfs buf;
@@ -1563,10 +1564,16 @@ public:
 		if (blocksize<1048576) {
 			// Standard MPI-IO: every rank writes to disk
 			#ifdef BGQ
-			if (rank==0) std::cout<<"Bug: using normal IO, instead of BGQ IO!"<<std::endl;
+			if (rank==0) std::cout<<"Bug: using stock MPI-IO, instead of BGQ IO!"<<std::endl;
 			#endif
 			MPI_File output;
-			MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_EXCL|MPI::MODE_CREATE, MPI::INFO_NULL, &output);
+			mpi_err = MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_EXCL|MPI::MODE_CREATE, MPI::INFO_NULL, &output);
+			if (mpi_err != MPI_SUCCESS) {
+				char error_string[256];
+				int length_of_error_string=256;
+				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
+				fprintf(stderr, "%3d: %s\n", rank, error_string);
+			}
 			if (!output) {
 				std::cerr << "File output error: could not open " << fname << "." << std::endl;
 				exit(-1);
