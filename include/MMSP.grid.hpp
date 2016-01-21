@@ -1567,7 +1567,7 @@ public:
 			if (rank==0) std::cout<<"Bug: using stock MPI-IO, instead of BGQ IO!"<<std::endl;
 			#endif
 			MPI_File output;
-			mpi_err = MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_EXCL|MPI::MODE_CREATE, MPI::INFO_NULL, &output);
+			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
 				char error_string[256];
 				int length_of_error_string=256;
@@ -1886,7 +1886,7 @@ public:
 			if (rank==0) std::cout<<"  Opening "<<std::string(fname)<<" for output."<<std::endl;
 			#endif
 			MPI_File output;
-			mpi_err = MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_EXCL|MPI::MODE_CREATE, MPI::INFO_NULL, &output);
+			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
 				char error_string[256];
 				int length_of_error_string=256;
