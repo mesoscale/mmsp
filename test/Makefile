@@ -7,9 +7,9 @@ incdir = ../include
 
 # compilers/flags
 compiler = g++
-flags = -O3 -I $(incdir)
+flags = -O0 -I $(incdir)
 pcompiler = mpic++
-pflags = -O3 -I $(incdir) -include mpi.h 
+pflags = -O0 -I $(incdir) -include mpi.h 
 
 # dependencies
 core = $(incdir)/MMSP.hpp \
@@ -28,8 +28,9 @@ parallel: test.cpp $(core)
 
 unitTestSuite: MMSP.unitTestSuite.hpp
 	cxxtestgen --error-printer -o MMSP.unitTestSuite.cpp $< && \
-	$(compiler) -std=c++11 -O2 -I$(incdir) -o $@ MMSP.unitTestSuite.cpp && \
-	./$@
+	$(compiler) $(flags) --coverage -fprofile-arcs -ftest-coverage -fPIC -o $@ MMSP.unitTestSuite.cpp $(core) && \
+	./$@ && \
+	gcovr -r . --html --html-details -o unitTestSuite.html
 
 clean:
-	rm -f test parallel MMSP.unitTestSuite.cpp unitTestSuite
+	rm -f test parallel MMSP.unitTestSuite.cpp unitTestSuite *.html *.gcno *.gcda

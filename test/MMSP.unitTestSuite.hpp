@@ -1,7 +1,6 @@
 /* MMSP.unitTestSuite.hpp
 ** Use CxxTest to build unit tests for MMSP classes
-**
-**
+** http://cxxtest.com
 */
 #include"MMSP.hpp"
 #include<cxxtest/TestSuite.h>
@@ -103,18 +102,27 @@ public:
 		TS_ASSERT_EQUALS(vl.buffer_size(),sizeof(int)+3*sizeof(long));
 		TS_ASSERT_EQUALS(vf.buffer_size(),sizeof(int)+3*sizeof(float));
 		TS_ASSERT_EQUALS(vd.buffer_size(),sizeof(int)+3*sizeof(double));
+
+		TS_ASSERT_THROWS_ANYTHING(vc[4]);
+		TS_ASSERT_THROWS_ANYTHING(vs[4]);
+		TS_ASSERT_THROWS_ANYTHING(vi[4]);
+		TS_ASSERT_THROWS_ANYTHING(vl[4]);
+		TS_ASSERT_THROWS_ANYTHING(vf[4]);
+		TS_ASSERT_THROWS_ANYTHING(vd[4]);
 	}
 	void testAddition(void){
 		MMSP::vector<int> temp(3,4);
-		//TS_ASSERT_EQUALS(vc+vc,temp);
-		//TS_ASSERT_EQUALS(vs+vs,temp);
-		TS_ASSERT_EQUALS(vi+vi,temp);
-		/*TS_ASSERT_EQUALS(vl+vl,temp);
-		TS_ASSERT_EQUALS(vf+vf,temp);
-		TS_ASSERT_EQUALS(vd+vd,temp);
-		*/
+		for (int i=0; i<3; i++) {
+			TS_ASSERT_EQUALS((vc+vc)[i],temp[i]);
+			TS_ASSERT_EQUALS((vs+vs)[i],temp[i]);
+			TS_ASSERT_EQUALS((vi+vi)[i],temp[i]);
+			TS_ASSERT_EQUALS((vl+vl)[i],temp[i]);
+			TS_ASSERT_EQUALS((vf+vf)[i],temp[i]);
+			TS_ASSERT_EQUALS((vd+vd)[i],temp[i]);
+		}
 	}
 	void testSquares(void){
+		// v*v is the inner (dot) product
 		MMSP::vector<int> temp(3,4);
 		TS_ASSERT_EQUALS(vc*vc,12);
 		TS_ASSERT_EQUALS(vs*vs,12);
@@ -125,12 +133,13 @@ public:
 	}
 	void testMultiplication(void){
 		MMSP::vector<int> temp(3,4);
-		//TS_ASSERT_EQUALS(2*vc,temp);
-		TS_ASSERT_EQUALS(2*vi,temp);
-		/*TS_ASSERT_EQUALS(2*vl,temp);
-		TS_ASSERT_EQUALS(2*vf,temp);
-		TS_ASSERT_EQUALS(2*vd,temp);
-		*/
+		for (int i=0; i<3; i++) {
+			TS_ASSERT_EQUALS((2*vc)[i],temp[i]);
+			TS_ASSERT_EQUALS((2*vi)[i],temp[i]);
+			TS_ASSERT_EQUALS((2*vl)[i],temp[i]);
+			TS_ASSERT_EQUALS((2*vf)[i],temp[i]);
+			TS_ASSERT_EQUALS((2*vd)[i],temp[i]);
+		}
 	}
 };
 
@@ -182,7 +191,7 @@ public:
 		TS_ASSERT_EQUALS(svf.length(),3);
 		TS_ASSERT_EQUALS(svd.length(),3);
 
-		//TS_ASSERT_EQUALS(svc.buffer_size(),sizeof(int)+3*sizeof(int)+3*sizeof(char));
+		TS_ASSERT_DIFFERS(sizeof(int)+sizeof(char),sizeof(MMSP::item<char>)); // that is unexpected
 		TS_ASSERT_EQUALS(sizeof(int)+sizeof(int),sizeof(MMSP::item<char>)); // that is unexpected
 		TS_ASSERT_EQUALS(svc.buffer_size(),sizeof(int)+3*sizeof(int)+3*sizeof(char)+3*(sizeof(int)-sizeof(char)));
 		TS_ASSERT_EQUALS(svs.buffer_size(),sizeof(int)+3*sizeof(int)+3*sizeof(short)+3*(sizeof(int)-sizeof(short)));
@@ -202,37 +211,15 @@ public:
 		MMSP::sparse<int> temp;
 		for (int i=0; i<3; i++)
 			temp.set(2*i) = 4;
-		//TS_ASSERT_EQUALS(svc+svc,temp);
-		//TS_ASSERT_EQUALS(svs+svs,temp);
 		TS_ASSERT_EQUALS(svi+svi,temp);
-		/*TS_ASSERT_EQUALS(svl+svl,temp);
-		TS_ASSERT_EQUALS(svf+svf,temp);
-		TS_ASSERT_EQUALS(svd+svd,temp);
-		*/
 	}
-	void testSquares(void){
-		MMSP::sparse<int> temp;
-		for (int i=0; i<3; i++)
-			temp.set(2*i) = 4;
-		//TS_ASSERT_EQUALS(svc*svc,temp);
-		//TS_ASSERT_EQUALS(svs*svs,temp);
-		//TS_ASSERT_EQUALS(svi*svi,temp);
-		/*TS_ASSERT_EQUALS(svl*svl,temp);
-		TS_ASSERT_EQUALS(svf*svf,temp);
-		TS_ASSERT_EQUALS(svd*svd,temp);
-		*/
-	}
+	// Note: Multiplying two sparse vectors is undefined by design.
 	void testMultiplication(void){
-		MMSP::sparse<int> temp;
-		for (int i=0; i<3; i++)
-			temp.set(2*i) = 4;
-		//TS_ASSERT_EQUALS(2*svc,temp);
-		//TS_ASSERT_EQUALS(2*svs,temp);
-		TS_ASSERT_EQUALS(2*svi,temp);
-		/*TS_ASSERT_EQUALS(2*svl,temp);
-		TS_ASSERT_EQUALS(2*svf,temp);
-		TS_ASSERT_EQUALS(2*svd,temp);
-		*/
+		TS_ASSERT_EQUALS((2*svc)[0],4);
+		TS_ASSERT_EQUALS((2*svs)[0],4);
+		TS_ASSERT_EQUALS((2*svi)[0],4);
+		TS_ASSERT_EQUALS((2*svl)[0],4);
+		TS_ASSERT_EQUALS((2*svf)[0],4);
+		TS_ASSERT_EQUALS((2*svd)[0],4);
 	}
 };
-
