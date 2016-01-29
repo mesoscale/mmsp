@@ -28,9 +28,8 @@ parallel: test.cpp $(core)
 
 unitTestSuite: MMSP.unitTestSuite.hpp
 	cxxtestgen --error-printer -o MMSP.unitTestSuite.cpp $< && \
-	$(compiler) $(flags) --coverage -fprofile-arcs -ftest-coverage -fPIC -o $@ MMSP.unitTestSuite.cpp $(core) && \
-	./$@ && \
-	gcovr -r . --html --html-details -o unitTestSuite.html
+	$(compiler) $(flags) -o $@ MMSP.unitTestSuite.cpp $(core) && \
+	./$@
 
 clean:
-	rm -f test parallel MMSP.unitTestSuite.cpp unitTestSuite *.html *.gcno *.gcda
+	rm -f test parallel MMSP.unitTestSuite.cpp unitTestSuite

@@ -16,7 +16,7 @@ private:
 	MMSP::scalar<double> sd;
 
 public:
-	scalarTestSuite() {
+	void setUp() {
 		sc = 2;
 		ss = 2;
 		si = 2;
@@ -24,7 +24,7 @@ public:
 		sf = 2.0;
 		sd = 2.0;
 	}
-	void testSize(void){
+	void testSize(void) {
 		TS_ASSERT_EQUALS(sc.buffer_size(),sizeof(char));
 		TS_ASSERT_EQUALS(ss.buffer_size(),sizeof(short));
 		TS_ASSERT_EQUALS(si.buffer_size(),sizeof(int));
@@ -32,7 +32,7 @@ public:
 		TS_ASSERT_EQUALS(sf.buffer_size(),sizeof(float));
 		TS_ASSERT_EQUALS(sd.buffer_size(),sizeof(double));
 	}
-	void testAddition(void){
+	void testAddition(void) {
 		TS_ASSERT_EQUALS(sc+sc,char(4));
 		TS_ASSERT_EQUALS(ss+ss,short(4));
 		TS_ASSERT_EQUALS(si+si,int(4));
@@ -40,7 +40,7 @@ public:
 		TS_ASSERT_EQUALS(sf+sf,float(4));
 		TS_ASSERT_EQUALS(sd+sd,double(4));
 	}
-	void testSquares(void){
+	void testSquares(void) {
 		TS_ASSERT_EQUALS(sc*sc,char(4));
 		TS_ASSERT_EQUALS(ss*ss,short(4));
 		TS_ASSERT_EQUALS(si*si,int(4));
@@ -48,7 +48,7 @@ public:
 		TS_ASSERT_EQUALS(sf*sf,float(4));
 		TS_ASSERT_EQUALS(sd*sd,double(4));
 	}
-	void testMultiplication(void){
+	void testMultiplication(void) {
 		TS_ASSERT_EQUALS(2*sc,char(4));
 		TS_ASSERT_EQUALS(2*ss,short(4));
 		TS_ASSERT_EQUALS(2*si,int(4));
@@ -69,7 +69,7 @@ private:
 	MMSP::vector<double> vd;
 
 public:
-	vectorTestSuite() {
+	void setUp() {
 		MMSP::vector<int> temp(3,2);
 		vc = temp;
 		vs = temp;
@@ -78,7 +78,7 @@ public:
 		vf = temp;
 		vd = temp;
 	}
-	void testValue(void){
+	void testValue(void) {
 		for (int i=0; i<3; i++) {
 			TS_ASSERT_EQUALS(vc[i],char(2));
 			TS_ASSERT_EQUALS(vs[i],short(2));
@@ -88,7 +88,7 @@ public:
 			TS_ASSERT_EQUALS(vd[i],double(2));
 		}
 	}
-	void testSize(void){
+	void testSize(void) {
 		TS_ASSERT_EQUALS(vc.length(),3);
 		TS_ASSERT_EQUALS(vs.length(),3);
 		TS_ASSERT_EQUALS(vi.length(),3);
@@ -110,7 +110,7 @@ public:
 		TS_ASSERT_THROWS_ANYTHING(vf[4]);
 		TS_ASSERT_THROWS_ANYTHING(vd[4]);
 	}
-	void testAddition(void){
+	void testAddition(void) {
 		MMSP::vector<int> temp(3,4);
 		for (int i=0; i<3; i++) {
 			TS_ASSERT_EQUALS((vc+vc)[i],temp[i]);
@@ -121,7 +121,7 @@ public:
 			TS_ASSERT_EQUALS((vd+vd)[i],temp[i]);
 		}
 	}
-	void testSquares(void){
+	void testSquares(void) {
 		// v*v is the inner (dot) product
 		MMSP::vector<int> temp(3,4);
 		TS_ASSERT_EQUALS(vc*vc,12);
@@ -131,7 +131,7 @@ public:
 		TS_ASSERT_EQUALS(vf*vf,12);
 		TS_ASSERT_EQUALS(vd*vd,12);
 	}
-	void testMultiplication(void){
+	void testMultiplication(void) {
 		MMSP::vector<int> temp(3,4);
 		for (int i=0; i<3; i++) {
 			TS_ASSERT_EQUALS((2*vc)[i],temp[i]);
@@ -152,20 +152,23 @@ private:
 	MMSP::sparse<long>   svl;
 	MMSP::sparse<float>  svf;
 	MMSP::sparse<double> svd;
-
-public:
-	sparseTestSuite() {
-		MMSP::sparse<int> temp;
+	template<typename T> void sparseInit(MMSP::sparse<T>& s) {
+		MMSP::sparse<T> temp;
 		for (int i=0; i<3; i++)
 			temp.set(2*i) = 2;
-		svc = temp;
-		svs = temp;
-		svi = temp;
-		svl = temp;
-		svf = temp;
-		svd = temp;
+		s = temp;
 	}
-	void testValue(void){
+
+public:
+	void setUp() {
+		sparseInit(svc);
+		sparseInit(svs);
+		sparseInit(svi);
+		sparseInit(svl);
+		sparseInit(svf);
+		sparseInit(svd);
+	}
+	void testValue(void) {
 		for (int i=0; i<6; i+=2) {
 			TS_ASSERT_EQUALS(svc[i],char(2));
 			TS_ASSERT_EQUALS(svs[i],short(2));
@@ -183,7 +186,7 @@ public:
 			TS_ASSERT_EQUALS(svd[i],double(0));
 		}
 	}
-	void testSize(void){
+	void testSize(void) {
 		TS_ASSERT_EQUALS(svc.length(),3);
 		TS_ASSERT_EQUALS(svs.length(),3);
 		TS_ASSERT_EQUALS(svi.length(),3);
@@ -207,19 +210,65 @@ public:
 		TS_ASSERT_EQUALS(svf.buffer_size(),sizeof(int)+3*sizeof(int)+3*sizeof(float));
 		TS_ASSERT_EQUALS(svd.buffer_size(),sizeof(int)+3*sizeof(double)+3*sizeof(double));
 	}
-	void testAddition(void){
+	void testAddition(void) {
 		MMSP::sparse<int> temp;
 		for (int i=0; i<3; i++)
 			temp.set(2*i) = 4;
 		TS_ASSERT_EQUALS(svi+svi,temp);
 	}
 	// Note: Multiplying two sparse vectors is undefined by design.
-	void testMultiplication(void){
+	void testMultiplication(void) {
 		TS_ASSERT_EQUALS((2*svc)[0],4);
 		TS_ASSERT_EQUALS((2*svs)[0],4);
 		TS_ASSERT_EQUALS((2*svi)[0],4);
 		TS_ASSERT_EQUALS((2*svl)[0],4);
 		TS_ASSERT_EQUALS((2*svf)[0],4);
 		TS_ASSERT_EQUALS((2*svd)[0],4);
+	}
+};
+
+class gridTestSuite : public CxxTest::TestSuite
+{
+private:
+
+public:
+	void setUp(int argc, char* argv[]) {
+		MMSP::Init(argc, argv);
+	}
+	void tearDown() {
+		MMSP::Finalize();
+	}
+	void testSize1D() {
+		MMSP::grid<1,MMSP::scalar<char> >   g1c(0, 0, 64);
+		MMSP::grid<1,MMSP::scalar<short> >  g1s(0, 0, 64);
+		MMSP::grid<1,MMSP::scalar<int> >    g1i(0, 0, 64);
+		MMSP::grid<1,MMSP::scalar<long> >   g1l(0, 0, 64);
+		MMSP::grid<1,MMSP::scalar<float> >  g1f(0, 0, 64);
+		MMSP::grid<1,MMSP::scalar<double> > g1d(0, 0, 64);
+
+		#ifndef MPI_VERSION
+		TS_ASSERT_EQUALS(MMSP::nodes(g1c),64);
+		TS_ASSERT_EQUALS(MMSP::nodes(g1s),64);
+		TS_ASSERT_EQUALS(MMSP::nodes(g1i),64);
+		TS_ASSERT_EQUALS(MMSP::nodes(g1l),64);
+		TS_ASSERT_EQUALS(MMSP::nodes(g1f),64);
+		TS_ASSERT_EQUALS(MMSP::nodes(g1d),64);
+		#else
+		int np = MPI::COMM_WORLD.Get_size();
+		TS_ASSERT_LESS_THAN_EQUALS(MMSP::nodes(g1c),64/np);
+		TS_ASSERT_LESS_THAN_EQUALS(MMSP::nodes(g1s),64/np);
+		TS_ASSERT_LESS_THAN_EQUALS(MMSP::nodes(g1i),64/np);
+		TS_ASSERT_LESS_THAN_EQUALS(MMSP::nodes(g1l),64/np);
+		TS_ASSERT_LESS_THAN_EQUALS(MMSP::nodes(g1f),64/np);
+		TS_ASSERT_LESS_THAN_EQUALS(MMSP::nodes(g1d),64/np);
+		#endif
+
+		TS_ASSERT_EQUALS(g1c.buffer_size(),MMSP::nodes(g1c)*sizeof(char));
+		TS_ASSERT_EQUALS(g1s.buffer_size(),MMSP::nodes(g1s)*sizeof(short));
+		TS_ASSERT_EQUALS(g1i.buffer_size(),MMSP::nodes(g1i)*sizeof(int));
+		TS_ASSERT_EQUALS(g1l.buffer_size(),MMSP::nodes(g1l)*sizeof(long));
+		TS_ASSERT_EQUALS(g1f.buffer_size(),MMSP::nodes(g1f)*sizeof(float));
+		TS_ASSERT_EQUALS(g1d.buffer_size(),MMSP::nodes(g1d)*sizeof(double));
+
 	}
 };
