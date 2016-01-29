@@ -25,6 +25,10 @@ utility/TKmmsp2vti
 utility/vox2MC
 utility/wrongendian
 
+# unit testing
+test/MMSP.unitTestSuite.cpp
+test/unitTestSuite
+
 # Compiled Object files
 *.slo
 *.lo
