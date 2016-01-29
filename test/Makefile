@@ -26,5 +26,10 @@ test: test.cpp $(core)
 parallel: test.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@
 
+unitTestSuite: MMSP.unitTestSuite.hpp
+	cxxtestgen --error-printer -o MMSP.unitTestSuite.cpp $< && \
+	$(compiler) -std=c++11 -O2 -I$(incdir) -o $@ MMSP.unitTestSuite.cpp && \
+	./$@
+
 clean:
-	rm -f test parallel
+	rm -f test parallel MMSP.unitTestSuite.cpp unitTestSuite
