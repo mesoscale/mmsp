@@ -18,10 +18,10 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.vector.hpp
 
 # the program
-zener: zener.cpp zener.hpp $(core)
+zener: zener.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: zener.cpp zener.hpp $(core)
+parallel: zener.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
