@@ -1,4 +1,4 @@
-// potts.hpp
+// potts.cpp
 // 2D and 3D Potts model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

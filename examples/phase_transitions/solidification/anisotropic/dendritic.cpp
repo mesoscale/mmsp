@@ -1,4 +1,4 @@
-// dendritic.hpp
+// dendritic.cpp
 // Anisotropic solidification by 2D phase field method
 // Questions/comments to kellet@rpi.edu (Trevor Keller)
 

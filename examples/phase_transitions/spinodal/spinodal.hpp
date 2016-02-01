@@ -1,4 +1,4 @@
-// spinodal.cpp
+// spinodal.hpp
 // Example program for spinodal decomposition using MMSP
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

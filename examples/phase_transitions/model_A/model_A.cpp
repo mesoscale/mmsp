@@ -1,4 +1,4 @@
-// model_A.hpp
+// model_A.cpp
 // Algorithms for 2D and 3D implementation of "model A"
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

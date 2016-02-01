@@ -1,4 +1,4 @@
-// poisson.hpp
+// poisson.cpp
 // smooth() and defect() functions for multigrid solution of Poisson equation
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

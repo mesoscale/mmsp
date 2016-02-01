@@ -1,4 +1,4 @@
-// graingrowth.cpp
+// graingrowth.hpp
 // Isotropic phase field grain growth example code
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

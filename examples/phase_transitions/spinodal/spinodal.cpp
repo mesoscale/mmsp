@@ -1,4 +1,4 @@
-// spinodal.hpp
+// spinodal.cpp
 // Algorithm for 2D and 3D spinodal decomposition phase field model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

@@ -1,4 +1,4 @@
-// allen-cahn.hpp
+// allen-cahn.cpp
 // Algorithms for 2D and 3D Allen-Cahn model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

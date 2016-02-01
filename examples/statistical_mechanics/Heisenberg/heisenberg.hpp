@@ -1,4 +1,4 @@
-// heisenberg.cpp
+// heisenberg.hpp
 // Classical Heisenberg model using MMSP
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

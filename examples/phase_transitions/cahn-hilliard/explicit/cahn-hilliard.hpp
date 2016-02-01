@@ -1,4 +1,4 @@
-// cahn-hilliard.cpp
+// cahn-hilliard.hpp
 // Example program for the Cahn-Hilliard model using MMSP
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

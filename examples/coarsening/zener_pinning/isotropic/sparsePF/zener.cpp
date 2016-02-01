@@ -1,5 +1,5 @@
-// graingrowth.hpp
-// Algorithms for 2D and 3D isotropic sparsePF grain growth
+// zener.cpp
+// Algorithms for 2D and 3D isotropic sparsePF growth with Zener pinning
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef GRAINGROWTH_UPDATE

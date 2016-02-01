@@ -1,4 +1,4 @@
-// cahn-hilliard.hpp
+// cahn-hilliard.cpp
 // Algorithms for 2D and 3D Cahn-Hilliard model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

@@ -1,4 +1,4 @@
-// ising.cpp
+// ising.hpp
 // Ising model using MMSP
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

@@ -1,4 +1,4 @@
-// ising.hpp
+// ising.cpp
 // 2D and 3D Ising model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

@@ -1,4 +1,4 @@
-// graingrowth.cpp
+// graingrowth.hpp
 // Anisotropic Monte Carlo grain growth example code
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 // Updated MC implementation by tany3@rpi.edu (Yixuan Tan)

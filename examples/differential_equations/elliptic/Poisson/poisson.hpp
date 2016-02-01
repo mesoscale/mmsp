@@ -1,4 +1,4 @@
-// poisson.cpp
+// poisson.hpp
 // multigrid Poisson equation solver using MMSP
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

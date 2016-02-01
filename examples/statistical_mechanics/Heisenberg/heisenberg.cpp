@@ -1,4 +1,4 @@
-// heisenberg.hpp
+// heisenberg.cpp
 // 2D and 3D Heisenberg model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

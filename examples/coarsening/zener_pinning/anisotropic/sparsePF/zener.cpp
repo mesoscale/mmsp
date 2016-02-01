@@ -1,4 +1,4 @@
-// zener.hpp
+// zener.cpp
 // Anisotropic coarsening algorithms for 2D and 3D sparse phase field (sparsePF) methods
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

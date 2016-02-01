@@ -1,4 +1,4 @@
-// graingrowth.hpp
+// graingrowth.cpp
 // Anisotropic coarsening algorithms for 2D and 3D phase field methods
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

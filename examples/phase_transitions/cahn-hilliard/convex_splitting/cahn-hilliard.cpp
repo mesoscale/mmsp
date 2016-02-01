@@ -1,4 +1,4 @@
-/** cahn-hilliard.hpp
+/** cahn-hilliard.cpp
  ** Algorithms for 2D Cahn-Hilliard model with convex splitting.
  **
  ** This is an advanced example, with precompiler directives switching between

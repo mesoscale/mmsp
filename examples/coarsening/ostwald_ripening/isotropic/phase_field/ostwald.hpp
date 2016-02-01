@@ -1,4 +1,4 @@
-// ostwald.cpp
+// ostwald.hpp
 // Example program for Ostwald ripening using MMSP
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

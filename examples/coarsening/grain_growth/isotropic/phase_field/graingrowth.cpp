@@ -1,4 +1,4 @@
-// graingrowth.hpp
+// graingrowth.cpp
 // Algorithms for 2D and 3D isotropic phase field grain growth
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

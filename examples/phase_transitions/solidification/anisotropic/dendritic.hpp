@@ -1,4 +1,4 @@
-// dendritic.cpp
+// dendritic.hpp
 // Anisotropic dendritic solidification code
 // Questions/comments to kellet@rpi.edu (Trevor Keller)
 
