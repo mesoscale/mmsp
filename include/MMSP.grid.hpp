@@ -2438,6 +2438,26 @@ template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& 
 	return laplacian;
 }
 
+template<int dim, typename T> T laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field)
+{
+    double laplacian = 0.0;
+    vector<int> s = x;
+
+    const T& y = GRID(x)[field];
+
+    for (int i=0; i<dim; i++) {
+        s[i] += 1;
+        const T& yh = GRID(s)[field];
+        s[i] -= 2;
+        const T& yl = GRID(s)[field];
+        s[i] += 1;
+
+        double weight = 1.0 / pow(dx(GRID, i),2.0);
+        laplacian += weight * (yh - 2.0 * y + yl);
+    }
+    return laplacian;
+}
+
 template <int dim, typename T> sparse<T> laplacian(const grid<dim, sparse<T> >& GRID, const vector<int>& x)
 {
 	sparse<T> laplacian;
@@ -2468,6 +2488,12 @@ template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& 
 {
 	vector<int> x = GRID.position(i);
 	return laplacian(GRID, x);
+}
+
+template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& GRID, int i, int f)
+{
+	vector<int> x = GRID.position(i);
+	return laplacian(GRID, x, f);
 }
 
 template <int dim, typename T> sparse<T> laplacian(const grid<dim, sparse<T> >& GRID, int i)
