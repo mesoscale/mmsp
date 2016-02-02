@@ -2490,7 +2490,7 @@ template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& 
 	return laplacian(GRID, x);
 }
 
-template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& GRID, int i, int f)
+template <int dim, typename T> T laplacian(const grid<dim, vector<T> >& GRID, int i, int f)
 {
 	vector<int> x = GRID.position(i);
 	return laplacian(GRID, x, f);
