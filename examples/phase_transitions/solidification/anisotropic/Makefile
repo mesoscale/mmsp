@@ -19,14 +19,14 @@ core = $(incdir)/MMSP.main.hpp \
        $(incdir)/MMSP.sparse.hpp
 
 # the program
-dendritic.out: dendritic.cpp $(core)
+solidification.out: solidification.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
 mmsp2png: mmsp2png.cpp $(core) /usr/include/IL/devil_cpp_wrapper.hpp
 	$(compiler) $(flags) -I /usr/include/IL -include il.h $< -o $@ -lz -lIL -lILU -lILUT
 
-parallel: dendritic.cpp $(core)
-	$(pcompiler) $(pflags) $< -o $@_dendritic.out -lz
+parallel: solidification.cpp $(core)
+	$(pcompiler) $(pflags) $< -o $@_solidification.out -lz
 
 clean:
-	rm -rf dendritic.out parallel_dendritic.out mmsp2png
+	rm -rf solidification.out parallel_solidification.out mmsp2png

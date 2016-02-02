@@ -1,14 +1,14 @@
-// dendritic.cpp
+// solidification.cpp
 // Anisotropic solidification by 2D phase field method
 // Questions/comments to kellet@rpi.edu (Trevor Keller)
 
-#ifndef DENDRITIC_UPDATE
-#define DENDRITIC_UPDATE
+#ifndef SOLIDIFICATION_UPDATE
+#define SOLIDIFICATION_UPDATE
 #include<iomanip>
 #include<cmath>
 #include<ctime>
 #include"MMSP.hpp"
-#include"dendritic.hpp"
+#include"solidification.hpp"
 
 namespace MMSP{
 
