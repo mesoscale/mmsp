@@ -68,7 +68,7 @@ template <int dim> void update(grid<dim,int>& mcGrid, int steps)
 	MPI::COMM_WORLD.Barrier();
 	#endif
 
-/*---------------generate cells------------------*/
+  /*---------------generate cells------------------*/
   int dimension_length=0, number_of_lattice_cells=1;
   int lattice_cells_each_dimension[dim];
   for(int i=0; i<dim; i++){
@@ -172,10 +172,12 @@ template <int dim> void update(grid<dim,int>& mcGrid, int steps)
   }
 
 	for(int step=0; step<steps; step++){
-    int num_sublattices=0;
-    if(dim==2) num_sublattices = 4; 
-    else if(dim==3) num_sublattices = 8;
-		for (int sublattice=0; sublattice < num_sublattices; sublattice++) {
+      if (rank==0)
+      	print_progress(step, steps);
+      int num_sublattices=0;
+      if(dim==2) num_sublattices = 4;
+      else if(dim==3) num_sublattices = 8;
+	  for (int sublattice=0; sublattice < num_sublattices; sublattice++) {
 
       srand(time(NULL)); /* seed random number generator */
 	    vector<int> x (dim,0);

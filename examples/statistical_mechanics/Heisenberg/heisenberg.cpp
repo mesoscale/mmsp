@@ -57,6 +57,11 @@ void generate(int dim, const char* filename)
 
 template <int dim, typename T> void update(grid<dim,vector<T> >& spinGrid, int steps)
 {
+	int rank=0;
+    #ifdef MPI_VERSION
+    rank = MPI::COMM_WORLD.Get_rank();
+    #endif
+
 	double J = 1.0;
 	double kT = (dim==3)?0.75:0.50;
 	double pi = acos(-1.0);
@@ -64,6 +69,9 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& spinGrid, int s
 	int gss = (dim==1)?nodes(spinGrid):int(sqrt(nodes(spinGrid)));
 
 	for (int step=0; step<steps; step++) {
+		if (rank==0)
+			print_progress(step, steps);
+
 		for (int h=0; h<nodes(spinGrid); h++) {
 			// choose a random site
 			int p = rand()%nodes(spinGrid);

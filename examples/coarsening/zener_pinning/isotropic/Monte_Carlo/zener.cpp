@@ -93,10 +93,18 @@ void generate(int dim, const char* filename)
 
 template <int dim, typename T> void update(grid<dim,T>& spinGrid, int steps)
 {
+	int rank=0;
+    #ifdef MPI_VERSION
+    rank = MPI::COMM_WORLD.Get_rank();
+    #endif
+
 	const double kT = (dim==3)?0.75:0.50;
 	int gss = int(sqrt(nodes(spinGrid)));
 
 	for (int step=0; step<steps; step++) {
+		if (rank==0)
+			print_progress(step, steps);
+
 		for (int h=0; h<nodes(spinGrid); h++) {
 			// choose a random node
 			int p = rand()%nodes(spinGrid);

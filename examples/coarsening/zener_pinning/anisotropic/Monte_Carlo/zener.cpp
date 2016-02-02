@@ -82,10 +82,18 @@ void generate(int dim, const char* filename)
 
 template <int dim> void update(grid<dim,int>& mcGrid, int steps)
 {
+	int rank=0;
+    #ifdef MPI_VERSION
+    rank = MPI::COMM_WORLD.Get_rank();
+    #endif
+
 	const double kT = (dim==3)?0.75:0.50;
 	int gss = int(nodes(mcGrid));
 
 	for (int step=0; step<steps; step++) {
+		if (rank==0)
+			print_progress(step, steps);
+
 		for (int h=0; h<nodes(mcGrid); h++) {
 			// choose a random node
 			int p = rand()%nodes(mcGrid);

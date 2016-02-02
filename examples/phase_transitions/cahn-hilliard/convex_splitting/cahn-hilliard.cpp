@@ -303,6 +303,9 @@ void update(grid<dim,vector<T> >& oldGrid, int steps)
 	#endif
 
 	for (int step=0; step<steps; step++) {
+		if (rank==0)
+			print_progress(step, steps);
+
 		double residual=1.0;
 		unsigned int iter=0;
 

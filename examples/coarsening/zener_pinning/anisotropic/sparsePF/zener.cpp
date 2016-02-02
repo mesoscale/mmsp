@@ -91,11 +91,19 @@ void generate(int dim, const char* filename)
 
 template <int dim, typename T> void update(grid<dim,sparse<T> >& oldGrid, int steps)
 {
+	int rank=0;
+    #ifdef MPI_VERSION
+    rank = MPI::COMM_WORLD.Get_rank();
+    #endif
+
 	double dt = 0.01;
 	double width = 8.0;
 	double epsilon = 1.0e-8;
 
 	for (int step=0; step<steps; step++) {
+		if (rank==0)
+			print_progress(step, steps);
+
 		grid<dim,sparse<T> > newGrid(oldGrid);
 
 		for (int n=0; n<nodes(oldGrid); n++) {

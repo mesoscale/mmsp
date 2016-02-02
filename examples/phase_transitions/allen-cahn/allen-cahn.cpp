@@ -42,6 +42,11 @@ void generate(int dim, const char* filename)
 
 template <int dim, typename T> void update(grid<dim,T>& oldGrid, int steps)
 {
+	int rank=0;
+    #ifdef MPI_VERSION
+    rank = MPI::COMM_WORLD.Get_rank();
+    #endif
+
 	grid<dim,T> newGrid(oldGrid);
 
 	double r = 1.0;
@@ -51,6 +56,9 @@ template <int dim, typename T> void update(grid<dim,T>& oldGrid, int steps)
 	double dt = 0.01;
 
 	for (int step=0; step<steps; step++) {
+		if (rank==0)
+			print_progress(step, steps);
+
 		for (int i=0; i<nodes(oldGrid); i++) {
 			T phi = oldGrid(i);
 			newGrid(i) = phi-dt*M*(-r*phi+u*pow(phi,3)-K*laplacian(oldGrid,i));

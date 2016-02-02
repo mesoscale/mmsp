@@ -69,6 +69,11 @@ void generate(int dim, const char* filename)
 
 template <int dim, typename T> void update(grid<dim,T>& oldGrid, int steps)
 {
+	int rank=0;
+    #ifdef MPI_VERSION
+    rank = MPI::COMM_WORLD.Get_rank();
+    #endif
+
 	grid<dim,T> newGrid(oldGrid);
 
 	T r = 1.0;
@@ -80,6 +85,9 @@ template <int dim, typename T> void update(grid<dim,T>& oldGrid, int steps)
 	T dV = 1.0;
 
 	for (int step=0; step<steps; step++) {
+		if (rank==0)
+			print_progress(step, steps);
+
 		for (int i=0; i<nodes(oldGrid); i++) {
 			T phi = oldGrid(i);
 			T noise = gaussian(0.0,sqrt(2.0*kT/(dt*dV)));
