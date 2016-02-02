@@ -1,6 +1,6 @@
 // dendritic.hpp
 // Anisotropic solidification by 2D phase field method
-// Questions/comments to kellet@rpi.edu (Trevor Keller)
+// Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
 #ifndef DENDRITIC_UPDATE
 #define DENDRITIC_UPDATE

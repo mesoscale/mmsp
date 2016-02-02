@@ -4,7 +4,7 @@
 // Output:  grayscale portable network graphics
 // Depends: MMSP, DevIL image library, zlib
 
-// Questions/Comments to kellet@rpi.edu (Trevor Keller)
+// Questions/Comments to trevor.keller@gmail.com (Trevor Keller)
 
 // DevIL usage after http://bobobobo.wordpress.com/2009/03/02/how-to-use-openil-to-generate-and-save-an-image/
 

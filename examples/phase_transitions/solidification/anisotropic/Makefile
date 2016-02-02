@@ -1,6 +1,6 @@
 # Makefile
 # GNU makefile for dendritic solidification code
-# Questions/comments to kellet@rpi.edu (Trevor Keller)
+# Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
 # includes
 incdir = ../../../../include
