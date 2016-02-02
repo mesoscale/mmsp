@@ -6,7 +6,7 @@
 #define spinENBERG_UPDATE
 #include"MMSP.hpp"
 #include<cmath>
-#include"spinenberg.hpp"
+#include"heisenberg.hpp"
 
 namespace MMSP{
 
@@ -81,23 +81,38 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& spinGrid, int s
 			// compute energy change
 			double sum = -1.0;
 			if (dim==1) {
-				for (int i=-1; i<=1; i++) {
-					vector<T>& s = spinGrid[x[0]+i];
+				for (int i=-1; i<2; i++) {
+					x[0] += i;
+					vector<T>& s = spinGrid(x);
 					sum += s[0]*(s1[0]-s2[0])+s[1]*(s1[1]-s2[1])+s[2]*(s1[2]-s2[2]);
+					x[0] -= i;
 				}
 			} else if (dim==2) {
-				for (int i=-1; i<=1; i++)
-					for (int j=-1; j<=1; j++) {
-						vector<T>& s = spinGrid[x[0]+i][x[1]+j];
+				for (int i=-1; i<2; i++) {
+					x[0] += i;
+					for (int j=-1; j<2; j++) {
+						x[1] += j;
+						vector<T>& s = spinGrid(x);
 						sum += s[0]*(s1[0]-s2[0])+s[1]*(s1[1]-s2[1])+s[2]*(s1[2]-s2[2]);
+						x[1] -= j;
 					}
+					x[0] -= i;
+				}
 			} else if (dim==3) {
-				for (int i=-1; i<=1; i++)
-					for (int j=-1; j<=1; j++)
-						for (int k=-1; k<=1; k++) {
-							vector<T>& s = spinGrid[x[0]+i][x[1]+j][x[2]+k];
+				for (int i=-1; i<2; i++) {
+					x[0] += i;
+					for (int j=-1; j<2; j++) {
+						x[1] += j;
+						for (int k=-1; k<2; k++) {
+							x[2] += k;
+							vector<T>& s = spinGrid(x);
 							sum += s[0]*(s1[0]-s2[0])+s[1]*(s1[1]-s2[1])+s[2]*(s1[2]-s2[2]);
+							x[2] -= k;
 						}
+						x[1] -= j;
+					}
+					x[0] -= i;
+				}
 			}
 			double dE = -J*sum;
 

@@ -53,7 +53,8 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& refGrid, int st
   static int iterations=1;
   static grid<2,T> oldGrid(1,g0(refGrid,0),g1(refGrid,0),g0(refGrid,1),g1(refGrid,1));
   if (iterations==1)
-    for (int i=0; i<nodes(oldGrid); ++i) oldGrid(i)=refGrid(i)[0];
+    for (int i=0; i<nodes(oldGrid); ++i)
+    	oldGrid(i)=refGrid(i)[0];
 
   grid<dim,vector<T> > newGrid(refGrid);
   double      dt=5e-5;    // time-step
@@ -80,7 +81,8 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& refGrid, int st
   int plus=0;
   for (int step=0; step<steps; ++step)
   {
-    if (id==0) print_progress(step, steps, iterations);
+    if (id==0) print_progress(step, steps);
+
     ghostswap(refGrid);
     grid<dim,vector<T> > Dgradphi(refGrid);
 

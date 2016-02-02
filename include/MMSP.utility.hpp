@@ -329,8 +329,8 @@ template <typename T> T global(T& value, const char* operation) {
 	Call once inside the update function (or equivalent).
 
 	for (int step=0; step<steps; step++) {
-		print_progress(step, steps);
-		...
+		if (MPI::COMM_WORLD.Get_rank()==0)
+			print_progress(step, steps);
 		for (int n=0; n<nodes(grid); n++) {
 			...
 		}

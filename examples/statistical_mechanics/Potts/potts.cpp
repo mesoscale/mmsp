@@ -62,22 +62,37 @@ template <int dim> void update(grid<dim,int>& spinGrid, int steps)
 			double dE = -1.0;
 			if (dim==2) {
 				for (int i=-1; i<=1; i++) {
-					int spin = spinGrid[x[0]+i];
+					x[0] += i;
+					int spin = spinGrid(x);
 					dE += (spin!=spin2)-(spin!=spin1);
+					x[0] -= i;
 				}
 			} else if (dim==2) {
-				for (int i=-1; i<=1; i++)
+				for (int i=-1; i<=1; i++) {
+					x[0] += i;
 					for (int j=-1; j<=1; j++) {
-						int spin = spinGrid[x[0]+i][x[1]+j];
+						x[1] += j;
+						int spin = spinGrid(x);
 						dE += (spin!=spin2)-(spin!=spin1);
+						x[1] -= j;
 					}
+					x[0] -= i;
+				}
 			} else if (dim==3) {
-				for (int i=-1; i<=1; i++)
-					for (int j=-1; j<=1; j++)
+				for (int i=-1; i<=1; i++) {
+					x[0] += i;
+					for (int j=-1; j<=1; j++) {
+						x[1] += j;
 						for (int k=-1; k<=1; k++) {
-							int spin = grid[x[0]+i][x[1]+j][x[2]+k];
+							x[2] += k;
+							int spin = spinGrid(x);
 							dE += (spin!=spin2)-(spin!=spin1);
+							x[2] -= k;
 						}
+						x[1] -= j;
+					}
+					x[0] -= i;
+				}
 			}
 			dE *= J;
 

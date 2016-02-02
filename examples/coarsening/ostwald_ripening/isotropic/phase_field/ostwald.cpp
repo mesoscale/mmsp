@@ -15,14 +15,11 @@ void generate(int dim, const char* filename)
 	if (dim==1) {
 		GRID1D initGrid(2,0,128);
 
-		int x0 = x0(initGrid);
-		int x1 = x1(initGrid);
-
-		for (int x=x0; x<x1; x++)
+		for (int n=0; n<nodes(initGrid); n++) {
 				double r = double(rand())/double(RAND_MAX);
-				initGrid[x][0] = r;
-				initGrid[x][1] = 1.0-r;
-			}
+				initGrid(n)[0] = r;
+				initGrid(n)[1] = 1.0-r;
+		}
 
 		output(initGrid,filename);
 	}
@@ -30,17 +27,11 @@ void generate(int dim, const char* filename)
 	if (dim==2) {
 		GRID2D initGrid(2,0,128,0,128);
 
-		int x0 = x0(initGrid);
-		int x1 = x1(initGrid);
-		int y0 = y0(initGrid);
-		int y1 = y1(initGrid);
-
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++) {
+		for (int n=0; n<nodes(initGrid); n++) {
 				double r = double(rand())/double(RAND_MAX);
-				initGrid[x][y][0] = r;
-				initGrid[x][y][1] = 1.0-r;
-			}
+				initGrid(n)[0] = r;
+				initGrid(n)[1] = 1.0-r;
+		}
 
 		output(initGrid,filename);
 	}
@@ -48,20 +39,11 @@ void generate(int dim, const char* filename)
 	if (dim==3) {
 		GRID3D initGrid(2,0,64,0,64,0,64);
 
-		int x0 = x0(initGrid);
-		int x1 = x1(initGrid);
-		int y0 = y0(initGrid);
-		int y1 = y1(initGrid);
-		int z0 = z0(initGrid);
-		int z1 = z1(initGrid);
-
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++)
-				for (int z=z0; z<z1; z++) {
-					double r = double(rand())/double(RAND_MAX);
-					initGrid[x][y][z][0] = r;
-					initGrid[x][y][z][1] = 1.0-r;
-				}
+		for (int n=0; n<nodes(initGrid); n++) {
+				double r = double(rand())/double(RAND_MAX);
+				initGrid(n)[0] = r;
+				initGrid(n)[1] = 1.0-r;
+		}
 
 		output(initGrid,filename);
 	}
@@ -91,14 +73,15 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 
 	for (int step=0; step<steps; step++) {
 		for (int n=0; n<nodes(oldGrid); n++) {
+			vector<int> x = position(oldGrid, n);
 			double sum = 0.0;
 			for (int i=1; i<fields(oldGrid); i++)
 				sum += pow(oldGrid(n)[i],2);
 
 			T C = oldGrid(n)[0];
-			T lap = laplacian(oldGrid, n, 0);
+			T lap = laplacian(oldGrid, x, 0);
 
-			wspace[x][y] = -A*(C-Cmatrix)+B*pow(C-Cmatrix,3)
+			wspace(x) = -A*(C-Cmatrix)+B*pow(C-Cmatrix,3)
 			               +Dalpha*pow(C-Calpha,3)+Dbeta*pow(C-Cbeta,3)
 			               -gamma*(C-Calpha)*sum-kappa*lap;
 		}

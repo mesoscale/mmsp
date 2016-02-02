@@ -61,23 +61,38 @@ template <int dim> void update(grid<dim,int>& spinGrid, int steps)
 			// compute energy change
 			double sum = -1.0;
 			if (dim==1) {
-				for (int i=-1; i<=1; i++) {
-					int spin = spinGrid[x[0]+i];
+				for (int i=-1; i<2; i++) {
+					x[0] += i;
+					int spin = spinGrid(x);
 					sum += (spin!=spin2)-(spin!=spin1);
+					x[0] -= i;
 				}
 			} else if (dim==2) {
-				for (int i=-1; i<=1; i++)
-					for (int j=-1; j<=1; j++) {
-						int spin = spinGrid[x[0]+i][x[1]+j];
+				for (int i=-1; i<2; i++) {
+					x[0] += i;
+					for (int j=-1; j<2; j++) {
+						x[1] += j;
+						int spin = spinGrid(x);
 						sum += (spin!=spin2)-(spin!=spin1);
+						x[1] -= j;
 					}
+					x[0] -= i;
+				}
 			} else if (dim==3) {
-				for (int i=-1; i<=1; i++)
-					for (int j=-1; j<=1; j++)
-						for (int k=-1; k<=1; k++) {
-							int spin = spinGrid[x[0]+i][x[1]+j][x[2]+k];
+				for (int i=-1; i<2; i++) {
+					x[0] += i;
+					for (int j=-1; j<2; j++) {
+						x[1] += j;
+						for (int k=-1; k<2; k++) {
+							x[2] += k;
+							int spin = spinGrid(x);
 							sum += (spin!=spin2)-(spin!=spin1);
+							x[2] -= k;
 						}
+						x[1] -= j;
+					}
+					x[0] -= i;
+				}
 			}
 			double dE = -0.5*J*sum-H*(spin2-spin1);
 
