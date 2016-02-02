@@ -92,7 +92,7 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 			T lap = laplacian(wspace,x);
 			T C = oldGrid(n)[0];
 
-			newGrid(x)[0] = C+dt*D*lap;
+			newGrid(n)[0] = C+dt*D*lap;
 
 			double sum = 0.0;
 			for (int i=1; i<fields(oldGrid); i++)
@@ -101,7 +101,7 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 			vector<T> vlap = laplacian(oldGrid,x);
 			for (int i=1; i<fields(oldGrid); i++) {
 				T value = oldGrid(n)[i];
-				newGrid(x)[i] = value-dt*L*(-gamma*pow(C-Calpha,2)+delta*pow(value,3)
+				newGrid(n)[i] = value-dt*L*(-gamma*pow(C-Calpha,2)+delta*pow(value,3)
 				                            +epsilon*value*(sum-pow(value,2))-kappa*vlap[i]);
 			}
 		}

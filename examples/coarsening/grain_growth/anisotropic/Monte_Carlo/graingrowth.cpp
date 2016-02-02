@@ -34,6 +34,7 @@ void generate(int dim, const char* filename)
 
 		for (int i=0; i<nodes(initGrid); i++)
 			initGrid(i) = rand()%20;
+
 	  output(initGrid,filename);
   }
   else if(dim==3){
@@ -41,6 +42,7 @@ void generate(int dim, const char* filename)
 
 		for (int i=0; i<nodes(initGrid); i++)
 			initGrid(i) = rand()%20;
+
 		output(initGrid,filename);
   }
 }

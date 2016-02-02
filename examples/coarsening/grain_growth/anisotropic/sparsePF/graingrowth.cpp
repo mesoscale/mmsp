@@ -87,7 +87,7 @@ template <int dim, typename T> void update(grid<dim,sparse<T> >& oldGrid, int st
 		for (int n=0; n<nodes(oldGrid); n++) {
 			vector<int> x = position(oldGrid,n);
 
-			// determine nonzero fields within 
+			// determine nonzero fields within
 			// the neighborhood of this node
 			sparse<int> s;
 			for (int j=0; j<dim; j++)

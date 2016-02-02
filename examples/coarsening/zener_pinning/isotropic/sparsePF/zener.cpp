@@ -24,11 +24,12 @@ void generate(int dim, const char* filename)
 
 		for (int j=0; j<50; j++) {
 			int i = rand()%nodes(initGrid);
-			vector<int> p = position(initGrid,i);
-			for (int x=p[0]-1; x<=p[0]+1; x++) {
-				set(initGrid[x],0) = 1.0;
-				set(initGrid[x],1) = 0.0;
-				set(initGrid[x],2) = 0.0;
+			vector<int> x = position(initGrid,i);
+			vector<int> p(x);
+			for (p[0]=x[0]-1; p[0]<=x[0]+1; p[0]++) {
+				set(initGrid(p),0) = 1.0;
+				set(initGrid(p),1) = 0.0;
+				set(initGrid(p),2) = 0.0;
 			}
 		}
 
@@ -47,12 +48,13 @@ void generate(int dim, const char* filename)
 
 		for (int j=0; j<50; j++) {
 			int i = rand()%nodes(initGrid);
-			vector<int> p = position(initGrid,i);
-			for (int x=p[0]-1; x<=p[0]+1; x++)
-				for (int y=p[1]-1; y<=p[1]+1; y++) {
-					set(initGrid[x][y],0) = 1.0;
-					set(initGrid[x][y],1) = 0.0;
-					set(initGrid[x][y],2) = 0.0;
+			vector<int> x = position(initGrid,i);
+			vector<int> p(x);
+			for (p[0]=x[0]-1; p[0]<=x[0]+1; p[0]++)
+				for (p[1]=x[1]-1; p[1]<=x[1]+1; p[1]++) {
+					set(initGrid(p),0) = 1.0;
+					set(initGrid(p),1) = 0.0;
+					set(initGrid(p),2) = 0.0;
 				}
 		}
 
@@ -71,13 +73,14 @@ void generate(int dim, const char* filename)
 
 		for (int j=0; j<50; j++) {
 			int i = rand()%nodes(initGrid);
-			vector<int> p = position(initGrid,i);
-			for (int x=p[0]-1; x<=p[0]+1; x++)
-				for (int y=p[1]-1; y<=p[1]+1; y++)
-					for (int z=p[1]-1; z<=p[2]+1; z++) {
-						set(initGrid[x][y][z],0) = 1.0;
-						set(initGrid[x][y][z],1) = 0.0;
-						set(initGrid[x][y][z],2) = 0.0;
+			vector<int> x = position(initGrid,i);
+			vector<int> p(x);
+			for (p[0]=x[0]-1; p[0]<=x[0]+1; p[0]++)
+				for (p[1]=x[1]-1; p[1]<=x[1]+1; p[1]++)
+					for (p[2]=x[2]-1; p[2]<=x[2]+1; p[2]++) {
+						set(initGrid(p),0) = 1.0;
+						set(initGrid(p),1) = 0.0;
+						set(initGrid(p),2) = 0.0;
 					}
 		}
 

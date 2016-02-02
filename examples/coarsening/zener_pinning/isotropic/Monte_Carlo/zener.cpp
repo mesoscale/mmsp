@@ -91,27 +91,27 @@ void generate(int dim, const char* filename)
 	}
 }
 
-template <typename T> void update(MMSP::grid<1,T>& grid, int steps)
+template <int dim, typename T> void update(grid<dim,T>& spinGrid, int steps)
 {
-	const double kT = 0.50;
-	int gss = int(sqrt(nodes(grid)));
+	const double kT = (dim==3)?0.75:0.50;
+	int gss = int(sqrt(nodes(spinGrid)));
 
 	for (int step=0; step<steps; step++) {
-		for (int h=0; h<nodes(grid); h++) {
+		for (int h=0; h<nodes(spinGrid); h++) {
 			// choose a random node
-			int p = rand()%nodes(grid);
-			int spin1 = grid(p);
+			int p = rand()%nodes(spinGrid);
+			int spin1 = spinGrid(p);
 
 			if (spin1!=0) {
-				vector<int> x = position(grid,p);
+				vector<int> x = position(spinGrid,p);
 				// determine neighboring spins
 				sparse<bool> neighbors;
-				set(neighbors,grid(x)) = true;
+				set(neighbors,spinGrid(x)) = true;
 				for (int d=0; d<1; d++) {
 					x[d]--;
-					set(neighbors,grid(x)) = true;
+					set(neighbors,spinGrid(x)) = true;
 					x[d]+=2;
-					set(neighbors,grid(x)) = true;
+					set(neighbors,spinGrid(x)) = true;
 					x[d]--;
 				}
 
@@ -121,113 +121,48 @@ template <typename T> void update(MMSP::grid<1,T>& grid, int steps)
 				if (spin1!=spin2 and spin2!=0) {
 					// compute energy change
 					double dE = -1.0;
-					for (int i=-1; i<=1; i++) {
-						int spin = grid[x[0]+i];
-						dE += (spin!=spin2)-(spin!=spin1);
+					if (dim==1) {
+						for (int i=-1; i<=1; i++) {
+							x[0] += i;
+							int spin = spinGrid(x);
+							dE += (spin!=spin2)-(spin!=spin1);
+							x[0] -= i;
+						}
+					} else if (dim==2) {
+						for (int i=-1; i<=1; i++) {
+							x[0] += i;
+							for (int j=-1; j<=1; j++) {
+								x[1] += j;
+								int spin = spinGrid(x);
+								dE += (spin!=spin2)-(spin!=spin1);
+								x[1] -= j;
+							}
+							x[0] -= i;
+						}
+					} else if (dim==3) {
+						for (int i=-1; i<=1; i++) {
+							x[0] += i;
+							for (int j=-1; j<=1; j++) {
+								x[1] += j;
+								for (int k=-1; k<=1; k++) {
+									x[2] += k;
+									int spin = spinGrid(x);
+									dE += (spin!=spin2)-(spin!=spin1);
+									x[2] -= k;
+								}
+								x[1] -= j;
+							}
+							x[0] -= i;
+						}
 					}
 
 					// attempt a spin flip
 					double r = double(rand())/double(RAND_MAX);
-					if (dE<=0.0) grid(p) = spin2;
-					else if (r<exp(-dE/kT)) grid(p) = spin2;
+					if (dE<=0.0) spinGrid(p) = spin2;
+					else if (r<exp(-dE/kT)) spinGrid(p) = spin2;
 				}
 			}
-			if (h%gss==0) ghostswap(grid);
-		}
-	}
-}
-
-template <typename T> void update(MMSP::grid<2,T>& grid, int steps)
-{
-	const double kT = 0.50;
-	int gss = int(sqrt(nodes(grid)));
-
-	for (int step=0; step<steps; step++) {
-		for (int h=0; h<nodes(grid); h++) {
-			// choose a random node
-			int p = rand()%nodes(grid);
-			int spin1 = grid(p);
-
-			if (spin1!=0) {
-				vector<int> x = position(grid,p);
-				// determine neighboring spins
-				sparse<bool> neighbors;
-				set(neighbors,grid(x)) = true;
-				for (int d=0; d<2; d++) {
-					x[d]--;
-					set(neighbors,grid(x)) = true;
-					x[d]+=2;
-					set(neighbors,grid(x)) = true;
-					x[d]--;
-				}
-
-				// choose a random neighbor spin
-				int spin2 = index(neighbors,rand()%length(neighbors));
-
-				if (spin1!=spin2 and spin2!=0) {
-					// compute energy change
-					double dE = -1.0;
-					for (int i=-1; i<=1; i++)
-						for (int j=-1; j<=1; j++) {
-							int spin = grid[x[0]+i][x[1]+j];
-							dE += (spin!=spin2)-(spin!=spin1);
-						}
-
-					// attempt a spin flip
-					double r = double(rand())/double(RAND_MAX);
-					if (dE<=0.0) grid(p) = spin2;
-					else if (r<exp(-dE/kT)) grid(p) = spin2;
-				}
-			}
-			if (h%gss==0) ghostswap(grid);
-		}
-	}
-}
-
-template <typename T> void update(MMSP::grid<3,T>& grid, int steps)
-{
-	const double kT = 0.75;
-	int gss = int(sqrt(nodes(grid)));
-
-	for (int step=0; step<steps; step++) {
-		for (int h=0; h<nodes(grid); h++) {
-			// choose a random node
-			int p = rand()%nodes(grid);
-			int spin1 = grid(p);
-
-			if (spin1!=0) {
-				vector<int> x = position(grid,p);
-				// determine neighboring spins
-				sparse<bool> neighbors;
-				set(neighbors,grid(x)) = true;
-				for (int d=0; d<3; d++) {
-					x[d]--;
-					set(neighbors,grid(x)) = true;
-					x[d]+=2;
-					set(neighbors,grid(x)) = true;
-					x[d]--;
-				}
-
-				// choose a random neighbor spin
-				int spin2 = index(neighbors,rand()%length(neighbors));
-
-				if (spin1!=spin2 and spin2!=0) {
-					// compute energy change
-					double dE = -1.0;
-					for (int i=-1; i<=1; i++)
-						for (int j=-1; j<=1; j++)
-							for (int k=-1; k<=1; k++) {
-								int spin = grid[x[0]+i][x[1]+j][x[2]+k];
-								dE += (spin!=spin2)-(spin!=spin1);
-							}
-
-					// attempt a spin flip
-					double r = double(rand())/double(RAND_MAX);
-					if (dE<=0.0) grid(p) = spin2;
-					else if (r<exp(-dE/kT)) grid(p) = spin2;
-				}
-			}
-			if (h%gss==0) ghostswap(grid);
+			if (h%gss==0) ghostswap(spinGrid);
 		}
 	}
 }
