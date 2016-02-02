@@ -48,5 +48,5 @@ gnuplot_i.hpp.gch : gnuplot_i.hpp
 
 
 clean :
-	rm *.o *~ *.gch
+	rm -rf go *.o *~ *.gch
 
