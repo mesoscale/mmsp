@@ -16,8 +16,6 @@
 #include <cassert>
 #include "MersenneTwister.h"
 
-void print_progress(const int i, const int N);
-
 template <int dim, typename T> double radius(const MMSP::vector<T>& a, const MMSP::vector<T>& b) {
   double radius=0.0;
 	for (int d=0; d<dim; ++d) radius+=std::pow(double(b[d]-a[d]), 2.0);
@@ -604,25 +602,4 @@ void tessellate(MMSP::grid<dim, sparse<T> >& grid, const std::string& seed_filen
 
 } // namespace
 
-void print_progress(const int i, const int N) {
-  char* timestring;
-  static unsigned long tstart;
-  struct tm* timeinfo;
-
-  if (i==0) {
-    tstart = time(NULL);
-    std::time_t rawtime;
-    std::time( &rawtime );
-    timeinfo = std::localtime( &rawtime );
-    timestring = std::asctime(timeinfo);
-    timestring[std::strlen(timestring)-1] = '\0';
-    std::cout<<timestring<<" ["<<std::flush;
-  } else if (i==N-1) {
-    unsigned long deltat = time(NULL)-tstart;
-    std::cout<<"•] "<<std::setw(2)<<std::right<<deltat/3600<<"h:"
-                    <<std::setw(2)<<std::right<<(deltat%3600)/60<<"m:"
-                    <<std::setw(2)<<std::right<<deltat%60<<"s"
-                    <<'.'<<std::endl;
-  } else if ((20 * i) % N == 0) std::cout<<"• "<<std::flush;
-}
 #endif
