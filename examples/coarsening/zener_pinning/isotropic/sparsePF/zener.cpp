@@ -13,7 +13,7 @@ namespace MMSP{
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		grid<1,sparse<double> > initGrid(0,0,128);
+		GRID1D initGrid(0,0,128);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -36,7 +36,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		grid<2,sparse<double> > initGrid(0,0,128,0,128);
+		GRID2D initGrid(0,0,128,0,128);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -60,7 +60,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		grid<3,sparse<double> > initGrid(0,0,64,0,64,0,64);
+		GRID3D initGrid(0,0,64,0,64,0,64);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -85,14 +85,14 @@ void generate(int dim, const char* filename)
 	}
 }
 
-template <int dim> void update(grid<dim,sparse<double> >& oldGrid, int steps)
+template <int dim, typename T> void update(grid<dim,sparse<T> >& oldGrid, int steps)
 {
 	double dt = 0.01;
 	double epsilon = 1.0e-8;
 
 	for (int step=0; step<steps; step++) {
 		// update grid must be overwritten each time
-		grid<dim,sparse<double> > newGrid(oldGrid);
+		grid<dim,sparse<T> > newGrid(oldGrid);
 
 		for (int n=0; n<nodes(oldGrid); n++) {
 			vector<int> x = position(oldGrid,n);
@@ -117,23 +117,23 @@ template <int dim> void update(grid<dim,sparse<double> >& oldGrid, int steps)
 
 			else {
 				// compute laplacians
-				sparse<double> lap = laplacian(oldGrid,n);
+				sparse<T> lap = laplacian(oldGrid,n);
 
 				// compute sums of squares
 				double sum = 0.0;
 				for (int j=0; j<length(oldGrid(n)); j++) {
-					double phi = value(oldGrid(n),j);
+					T phi = value(oldGrid(n),j);
 					sum += phi*phi;
 				}
 
 				// compute update values
 				for (int j=0; j<length(neighbors); j++) {
 					int i = index(neighbors,j);
-					double phi = oldGrid(n)[i];
+					T phi = oldGrid(n)[i];
 					// particles have zero mobility
 					if (n==0) set(newGrid(n),i) = phi;
 					else {
-						double value = phi-dt*(-phi-pow(phi,3)+2.0*(phi*sum-lap[i]));
+						T value = phi-dt*(-phi-pow(phi,3)+2.0*(phi*sum-lap[i]));
 						if (value>epsilon) set(newGrid(n),i) = value;
 					}
 				}

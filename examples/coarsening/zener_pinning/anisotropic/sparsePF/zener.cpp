@@ -14,7 +14,7 @@ namespace MMSP{
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		grid<1,sparse<double> > initGrid(0,0,128);
+		GRID1D initGrid(0,0,128);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -37,7 +37,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		grid<2,sparse<double> > initGrid(0,0,128,0,128);
+		GRID2D initGrid(0,0,128,0,128);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -61,7 +61,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		grid<3,sparse<double> > initGrid(0,0,64,0,64,0,64);
+		GRID3D initGrid(0,0,64,0,64,0,64);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -86,14 +86,14 @@ void generate(int dim, const char* filename)
 	}
 }
 
-template <int dim> void update(grid<dim,sparse<double> >& oldGrid, int steps)
+template <int dim, typename T> void update(grid<dim,sparse<T> >& oldGrid, int steps)
 {
 	double dt = 0.01;
 	double width = 8.0;
 	double epsilon = 1.0e-8;
 
 	for (int step=0; step<steps; step++) {
-		grid<dim,sparse<double> > newGrid(oldGrid);
+		grid<dim,sparse<T> > newGrid(oldGrid);
 
 		for (int n=0; n<nodes(oldGrid); n++) {
 			// determine nonzero fields within 
@@ -118,10 +118,10 @@ template <int dim> void update(grid<dim,sparse<double> >& oldGrid, int steps)
 
 			else {
 				// compute laplacian of each field
-				sparse<double> lap = laplacian(oldGrid,n);
+				sparse<T> lap = laplacian(oldGrid,n);
 
 				// compute variational derivatives
-				sparse<double> dFdp;
+				sparse<T> dFdp;
 				for (int h=0; h<length(s); h++) {
 					int hindex = index(s,h);
 					for (int j=h+1; j<length(s); j++) {
@@ -141,7 +141,7 @@ template <int dim> void update(grid<dim,sparse<double> >& oldGrid, int steps)
 				}
 
 				// compute time derivatives
-				sparse<double> dpdt;
+				sparse<T> dpdt;
 				for (int h=0; h<length(s); h++) {
 					int hindex = index(s,h);
 					for (int j=h+1; j<length(s); j++) {
@@ -158,7 +158,7 @@ template <int dim> void update(grid<dim,sparse<double> >& oldGrid, int steps)
 				double sum = 0.0;
 				for (int h=0; h<length(s); h++) {
 					int i = index(s,h);
-					double value = oldGrid(n)[i]+dt*(2.0/S)*dpdt[i];
+					T value = oldGrid(n)[i]+dt*(2.0/S)*dpdt[i];
 					if (value>1.0) value = 1.0;
 					if (value<0.0) value = 0.0;
 					if (value>epsilon) set(newGrid(n),i) = value;

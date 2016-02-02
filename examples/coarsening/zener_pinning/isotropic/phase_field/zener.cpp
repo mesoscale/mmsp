@@ -13,7 +13,7 @@ namespace MMSP{
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		grid<1,vector<double> > initGrid(3,0,128);
+		GRID1D initGrid(3,0,128);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -38,7 +38,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		grid<2,vector<double> > initGrid(3,0,128,0,128);
+		GRID2D initGrid(3,0,128,0,128);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -64,7 +64,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		grid<3,vector<double> > initGrid(3,0,64,0,64,0,64);
+		GRID3D initGrid(3,0,64,0,64,0,64);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -91,27 +91,27 @@ void generate(int dim, const char* filename)
 	}
 }
 
-template <int dim> void update(grid<dim,vector<double> >& oldGrid, int steps)
+template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int steps)
 {
-	grid<dim,vector<double> > newGrid(oldGrid);
+	grid<dim,vector<T> > newGrid(oldGrid);
 
 	double dt = 0.01;
 
 	for (int step=0; step<steps; step++) {
 		for (int i=0; i<nodes(oldGrid); i++) {
 			// compute laplacians
-			vector<double> lap = laplacian(oldGrid,i);
+			vector<T> lap = laplacian(oldGrid,i);
 
 			// compute sums of squares
 			double sum = 0.0;
 			for (int j=0; j<fields(oldGrid); j++) {
-				double phi = oldGrid(i)[j];
+				T phi = oldGrid(i)[j];
 				sum += phi*phi;
 			}
 
 			// compute update values
 			for (int j=0; j<fields(oldGrid); j++) {
-				double phi = oldGrid(i)[j];
+				T phi = oldGrid(i)[j];
 				// particles have zero mobility
 				if (j==0) newGrid(i)[j] = phi;
 				else newGrid(i)[j] = phi-dt*(-phi-pow(phi,3)+2.0*(phi*sum-lap[j]));

@@ -14,7 +14,7 @@ namespace MMSP{
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		grid<1,vector<double> > initGrid(3,0,128);
+		GRID1D initGrid(3,0,128);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -39,7 +39,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		grid<2,vector<double> > initGrid(3,0,128,0,128);
+		GRID2D initGrid(3,0,128,0,128);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -65,7 +65,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		grid<3,vector<double> > initGrid(3,0,64,0,64,0,64);
+		GRID3D initGrid(3,0,64,0,64,0,64);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -92,9 +92,9 @@ void generate(int dim, const char* filename)
 	}
 }
 
-template <int dim> void update(grid<dim,vector<double> >& oldGrid, int steps)
+template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int steps)
 {
-	grid<dim,vector<double> > newGrid(oldGrid);
+	grid<dim,vector<T> > newGrid(oldGrid);
 
 	double dt = 0.01;
 	double width = 8.0;
@@ -127,10 +127,10 @@ template <int dim> void update(grid<dim,vector<double> >& oldGrid, int steps)
 
 			else {
 				// compute laplacian of each field
-				vector<double> lap = laplacian(oldGrid,i);
+				vector<T> lap = laplacian(oldGrid,i);
 
 				// compute variational derivatives
-				vector<double> dFdp(fields(oldGrid),0.0);
+				vector<T> dFdp(fields(oldGrid),0.0);
 				for (int h=0; h<fields(oldGrid); h++)
 					if (s[h]>0.0)
 						for (int j=h+1; j<fields(oldGrid); j++)
@@ -149,7 +149,7 @@ template <int dim> void update(grid<dim,vector<double> >& oldGrid, int steps)
 							}
 
 				// compute time derivatives
-				vector<double> dpdt(fields(oldGrid),0.0);
+				vector<T> dpdt(fields(oldGrid),0.0);
 				for (int h=0; h<fields(oldGrid); h++)
 					if (s[h]>0.0)
 						for (int j=h+1; j<fields(oldGrid); j++)
@@ -164,7 +164,7 @@ template <int dim> void update(grid<dim,vector<double> >& oldGrid, int steps)
 				// compute newGrid values
 				double sum = 0.0;
 				for (int h=0; h<fields(oldGrid); h++) {
-					double value = oldGrid(i)[h]+dt*(2.0/S)*dpdt[h];
+					T value = oldGrid(i)[h]+dt*(2.0/S)*dpdt[h];
 					if (value>1.0) value = 1.0;
 					if (value<0.0) value = 0.0;
 					newGrid(i)[h] = value;

@@ -14,7 +14,7 @@ namespace MMSP{
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		grid<1,int> initGrid(0,0,128);
+		GRID1D initGrid(0,0,128);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -34,7 +34,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		grid<2,int> initGrid(0,0,128,0,128);
+		GRID2D initGrid(0,0,128,0,128);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -55,7 +55,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		grid<3,int> initGrid(0,0,64,0,64,0,64);
+		GRID3D initGrid(0,0,64,0,64,0,64);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -77,9 +77,9 @@ void generate(int dim, const char* filename)
 	}
 }
 
-void update(grid<1,int>& mcGrid, int steps)
+template <int dim> void update(grid<dim,int>& mcGrid, int steps)
 {
-	const double kT = 0.50;
+	const double kT = (dim==3)?0.75:0.50;
 	int gss = int(nodes(mcGrid));
 
 	for (int step=0; step<steps; step++) {
@@ -92,119 +92,51 @@ void update(grid<1,int>& mcGrid, int steps)
 			if (spin1!=0) {
 				// determine neighboring spins
 				sparse<bool> neighbors;
-				for (int i=-1; i<=1; i++) {
-						int spin = mcGrid[x[0]+i];
-						set(neighbors,spin) = true;
-					}
-
-				// choose a random neighbor spin
-				int spin2 = index(neighbors,rand()%length(neighbors));
-
-				if (spin1!=spin2 and spin2!=0) {
-					// compute energy change
-					double dE = -energy(spin1,spin2);
+				if (dim==1) {
 					for (int i=-1; i<=1; i++) {
 							int spin = mcGrid[x[0]+i];
-							dE += energy(spin,spin2)-energy(spin,spin1);
-						}
-
-					// compute boundary energy, mobility
-					double E = energy(spin1,spin2);
-					double M = mobility(spin1,spin2);
-
-					// attempt a spin flip
-					double r = double(rand())/double(RAND_MAX);
-					if (dE<=0.0 and r<M*E) mcGrid(p) = spin2;
-					if (dE>0.0 and r<M*E*exp(-dE/(E*kT))) mcGrid(p) = spin2;
-				}
-			}
-			if (h%gss==0) ghostswap(mcGrid);
-		}
-	}
-}
-
-void update(grid<2,int>& mcGrid, int steps)
-{
-	const double kT = 0.50;
-	int gss = int(sqrt(nodes(mcGrid)));
-
-	for (int step=0; step<steps; step++) {
-		for (int h=0; h<nodes(mcGrid); h++) {
-			// choose a random node
-			int p = rand()%nodes(mcGrid);
-			vector<int> x = position(mcGrid,p);
-			int spin1 = mcGrid(p);
-
-			if (spin1!=0) {
-				// determine neighboring spins
-				sparse<bool> neighbors;
-				for (int i=-1; i<=1; i++)
-					for (int j=-1; j<=1; j++) {
-						int spin = mcGrid[x[0]+i][x[1]+j];
-						set(neighbors,spin) = true;
-					}
-
-				// choose a random neighbor spin
-				int spin2 = index(neighbors,rand()%length(neighbors));
-
-				if (spin1!=spin2 and spin2!=0) {
-					// compute energy change
-					double dE = -energy(spin1,spin2);
-					for (int i=-1; i<=1; i++)
-						for (int j=-1; j<=1; j++){
-							int spin = mcGrid[x[0]+i][x[1]+j];
-							dE += energy(spin,spin2)-energy(spin,spin1);
-						}
-
-					// compute boundary energy, mobility
-					double E = energy(spin1,spin2);
-					double M = mobility(spin1,spin2);
-
-					// attempt a spin flip
-					double r = double(rand())/double(RAND_MAX);
-					if (dE<=0.0 and r<M*E) mcGrid(p) = spin2;
-					if (dE>0.0 and r<M*E*exp(-dE/(E*kT))) mcGrid(p) = spin2;
-				}
-			}
-			if (h%gss==0) ghostswap(mcGrid);
-		}
-	}
-}
-
-void update(grid<3,int>& mcGrid, int steps)
-{
-	const double kT = 0.75;
-	int gss = int(sqrt(nodes(mcGrid)));
-
-	for (int step=0; step<steps; step++) {
-		for (int h=0; h<nodes(mcGrid); h++) {
-			// choose a random node
-			int p = rand()%nodes(mcGrid);
-			vector<int> x = position(mcGrid,p);
-			int spin1 = mcGrid(p);
-
-			if (spin1!=0) {
-				// determine neighboring spins
-				sparse<bool> neighbors;
-				for (int i=-1; i<=1; i++)
-					for (int j=-1; j<=1; j++)
-						for (int k=-1; k<=1; k++) {
-							int spin = mcGrid[x[0]+i][x[1]+j][x[2]+k];
 							set(neighbors,spin) = true;
 						}
-
-				// choose a random neighbor spin
-				int spin2 = index(neighbors,rand()%length(neighbors));
-
-				if (spin1!=spin2 and spin2!=0) {
-					// compute energy change
-					double dE = -energy(spin1,spin2);
+				} else if (dim==2) {
+				for (int i=-1; i<=1; i++)
+						for (int j=-1; j<=1; j++) {
+							int spin = mcGrid[x[0]+i][x[1]+j];
+							set(neighbors,spin) = true;
+						}
+				} else if (dim==3) {
 					for (int i=-1; i<=1; i++)
 						for (int j=-1; j<=1; j++)
 							for (int k=-1; k<=1; k++) {
 								int spin = mcGrid[x[0]+i][x[1]+j][x[2]+k];
+								set(neighbors,spin) = true;
+							}
+				}
+
+				// choose a random neighbor spin
+				int spin2 = index(neighbors,rand()%length(neighbors));
+
+				if (spin1!=spin2 and spin2!=0) {
+					// compute energy change
+					double dE = -energy(spin1,spin2);
+					if (dim==1) {
+						for (int i=-1; i<=1; i++) {
+								int spin = mcGrid[x[0]+i];
 								dE += energy(spin,spin2)-energy(spin,spin1);
 							}
+					} else if (dim==2) {
+						for (int i=-1; i<=1; i++)
+							for (int j=-1; j<=1; j++){
+								int spin = mcGrid[x[0]+i][x[1]+j];
+								dE += energy(spin,spin2)-energy(spin,spin1);
+							}
+					} else if (dim==3) {
+						for (int i=-1; i<=1; i++)
+							for (int j=-1; j<=1; j++)
+								for (int k=-1; k<=1; k++) {
+									int spin = mcGrid[x[0]+i][x[1]+j][x[2]+k];
+									dE += energy(spin,spin2)-energy(spin,spin1);
+								}
+					}
 
 					// compute boundary energy, mobility
 					double E = energy(spin1,spin2);

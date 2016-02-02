@@ -199,46 +199,46 @@ void generate(int dim, const char* filename)
 	#endif
 
 	if (dim==2) {
-		MMSP::grid<2,vector<double> > grid(2,0,edge,0,edge); // field 0 is c, field 1 is mu
+		grid<2,vector<double> > initGrid(2,0,edge,0,edge); // field 0 is c, field 1 is mu
 		for (int d=0; d<dim; d++)
-			dx(grid,d) = deltaX;
+			dx(initGrid,d) = deltaX;
 
 		#ifdef VANILLA
-		for (int n=0; n<nodes(grid); n++)
-			grid(n)[0] = C0 + 0.25*real_gen(mt_rand) - 0.125; // produces noise with amplitude 0.125 about C=C0
+		for (int n=0; n<nodes(initGrid); n++)
+			initGrid(n)[0] = C0 + 0.25*real_gen(mt_rand) - 0.125; // produces noise with amplitude 0.125 about C=C0
 		#else
 		double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)}; // produces stripes oriented 45 degrees to horizontal
-		for (int n=0; n<nodes(grid); n++) {
-			MMSP::vector<int> x = position(grid,n);
-			double wave = x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1];
-			grid(n)[0] = C0*(1.0 + 0.1 * std::cos(wave));
+		for (int n=0; n<nodes(initGrid); n++) {
+			vector<int> x = position(initGrid,n);
+			double wave = x[0]*dx(initGrid,0)*q[0] + x[1]*dx(initGrid,1)*q[1];
+			initGrid(n)[0] = C0*(1.0 + 0.1 * std::cos(wave));
 		}
 		#endif
 
-		ghostswap(grid); // otherwise, parallel jobs have a "window frame" artifact
+		ghostswap(initGrid); // otherwise, parallel jobs have a "window frame" artifact
 
-		for (int n=0; n<nodes(grid); n++) {
-			MMSP::vector<int> x = position(grid,n);
-			grid(n)[1] = full_dfdc(grid(n)[0]) - K*field_laplacian(grid, x, 0);
+		for (int n=0; n<nodes(initGrid); n++) {
+			vector<int> x = position(initGrid,n);
+			initGrid(n)[1] = full_dfdc(initGrid(n)[0]) - K*field_laplacian(initGrid, x, 0);
 		}
 
 		double dV = 1.0;
 		for (int d=0; d<dim; d++)
-			dV *= dx(grid,d);
+			dV *= dx(initGrid,d);
 
-		output(grid,filename);
+		output(initGrid,filename);
 		if (rank==0)
 			std::cout<<"Timestep is "<<dt<<" (explicit Co="<<CFL<<")."<<std::endl;
 
 		double energy = 0.0;
 		double mass = 0.0;
-		for (int n=0; n<nodes(grid); n++) {
-			MMSP::vector<int> x = position(grid,n);
-			MMSP::vector<MMSP::vector<double> > gradC = grad(grid, x);
+		for (int n=0; n<nodes(initGrid); n++) {
+			vector<int> x = position(initGrid,n);
+			vector<vector<double> > gradC = grad(initGrid, x);
 			double magSqGradC = 0.0;
 			for (int d=0; d<dim; d++)
 				magSqGradC += pow(gradC[d][0],2.0);
-			double C = grid(n)[0];
+			double C = initGrid(n)[0];
 			energy += (energy_density(C) + 0.5*K*magSqGradC);
 			mass += C;
 		}
@@ -264,7 +264,7 @@ void generate(int dim, const char* filename)
 }
 
 template<int dim, typename T>
-void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
+void update(grid<dim,vector<T> >& oldGrid, int steps)
 {
 	int rank=0;
 	#ifdef MPI_VERSION
@@ -273,7 +273,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 
 	ghostswap(oldGrid);
 
-	MMSP::grid<dim,vector<T> > newGrid(oldGrid);   // new values at each point and initial guess for iteration
+	grid<dim,vector<T> > newGrid(oldGrid);   // new values at each point and initial guess for iteration
 
 	newGrid.copy(oldGrid); // deep copy: includes data and ghost cells. Expensive.
 
@@ -325,7 +325,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 				#pragma omp parallel for schedule(dynamic)
 				#endif
 				for (int n=0; n<nodes(oldGrid); n++) {
-					MMSP::vector<int> x = position(oldGrid,n);
+					vector<int> x = position(oldGrid,n);
 					int x_sum=0;
 					for (int d=0; d<dim; d++)
 						x_sum += x[d];
@@ -377,7 +377,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 				#pragma omp parallel for schedule(dynamic)
 				#endif
 				for (int n=0; n<nodes(oldGrid); n++) {
-					MMSP::vector<int> x = position(oldGrid,n);
+					vector<int> x = position(oldGrid,n);
 					T lapC = field_laplacian(newGrid, x, 0);
 					T lapU = field_laplacian(newGrid, x, 1);
 
@@ -439,8 +439,8 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		double energy = 0.0;
 		double mass = 0.0;
 		for (int n=0; n<nodes(newGrid); n++) {
-			MMSP::vector<int> x = position(newGrid,n);
-			MMSP::vector<MMSP::vector<T> > gradC = grad(newGrid, x);
+			vector<int> x = position(newGrid,n);
+			vector<vector<T> > gradC = grad(newGrid, x);
 			double gradCsq = 0.0;
 			for (int d=0; d<dim; d++)
 				gradCsq += pow(gradC[d][0],2.0);

@@ -1,7 +1,7 @@
 #include"MMSP.hpp"
 using namespace MMSP;
 
-// Add in Laplacian funciton that is built in to MMSP
+// Add in Laplacian function that is built in to MMSP
 // Try using a grid of vectors >> one iterated with this code, one with laplacian
 
 

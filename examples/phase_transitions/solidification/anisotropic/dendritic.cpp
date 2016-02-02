@@ -10,8 +10,6 @@
 #include"MMSP.hpp"
 #include"dendritic.hpp"
 
-void print_progress(const int step, const int steps, const int iterations);
-
 namespace MMSP{
 
 void generate(int dim, const char* filename)
@@ -21,20 +19,20 @@ void generate(int dim, const char* filename)
   const double undercooling=-0.5;
   if (dim==2)
   {
-    MMSP::grid<2,vector<double> > grid(2,0,edge,0,edge);
-    for (int d=0; d<dim; ++d) dx(grid,d)=deltaX;
+    GRID2D initGrid(2,0,edge,0,edge);
+    for (int d=0; d<dim; ++d) dx(initGrid,d)=deltaX;
 
     // Seed a circle of radius N*dx
     int R=5;
-    for (int i=0; i<nodes(grid); ++i)
+    for (int i=0; i<nodes(initGrid); ++i)
     {
-      grid(i)[1]=undercooling; // Initial undercooling
-      vector<int> x = position(grid,i);
+      initGrid(i)[1]=undercooling; // Initial undercooling
+      vector<int> x = position(initGrid,i);
       int r=sqrt(pow(x[0]-edge/2,2)+pow(x[1]-edge/2,2));
-      if (r<=R) grid(i)[0]=1.;
-      else grid(i)[0]=0.;
+      if (r<=R) initGrid(i)[0]=1.;
+      else initGrid(i)[0]=0.;
     }
-    output(grid,filename);
+    output(initGrid,filename);
   }
   else
   {
@@ -43,7 +41,7 @@ void generate(int dim, const char* filename)
   }
 }
 
-template <int dim> void update(MMSP::grid<dim,vector<double> >& grid, int steps)
+template <int dim, typename T> void update(grid<dim,vector<T> >& refGrid, int steps)
 {
   int id=0;
   int np=1;
@@ -53,11 +51,11 @@ template <int dim> void update(MMSP::grid<dim,vector<double> >& grid, int steps)
   #endif
 
   static int iterations=1;
-  static MMSP::grid<2,double> grid_old(1,g0(grid,0),g1(grid,0),g0(grid,1),g1(grid,1));
+  static grid<2,T> oldGrid(1,g0(refGrid,0),g1(refGrid,0),g0(refGrid,1),g1(refGrid,1));
   if (iterations==1)
-    for (int i=0; i<nodes(grid_old); ++i) grid_old(i)=grid(i)[0];
+    for (int i=0; i<nodes(oldGrid); ++i) oldGrid(i)=refGrid(i)[0];
 
-  MMSP::grid<dim,vector<double> > update(grid);
+  grid<dim,vector<T> > newGrid(refGrid);
   double      dt=5e-5;    // time-step
   double   theta=0.;      // angle relative to lab frame
   double       c=0.02;   // degree of anisotropy
@@ -67,7 +65,7 @@ template <int dim> void update(MMSP::grid<dim,vector<double> >& grid, int steps)
   double      k1=0.9;
   double      k2=20.;
   double   DiffT=2.25;    // thermal diffusivity
-  double     CFL=tau/(2*alpha*alpha*(1./pow(dx(grid,0),2)+1./pow(dx(grid,1),2))); // Courant-Friedrich-Lewy condition on dt
+  double     CFL=tau/(2*alpha*alpha*(1./pow(dx(refGrid,0),2)+1./pow(dx(refGrid,1),2))); // Courant-Friedrich-Lewy condition on dt
 
   if (dt>0.5*CFL)
   {
@@ -83,27 +81,27 @@ template <int dim> void update(MMSP::grid<dim,vector<double> >& grid, int steps)
   for (int step=0; step<steps; ++step)
   {
     if (id==0) print_progress(step, steps, iterations);
-    ghostswap(grid);
-    MMSP::grid<dim,vector<double> > Dgradphi(grid);
+    ghostswap(refGrid);
+    grid<dim,vector<T> > Dgradphi(refGrid);
 
-    for (int i=0; i<nodes(grid); ++i)
+    for (int i=0; i<nodes(refGrid); ++i)
     {
-      vector<int> x=position(grid,i);
+      vector<int> x=position(refGrid,i);
 
       // calculate grad(phi)
-      vector<double> gradphi(dim,0.); // (0,0)
+      vector<T> gradphi(dim,0.); // (0,0)
       for (int d=0; d<dim; ++d)
       {
         ++x[d];
-        double right=grid(x)[0];
+        T right=refGrid(x)[0];
         --x[d];
-        gradphi[d]=(right-grid(x)[0])/dx(grid,d);
+        gradphi[d]=(right-refGrid(x)[0])/dx(refGrid,d);
       }
-      double psi = theta + atan2(gradphi[1], gradphi[0]);
-      double Phi = tan(N*psi/2.);
-      double PhiSq = Phi*Phi;
-      double beta = (1.-PhiSq)/(1.+PhiSq);
-      double dBetadPsi = (-2.*N*Phi)/(1.+PhiSq);
+      T psi = theta + atan2(gradphi[1], gradphi[0]);
+      T Phi = tan(N*psi/2.);
+      T PhiSq = Phi*Phi;
+      T beta = (1.-PhiSq)/(1.+PhiSq);
+      T dBetadPsi = (-2.*N*Phi)/(1.+PhiSq);
       // Origin of this form for D is uncertain.
       Dgradphi(i)[0]=alpha*alpha*(1.+c*beta)*(   (1.+c*beta)*gradphi[0] - (c*dBetadPsi)*gradphi[1] );
       Dgradphi(i)[1]=alpha*alpha*(1.+c*beta)*( (c*dBetadPsi)*gradphi[0] +   (1.+c*beta)*gradphi[1] );
@@ -111,51 +109,51 @@ template <int dim> void update(MMSP::grid<dim,vector<double> >& grid, int steps)
     // Sync parallel grids
     ghostswap(Dgradphi);
 
-    for (int i=0; i<nodes(grid); ++i)
+    for (int i=0; i<nodes(refGrid); ++i)
     {
-      vector<int> x = position(grid,i);
+      vector<int> x = position(refGrid,i);
 
       // Update phase field
-      double divDgradphi = 0.;
+      T divDgradphi = 0.;
       for (int d=0; d<dim; ++d)
       {
         --x[d];
-         double left=Dgradphi(x)[d];
+         T left=Dgradphi(x)[d];
          ++x[d];
-         divDgradphi+=(Dgradphi(x)[d]-left)/dx(grid,d);
+         divDgradphi+=(Dgradphi(x)[d]-left)/dx(refGrid,d);
       }
-      vector<double> old=grid(i);
-      double m_phi=old[0]-0.5-(k1/M_PI)*atan(k2*old[1]);
+      vector<T> old=refGrid(i);
+      T m_phi=old[0]-0.5-(k1/M_PI)*atan(k2*old[1]);
       // Semi-implicit scheme per Warren 2003
       if (m_phi>0)
       {
-        update(x)[0] = ((m_phi+tau/dt)*old[0]+divDgradphi)/(tau/dt+old[0]*m_phi);
+        newGrid(x)[0] = ((m_phi+tau/dt)*old[0]+divDgradphi)/(tau/dt+old[0]*m_phi);
       }
       else
       {
-        update(x)[0] = (old[0]*tau/dt+divDgradphi)/(tau/dt-(1.-old[0])*m_phi);
+        newGrid(x)[0] = (old[0]*tau/dt+divDgradphi)/(tau/dt-(1.-old[0])*m_phi);
       }
       // Fully explicit forward-Euler discretization
-      //update(x)[0] = grid(i)[0] + dt*dphidt/tau;
+      //newGrid(x)[0] = refGrid(i)[0] + dt*dphidt/tau;
 
       // Update undercooling field
-      double lapT=0;
+      T lapT=0;
       for (int d=0; d<dim; ++d)
       {
         ++x[d];
-        double right=grid(x)[1];
+        T right=refGrid(x)[1];
         x[d]-=2;
-        double left=grid(x)[1];
+        T left=refGrid(x)[1];
         ++x[d];
-        lapT+=(right-(2*grid(x)[1])+left)/pow(dx(grid,d),2); // Laplacian
+        lapT+=(right-(2*refGrid(x)[1])+left)/pow(dx(refGrid,d),2); // Laplacian
       }
-      double dTdt = DiffT*lapT+(old[0]-grid_old(i))/dt;
-      update(x)[1] = old[1] + dt*dTdt;
+      T dTdt = DiffT*lapT+(old[0]-oldGrid(i))/dt;
+      newGrid(x)[1] = old[1] + dt*dTdt;
     }
-    for (int i=0; i<nodes(grid_old); ++i) grid_old(i)=grid(i)[0];
-    swap(grid,update);
+    for (int i=0; i<nodes(oldGrid); ++i) oldGrid(i)=refGrid(i)[0];
+    swap(refGrid,newGrid);
   }
-  ghostswap(grid);
+  ghostswap(refGrid);
   ++iterations;
 }
 

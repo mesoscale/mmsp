@@ -13,56 +13,56 @@ namespace MMSP{
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		MMSP::grid<1,sparse<double> > grid(0,0,128);
+		GRID1D initGrid(0,0,128);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
+		for (int i=0; i<nodes(initGrid); i++) {
+			vector<int> x = position(initGrid,i);
 			double d = 64.0-x[0];
-			if (d<32.0) set(grid(i),1)= 1.0;
-			else set(grid(i),0) = 1.0;
+			if (d<32.0) set(initGrid(i),1)= 1.0;
+			else set(initGrid(i),0) = 1.0;
 		}
 
-		output(grid,filename);
+		output(initGrid,filename);
 	}
 
 	if (dim==2) {
-		MMSP::grid<2,sparse<double> > grid(0,0,128,0,128);
+		GRID2D initGrid(0,0,128,0,128);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
+		for (int i=0; i<nodes(initGrid); i++) {
+			vector<int> x = position(initGrid,i);
 			double d = sqrt(pow(64.0-x[0],2)+pow(64.0-x[1],2));
-			if (d<32.0) set(grid(i),1)= 1.0;
-			else set(grid(i),0) = 1.0;
+			if (d<32.0) set(initGrid(i),1)= 1.0;
+			else set(initGrid(i),0) = 1.0;
 		}
 
-		output(grid,filename);
+		output(initGrid,filename);
 	}
 
 	if (dim==3) {
-		MMSP::grid<3,sparse<double> > grid(0,0,64,0,64,0,64);
+		GRID3D initGrid(0,0,64,0,64,0,64);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
+		for (int i=0; i<nodes(initGrid); i++) {
+			vector<int> x = position(initGrid,i);
 			double d = sqrt(pow(32.0-x[0],2)+pow(32.0-x[1],2)+pow(32.0-x[2],2));
-			if (d<16.0) set(grid(i),1)= 1.0;
-			else set(grid(i),0) = 1.0;
+			if (d<16.0) set(initGrid(i),1)= 1.0;
+			else set(initGrid(i),0) = 1.0;
 		}
 
-		output(grid,filename);
+		output(initGrid,filename);
 	}
 }
 
-template <int dim> void update(MMSP::grid<dim,sparse<double> >& grid, int steps)
+template <int dim, typename T> void update(grid<dim,sparse<T> >& oldGrid, int steps)
 {
 	double dt = 0.01;
 	double epsilon = 1.0e-8;
 
 	for (int step=0; step<steps; step++) {
 		// update grid must be overwritten each time
-		MMSP::grid<dim,sparse<double> > update(grid);
+		grid<dim,sparse<T> > newGrid(oldGrid);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
+		for (int n=0; n<nodes(oldGrid); n++) {
+			vector<int> x = position(oldGrid,n);
 
 			// determine nonzero fields within
 			// the neighborhood of this node
@@ -70,9 +70,9 @@ template <int dim> void update(MMSP::grid<dim,sparse<double> >& grid, int steps)
 			for (int j=0; j<dim; j++)
 				for (int k=-1; k<=1; k++) {
 					x[j] += k;
-					for (int h=0; h<length(grid(x)); h++) {
-						int index = MMSP::index(grid(x),h);
-						set(neighbors,index) = 1;
+					for (int h=0; h<length(oldGrid(x)); h++) {
+						int i = index(oldGrid(x),h);
+						set(neighbors,i) = 1;
 					}
 					x[j] -= k;
 				}
@@ -80,30 +80,30 @@ template <int dim> void update(MMSP::grid<dim,sparse<double> >& grid, int steps)
 			// if there is only one nonzero
 			// field, it remains the same
 			if (length(neighbors)<2)
-				update(i) = grid(i);
+				newGrid(n) = oldGrid(n);
 
 			else {
 				// compute laplacian
-				sparse<double> lap = laplacian(grid,i);
+				sparse<T> lap = laplacian(oldGrid,n);
 
 				// compute sum of squares
 				double sum = 0.0;
-				for (int j=0; j<length(grid(i)); j++) {
-					double phi = MMSP::value(grid(i),j);
+				for (int j=0; j<length(oldGrid(n)); j++) {
+					T phi = value(oldGrid(n),j);
 					sum += phi*phi;
 				}
 
-				// compute update values
+				// compute newGrid values
 				for (int j=0; j<length(neighbors); j++) {
-					int index = MMSP::index(neighbors,j);
-					double phi = grid(i)[index];
-					double value = phi-dt*(-phi-pow(phi,3)+2.0*(phi*sum-lap[index]));
-					if (value>epsilon) set(update(i),index) = value;
+					int i = index(neighbors,j);
+					T phi = oldGrid(n)[i];
+					T value = phi-dt*(-phi-pow(phi,3)+2.0*(phi*sum-lap[i]));
+					if (value>epsilon) set(newGrid(n),i) = value;
 				}
 			}
 		}
-		swap(grid,update);
-		ghostswap(grid);
+		swap(oldGrid,newGrid);
+		ghostswap(oldGrid);
 	}
 }
 

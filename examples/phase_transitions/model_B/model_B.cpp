@@ -40,56 +40,59 @@ double gaussian(double ave, double std)
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		MMSP::grid<1,double> grid(1,0,128);
+		GRID1D initGrid(1,0,128);
 
-		for (int i=0; i<nodes(grid); i++) grid(i) = 0.0;
+		for (int i=0; i<nodes(initGrid); i++)
+			initGrid(i) = 0.0;
 
-		MMSP::output(grid,filename);
+		output(initGrid,filename);
 	}
 
 	if (dim==2) {
-		MMSP::grid<2,double> grid(1,0,128,0,128);
+		GRID2D initGrid(1,0,128,0,128);
 
-		for (int i=0; i<nodes(grid); i++) grid(i) = 0.0;
+		for (int i=0; i<nodes(initGrid); i++)
+			initGrid(i) = 0.0;
 
-		MMSP::output(grid,filename);
+		output(initGrid,filename);
 	}
 
 	if (dim==3) {
-		MMSP::grid<3,double> grid(1,0,64,0,64,0,64);
+		GRID3D initGrid(1,0,64,0,64,0,64);
 
-		for (int i=0; i<nodes(grid); i++) grid(i) = 0.0;
+		for (int i=0; i<nodes(initGrid); i++)
+			initGrid(i) = 0.0;
 
-		MMSP::output(grid,filename);
+		output(initGrid,filename);
 	}
 }
 
-template <int dim> void update(MMSP::grid<dim,double>& grid, int steps)
+template <int dim, typename T> void update(grid<dim,T>& oldGrid, int steps)
 {
-	MMSP::grid<dim,double> update(grid);
-	MMSP::grid<dim,double> temp(grid);
+	grid<dim,T> newGrid(oldGrid);
+	grid<dim,T> temp(oldGrid);
 
-	double r = 1.0;
-	double u = 1.0;
-	double K = 1.0;
-	double M = 1.0;
-	double dt = 0.01;
-	double kT = 0.01;
-	double dV = 1.0;
+	T r = 1.0;
+	T u = 1.0;
+	T K = 1.0;
+	T M = 1.0;
+	T dt = 0.01;
+	T kT = 0.01;
+	T dV = 1.0;
 
 	for (int step=0; step<steps; step++) {
-		for (int i=0; i<nodes(grid); i++) {
-			double phi = grid(i);
-			double noise = gaussian(0.0,sqrt(2.0*kT/(dt*dV)));
-			temp(i) = -r*phi+u*pow(phi,3)-K*laplacian(grid,i)+noise;
+		for (int i=0; i<nodes(oldGrid); i++) {
+			T phi = oldGrid(i);
+			T noise = gaussian(0.0,sqrt(2.0*kT/(dt*dV)));
+			temp(i) = -r*phi+u*pow(phi,3)-K*laplacian(oldGrid,i)+noise;
 		}
 		ghostswap(temp);
 
-		for (int i=0; i<nodes(grid); i++)
-			update(i) = grid(i)+dt*M*laplacian(temp,i);
+		for (int i=0; i<nodes(oldGrid); i++)
+			newGrid(i) = oldGrid(i)+dt*M*laplacian(temp,i);
 
-		swap(grid,update);
-		ghostswap(grid);
+		swap(oldGrid,newGrid);
+		ghostswap(oldGrid);
 	}
 }
 
