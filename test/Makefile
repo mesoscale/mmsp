@@ -1,15 +1,18 @@
 # Makefile
 # GNU makefile for single and parallel test programs using MMSP
+# and the Google unit test framework (gtest)
 # Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 # includes
 incdir = ../include
+gtdir  = gtest/googletest
 
 # compilers/flags
 compiler = g++
-flags = -O0 -I $(incdir)
+flags = -g -I$(incdir)
+gflags = -isystem $(gtdir)/include -I$(gtdir) $(flags) -I$(gtdir)/include -pthread
 pcompiler = mpic++
-pflags = -O0 -I $(incdir) -include mpi.h 
+pflags = $(flags) -include mpi.h 
 
 # dependencies
 core = $(incdir)/MMSP.hpp \
@@ -26,10 +29,30 @@ test: test.cpp $(core)
 parallel: test.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@
 
-unitTestSuite: MMSP.unitTestSuite.hpp
-	cxxtestgen --error-printer -o MMSP.unitTestSuite.cpp $< && \
-	$(compiler) $(flags) -o $@ MMSP.unitTestSuite.cpp $(core) && \
+# GTEST
+
+
+gthdr = $(gtdir)/include/gtest/*.h \
+        $(gtdir)/include/gtest/internal/*.h
+
+gtsrc = $(gtdir)/src/*.cc \
+        $(gtdir)/src/*.h
+
+gtest-all.o: $(gtsrc) $(gthdr)
+	$(compiler) $(gflags) -c $(gtdir)/src/gtest-all.cc
+
+gtest_main.o: $(gtsrc) $(gthdr)
+	$(compiler) $(gflags) -c $(gtdir)/src/gtest_main.cc
+
+gtest_main.a: gtest-all.o gtest_main.o
+	$(AR) $(ARFLAGS) $@ $^
+
+MMSP.unitTestSuite.o: $(core) $(gthdr)
+	$(compiler) $(gflags) -c MMSP.unitTestSuite.cpp
+
+unitTestSuite: MMSP.unitTestSuite.o gtest_main.a
+	$(compiler) $(gflags) $^ -o $@ -lpthread -lz && \
 	./$@
 
 clean:
-	rm -f test parallel MMSP.unitTestSuite.cpp unitTestSuite
+	rm -f test parallel unitTestSuite *.a *.o
