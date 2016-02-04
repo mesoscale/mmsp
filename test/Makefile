@@ -1,36 +1,38 @@
 # Makefile
 # GNU makefile for single and parallel test programs using MMSP
-# and the Google unit test framework (gtest)
-# Questions/comments to gruberja@gmail.com (Jason Gruber)
+# Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
 # includes
 incdir = ../include
-gtdir  = gtest/googletest
 
 # compilers/flags
 compiler = g++
 flags = -g -I$(incdir)
-gflags = -isystem $(gtdir)/include -I$(gtdir) $(flags) -I$(gtdir)/include -pthread
 pcompiler = mpic++
 pflags = $(flags) -include mpi.h 
 
-# dependencies
-core = $(incdir)/MMSP.hpp \
-       $(incdir)/MMSP.utility.hpp \
-       $(incdir)/MMSP.grid.hpp \
-       $(incdir)/MMSP.scalar.hpp \
-       $(incdir)/MMSP.vector.hpp \
-       $(incdir)/MMSP.sparse.hpp 
-
-# the program
-test: test.cpp $(core)
+# Hello World program
+test: test.cpp
 	$(compiler) $(flags) $< -o $@
 
-parallel: test.cpp $(core)
+parallel: test.cpp
 	$(pcompiler) $(pflags) $< -o $@
 
-# GTEST
 
+
+# Unit testing depends on the Google C++ testing framework, gtest.
+# This is introduced as a git submodule in the gtest sub-directory.
+# If yours is a fresh clone of MMSP, you can populate this module
+# from the top-level directory by executing
+# 	$ git submodule init
+# 	$ git submodule update
+# Alternatively, clone MMSP recursively:
+# 	$ git clone --recursive https://github.com/mesoscale/mmsp.git
+
+gtdir  = gtest/googletest
+
+gflags = -isystem $(gtdir)/include -I$(gtdir) $(flags) \
+         -I$(gtdir)/include -pthread
 
 gthdr = $(gtdir)/include/gtest/*.h \
         $(gtdir)/include/gtest/internal/*.h
@@ -38,21 +40,16 @@ gthdr = $(gtdir)/include/gtest/*.h \
 gtsrc = $(gtdir)/src/*.cc \
         $(gtdir)/src/*.h
 
+# gtest dependencies
 gtest-all.o: $(gtsrc) $(gthdr)
 	$(compiler) $(gflags) -c $(gtdir)/src/gtest-all.cc
 
-gtest_main.o: $(gtsrc) $(gthdr)
-	$(compiler) $(gflags) -c $(gtdir)/src/gtest_main.cc
+# unit testing program
+unitTestSuite: MMSP.unitTestSuite.cpp gtest-all.o
+	$(compiler) $(gflags) $^ -o $@ -lpthread -lz
 
-gtest_main.a: gtest-all.o gtest_main.o
-	$(AR) $(ARFLAGS) $@ $^
-
-MMSP.unitTestSuite.o: $(core) $(gthdr)
-	$(compiler) $(gflags) -c MMSP.unitTestSuite.cpp
-
-unitTestSuite: MMSP.unitTestSuite.o gtest_main.a
-	$(compiler) $(gflags) $^ -o $@ -lpthread -lz && \
-	./$@
+parallelTestSuite: MMSP.unitTestSuite.cpp gtest-all.o
+	$(pcompiler) $(gflags) -include mpi.h $^ -o $@ -lpthread -lz
 
 clean:
-	rm -f test parallel unitTestSuite *.a *.o
+	rm -f test parallel unitTestSuite parallelTestSuite gtest-all.o
