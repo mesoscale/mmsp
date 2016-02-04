@@ -1,141 +1,94 @@
 /* MMSP.unitTest.hpp
-** Use Google Test to build unit tests for MMSP classes
-** http://github.com/google/googletest
-*/
+ * Use Google Test to build unit tests for MMSP classes
+ * http://github.com/google/googletest
+ */
+
 #include"MMSP.hpp"
 #include<gtest/gtest.h>
+
+// GTest supports templated unit testing. Declare the types of interest.
 
 using testing::Types;
 typedef Types<char,short,int,long,float,double> datatypes;
 
-
-
 template <class T>
-class scalarTest : public testing::Test
+class dataTestSuite : public testing::Test
 {
 protected:
 	virtual void SetUp() {
-		value = 2;
-	}
+		myScalar = 2;
 
-	MMSP::scalar<T> value;
-};
-
-TYPED_TEST_CASE(scalarTest, datatypes);
-
-TYPED_TEST(scalarTest, testSize) {
-	EXPECT_EQ(this->value.buffer_size(),sizeof(TypeParam));
-}
-TYPED_TEST(scalarTest, testAddition) {
-	EXPECT_EQ(this->value+this->value,static_cast<TypeParam>(4));
-}
-TYPED_TEST(scalarTest, testSquares) {
-	EXPECT_EQ(this->value*this->value,static_cast<TypeParam>(4));
-}
-TYPED_TEST(scalarTest, testMultiplication) {
-	EXPECT_EQ(2*this->value,static_cast<TypeParam>(4));
-	EXPECT_EQ(this->value*2,static_cast<TypeParam>(4));
-}
-
-
-
-
-template <class T>
-class vectorTest : public testing::Test
-{
-protected:
-	virtual void SetUp() {
 		MMSP::vector<T> temp(3,2);
-		value = temp;
-	}
+		myVector = temp;
 
-	MMSP::vector<T> value;
-};
-
-TYPED_TEST_CASE(vectorTest, datatypes);
-
-TYPED_TEST(vectorTest, testValue) {
-	for (int i=0; i<3; i++) {
-		EXPECT_EQ(this->value[i],static_cast<TypeParam>(2));
-	}
-}
-TYPED_TEST(vectorTest, testSize) {
-	EXPECT_EQ(this->value.length(),3);
-	EXPECT_EQ(this->value.buffer_size(),sizeof(TypeParam));
-	EXPECT_DEATH(this->value[4],"index exceeds vector size");
-}
-TYPED_TEST(vectorTest, testAddition) {
-	MMSP::vector<TypeParam> temp = this->value+this->value;
-	for (int i=0; i<3; i++)
-		EXPECT_EQ(temp[i],static_cast<TypeParam>(4));
-}
-TYPED_TEST(vectorTest, testIncrement) {
-	this->value+=this->value;
-	for (int i=0; i<3; i++)
-		EXPECT_EQ(this->value[i],static_cast<TypeParam>(4));
-}
-TYPED_TEST(vectorTest, testSquares) {
-	EXPECT_EQ(this->value*this->value,12);
-}
-TYPED_TEST(vectorTest, testMultiplication) {
-	MMSP::vector<TypeParam> a = 2*this->value;
-	//MMSP::vector<TypeParam> b = this->value*2;
-	for (int i=0; i<3; i++) {
-		EXPECT_EQ(a[i],static_cast<TypeParam>(4));
-		//EXPECT_EQ(b[i],static_cast<TypeParam>(4)); // no such operator
-	}
-}
-
-
-
-
-template<class T>
-class sparseTest : public testing::Test
-{
-protected:
-	virtual void SetUp() {
 		for (int i=0; i<3; i++)
-			value.set(2*i) = 2;
+			mySparse.set(2*i) = 2;
 	}
-
-	MMSP::sparse<T> value;
+	MMSP::scalar<T> myScalar;
+	MMSP::vector<T> myVector;
+	MMSP::sparse<T> mySparse;
 };
 
+TYPED_TEST_CASE(dataTestSuite, datatypes);
 
-TYPED_TEST_CASE(sparseTest, datatypes);
-
-TYPED_TEST(sparseTest, testValue) {
-	for (int i=0; i<6; i+=2)
-		EXPECT_EQ(this->value[i],static_cast<TypeParam>(2));
-	for (int i=1; i<7; i+=2)
-		EXPECT_EQ(this->value[i],0);
+TYPED_TEST(dataTestSuite, testSize) {
+	/*scalar*/	EXPECT_EQ(this->myScalar.buffer_size(),sizeof(TypeParam));
+	/*vector*/	EXPECT_EQ(this->myVector.length(),3);
+	          	EXPECT_EQ(this->myVector.buffer_size(),sizeof(int)+3*sizeof(TypeParam));
+	          	try {
+		      		this->myVector[4];
+	          		FAIL();
+	         	} catch(std::exception& err) {
+	         		EXPECT_STREQ("index exceeds vector size",err.what());
+	         	}
+	/*sparse*/	EXPECT_EQ(this->mySparse.length(),3);
+	          	EXPECT_EQ(this->mySparse.buffer_size(),sizeof(int) + 6*std::max(sizeof(int),sizeof(TypeParam)));
 }
-TYPED_TEST(sparseTest, testSize) {
-	EXPECT_EQ(this->value.length(),3);
-	unsigned int delta = std::abs(sizeof(int) - sizeof(TypeParam));
-	EXPECT_EQ(this->value.buffer_size(),sizeof(int) + 2*3*sizeof(TypeParam) + 3*delta);
+TYPED_TEST(dataTestSuite, testValue) {
+	/*scalar*/	EXPECT_EQ(this->myScalar,static_cast<TypeParam>(2));
+	/*vector*/	for (int i=0; i<3; i++)
+	          		EXPECT_EQ(this->myVector[i],static_cast<TypeParam>(2));
+	/*sparse*/	for (int i=0; i<6; i+=2)
+	          		EXPECT_EQ(this->mySparse[i],static_cast<TypeParam>(2));
+	          	for (int i=1; i<7; i+=2)
+	          		EXPECT_EQ(this->mySparse[i],0);
 }
-TYPED_TEST(sparseTest, testAddition) {
-	MMSP::sparse<TypeParam> temp = this->value+this->value;
-	for (int i=0; i<3; i++)
-		EXPECT_EQ(temp.value(i),static_cast<TypeParam>(4));
+TYPED_TEST(dataTestSuite, testAddition) {
+	/*scalar*/	EXPECT_EQ(this->myScalar+this->myScalar,static_cast<TypeParam>(4));
+	/*vector*/	MMSP::vector<TypeParam> tempv = this->myVector+this->myVector;
+	          	for (int i=0; i<3; i++)
+	          		EXPECT_EQ(tempv[i],static_cast<TypeParam>(4));
+	/*sparse*/	MMSP::sparse<TypeParam> temps = this->mySparse+this->mySparse;
+	          	for (int i=0; i<3; i++)
+	          		EXPECT_EQ(temps.value(i),static_cast<TypeParam>(4));
 }
-TYPED_TEST(sparseTest, testIncrement) {
-	this->value+=this->value;
-	for (int i=0; i<3; i++)
-		EXPECT_EQ(this->value.value(i),static_cast<TypeParam>(4));
+TYPED_TEST(dataTestSuite, testIncrement) {
+	/*scalar*/	this->myScalar += this->myScalar;
+	          	EXPECT_EQ(this->myScalar,static_cast<TypeParam>(4));
+	/*vector*/	this->myVector += this->myVector;
+	          	for (int i=0; i<3; i++)
+	          		EXPECT_EQ(this->myVector[i],static_cast<TypeParam>(4));
+	/*sparse*/	this->mySparse+=this->mySparse;
+	          	for (int i=0; i<3; i++)
+	          		EXPECT_EQ(this->mySparse.value(i),static_cast<TypeParam>(4));
 }
-TYPED_TEST(sparseTest, testMultiplication) {
-	MMSP::sparse<TypeParam> a = 2*this->value;
-	//MMSP::sparse<TypeParam> b = this->value*2;
-	for (int i=0; i<3; i++) {
-		EXPECT_EQ(a.value(i),static_cast<TypeParam>(4));
-		//EXPECT_EQ(b.value(i),static_cast<TypeParam>(4)); // no such operator
-	}
+TYPED_TEST(dataTestSuite, testSquares) {
+	/*scalar*/	EXPECT_EQ(this->myScalar*this->myScalar,static_cast<TypeParam>(4));
+	/*vector*/	EXPECT_EQ(this->myVector*this->myVector,12);
+	/*sparse*/  // No such operator
 }
-
-
-
+TYPED_TEST(dataTestSuite, testMultiplication) {
+	/*scalar*/	EXPECT_EQ(2*this->myScalar,static_cast<TypeParam>(4));
+	          	EXPECT_EQ(this->myScalar*2,static_cast<TypeParam>(4));
+	/*vector*/	MMSP::vector<TypeParam> tempv = 2*this->myVector;
+	          	//MMSP::vector<TypeParam> b = this->myVector*2; // no such operator
+	          	for (int i=0; i<3; i++)
+	          		EXPECT_EQ(tempv[i],static_cast<TypeParam>(4));
+	/*sparse*/	MMSP::sparse<TypeParam> temps = 2*this->mySparse;
+	          	//MMSP::sparse<TypeParam> b = this->mySparse*2; // no such operator
+	          	for (int i=0; i<3; i++)
+	          		EXPECT_EQ(temps.value(i),static_cast<TypeParam>(4));
+}
 
 
 template<class T>
@@ -169,5 +122,4 @@ TYPED_TEST(gridTest, testSize) {
 	#endif
 	EXPECT_EQ(this->grid1D.buffer_size(),MMSP::nodes(this->grid1D)*sizeof(TypeParam));
 }
-
 
