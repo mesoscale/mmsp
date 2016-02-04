@@ -305,6 +305,9 @@ template <typename T, typename U> vector<T> operator*(const U& value, const vect
 	for (int i = 0; i < N; i++) z[i] = static_cast<T>(value) * x[i];
 	return z;
 }
+template <typename T, typename U> vector<T> operator*(const vector<T>& x, const U& value) {
+	return value*x;
+}
 template <typename T> T operator*(const vector<T>& x, const vector<T>& y) {
 	int N = (x.length()>y.length())?y.length():x.length();
 	T z(0);

@@ -35,12 +35,8 @@ TYPED_TEST(dataTestSuite, testSize) {
 	/*scalar*/	EXPECT_EQ(this->myScalar.buffer_size(),sizeof(TypeParam));
 	/*vector*/	EXPECT_EQ(this->myVector.length(),3);
 	          	EXPECT_EQ(this->myVector.buffer_size(),sizeof(int)+3*sizeof(TypeParam));
-	          	try {
-		      		this->myVector[4];
-	          		FAIL();
-	         	} catch(std::exception& err) {
-	         		EXPECT_STREQ("index exceeds vector size",err.what());
-	         	}
+	          	EXPECT_THROW(this->myVector[4],std::out_of_range);
+
 	/*sparse*/	EXPECT_EQ(this->mySparse.length(),3);
 	          	EXPECT_EQ(this->mySparse.buffer_size(),sizeof(int) + 6*std::max(sizeof(int),sizeof(TypeParam)));
 }
@@ -75,19 +71,23 @@ TYPED_TEST(dataTestSuite, testIncrement) {
 TYPED_TEST(dataTestSuite, testSquares) {
 	/*scalar*/	EXPECT_EQ(this->myScalar*this->myScalar,static_cast<TypeParam>(4));
 	/*vector*/	EXPECT_EQ(this->myVector*this->myVector,12);
-	/*sparse*/  // No such operator
+	/*sparse*/	// No operator*(sparse,sparse): meaning is not obvious.
 }
 TYPED_TEST(dataTestSuite, testMultiplication) {
 	/*scalar*/	EXPECT_EQ(2*this->myScalar,static_cast<TypeParam>(4));
 	          	EXPECT_EQ(this->myScalar*2,static_cast<TypeParam>(4));
 	/*vector*/	MMSP::vector<TypeParam> tempv = 2*this->myVector;
-	          	//MMSP::vector<TypeParam> b = this->myVector*2; // no such operator
-	          	for (int i=0; i<3; i++)
+	          	MMSP::vector<TypeParam> tempv2 = this->myVector*2;
+	          	for (int i=0; i<3; i++) {
 	          		EXPECT_EQ(tempv[i],static_cast<TypeParam>(4));
+	          		EXPECT_EQ(tempv2[i],static_cast<TypeParam>(4));
+	          	}
 	/*sparse*/	MMSP::sparse<TypeParam> temps = 2*this->mySparse;
-	          	//MMSP::sparse<TypeParam> b = this->mySparse*2; // no such operator
-	          	for (int i=0; i<3; i++)
+	          	MMSP::sparse<TypeParam> temps2 = this->mySparse*2;
+	          	for (int i=0; i<3; i++) {
 	          		EXPECT_EQ(temps.value(i),static_cast<TypeParam>(4));
+	          		EXPECT_EQ(temps2.value(i),static_cast<TypeParam>(4));
+	          	}
 }
 
 

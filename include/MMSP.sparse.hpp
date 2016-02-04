@@ -321,7 +321,9 @@ template <typename T, typename U> sparse<T> operator*(const U& value, const spar
 		z.set(x.index(i)) = static_cast<T>(value) * x.value(i);
 	return z;
 }
-
+template <typename T, typename U> sparse<T> operator*(const sparse<T>& x, const U& value) {
+	return value*x;
+}
 
 // target class: dim = 0 specialization for sparse class
 template <int ind, typename T>
