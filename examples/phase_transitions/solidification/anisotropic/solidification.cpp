@@ -1,6 +1,6 @@
 // solidification.cpp
 // Anisotropic solidification by 2D phase field method
-// Questions/comments to kellet@rpi.edu (Trevor Keller)
+// Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
 #ifndef SOLIDIFICATION_UPDATE
 #define SOLIDIFICATION_UPDATE

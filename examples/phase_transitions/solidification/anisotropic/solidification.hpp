@@ -1,6 +1,6 @@
 // solidification.hpp
 // Anisotropic dendritic solidification code
-// Questions/comments to kellet@rpi.edu (Trevor Keller)
+// Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
 std::string PROGRAM = "solidification";
 std::string MESSAGE = "Anisotropic dendritic solidification code";
