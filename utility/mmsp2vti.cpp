@@ -10,7 +10,7 @@
 #include<vector>
 #include<cmath>
 
-template<class T> void print_vector(std::ofstream& fstr, const MMSP::vector<T>& v, const int mode)
+template<class T> void print_vector(std::ofstream& fstr, const MMSP::vector<T>& v, const int& mode, const int& field)
 {
 	if (mode==1) { // --mag
 		double sum = 0.0;
@@ -23,13 +23,15 @@ template<class T> void print_vector(std::ofstream& fstr, const MMSP::vector<T>& 
 			if (v[h] > v[max])
 				max = h;
 		fstr << max << " ";
+	} else if (mode==3) { // --field
+		fstr << v[field] << " ";
 	} else {
 		for (int h = 0; h < v.length(); h++)
 			fstr << v[h] << " ";
 	}
 }
 
-template<class T> void print_sparse(std::ofstream& fstr, const MMSP::sparse<T>& s, const int mode)
+template<class T> void print_sparse(std::ofstream& fstr, const MMSP::sparse<T>& s, const int& mode, const int& field)
 {
 	if (mode==2) { // --max
 		int max = 0;
@@ -37,6 +39,8 @@ template<class T> void print_sparse(std::ofstream& fstr, const MMSP::sparse<T>& 
 			if (s.value(h) > s.value(max))
 				max = h;
 		fstr << max << " ";
+	} else if (mode==3) { // --field
+		fstr << s[field] << " ";
 	} else { // --mag is redundant for sparse
 		double sum = 0.0;
 		for (int h = 0; h < s.length(); h++)
@@ -56,7 +60,7 @@ int main(int argc, char* argv[])
 	// help diagnostic
 	if (std::string(argv[1]) == "--help") {
 		std::cout << argv[0] << ": convert MMSP grid data to VTK image data format.\n";
-		std::cout << "Usage: " << argv[0] << " [--help] [--mag|--max] infile [outfile]\n";
+		std::cout << "Usage: " << argv[0] << " [--help] [--mag|--max|--field=n] infile [outfile]\n";
 		std::cout << "       Select either --mag or --max to flatten vector or sparse data by the specified method.\n";
 		std::cout << "Questions/comments to gruberja@gmail.com (Jason Gruber).\n";
 		std::exit(0);
@@ -64,6 +68,7 @@ int main(int argc, char* argv[])
 
 	int fileindex = 1; // in typical usage, filename comes immediately after executable
 	int flatten = 0;
+	int field = 0;
 
 	if (std::string(argv[1]) == "--mag") {
 		flatten=1;
@@ -71,6 +76,11 @@ int main(int argc, char* argv[])
 	} else if (std::string(argv[1]) == "--max") {
 		flatten=2;
 		fileindex=2;
+	} else if (std::string(argv[1]).substr(0,8) == "--field=") {
+		flatten=3;
+		fileindex=2;
+		std::string str(argv[1]);
+		field = atoi(str.substr(8,12).c_str());
 	}
 
 // file open error check
@@ -597,14 +607,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_vector(output, GRID(x), flatten);
+						print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<bool> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_vector(output, GRID(x), flatten);
+							print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<bool> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -612,7 +622,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_vector(output, GRID(x), flatten);
+								print_vector(output, GRID(x), flatten, field);
 				}
 			}
 			if (char_type) {
@@ -621,14 +631,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_vector(output, GRID(x), flatten);
+						print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_vector(output, GRID(x), flatten);
+							print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -636,7 +646,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_vector(output, GRID(x), flatten);
+								print_vector(output, GRID(x), flatten, field);
 				}
 			}
 			if (unsigned_char_type) {
@@ -645,14 +655,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_vector(output, GRID(x), flatten);
+						print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<unsigned char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_vector(output, GRID(x), flatten);
+							print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<unsigned char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -660,7 +670,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_vector(output, GRID(x), flatten);
+								print_vector(output, GRID(x), flatten, field);
 				}
 			}
 			if (int_type) {
@@ -669,14 +679,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_vector(output, GRID(x), flatten);
+						print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_vector(output, GRID(x), flatten);
+							print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -684,7 +694,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_vector(output, GRID(x), flatten);
+								print_vector(output, GRID(x), flatten, field);
 				}
 			}
 			if (unsigned_int_type) {
@@ -693,14 +703,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_vector(output, GRID(x), flatten);
+						print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<unsigned int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_vector(output, GRID(x), flatten);
+							print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<unsigned int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -708,7 +718,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_vector(output, GRID(x), flatten);
+								print_vector(output, GRID(x), flatten, field);
 				}
 			}
 			if (long_type) {
@@ -717,14 +727,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_vector(output, GRID(x), flatten);
+						print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_vector(output, GRID(x), flatten);
+							print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -732,7 +742,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_vector(output, GRID(x), flatten);
+								print_vector(output, GRID(x), flatten, field);
 				}
 			}
 			if (unsigned_long_type) {
@@ -741,14 +751,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_vector(output, GRID(x), flatten);
+						print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<unsigned long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_vector(output, GRID(x), flatten);
+							print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<unsigned long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -756,7 +766,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_vector(output, GRID(x), flatten);
+								print_vector(output, GRID(x), flatten, field);
 				}
 			}
 			if (short_type) {
@@ -765,14 +775,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_vector(output, GRID(x), flatten);
+						print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_vector(output, GRID(x), flatten);
+							print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -780,7 +790,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_vector(output, GRID(x), flatten);
+								print_vector(output, GRID(x), flatten, field);
 				}
 			}
 			if (unsigned_short_type) {
@@ -789,14 +799,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_vector(output, GRID(x), flatten);
+						print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<unsigned short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_vector(output, GRID(x), flatten);
+							print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<unsigned short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -804,7 +814,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_vector(output, GRID(x), flatten);
+								print_vector(output, GRID(x), flatten, field);
 				}
 			}
 			if (float_type) {
@@ -813,14 +823,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_vector(output, GRID(x), flatten);
+						print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<float> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_vector(output, GRID(x), flatten);
+							print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<float> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -828,7 +838,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_vector(output, GRID(x), flatten);
+								print_vector(output, GRID(x), flatten, field);
 				}
 			}
 			if (double_type) {
@@ -837,14 +847,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_vector(output, GRID(x), flatten);
+						print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_vector(output, GRID(x), flatten);
+							print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -852,7 +862,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_vector(output, GRID(x), flatten);
+								print_vector(output, GRID(x), flatten, field);
 				}
 			}
 			if (long_double_type) {
@@ -861,14 +871,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_vector(output, GRID(x), flatten);
+						print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<long double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_vector(output, GRID(x), flatten);
+							print_vector(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<long double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -876,7 +886,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_vector(output, GRID(x), flatten);
+								print_vector(output, GRID(x), flatten, field);
 				}
 			}
 		}
@@ -888,14 +898,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_sparse(output, GRID(x), flatten);
+						print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<bool> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_sparse(output, GRID(x), flatten);
+							print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<bool> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -903,7 +913,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_sparse(output, GRID(x), flatten);
+								print_sparse(output, GRID(x), flatten, field);
 				}
 			}
 			if (char_type) {
@@ -912,14 +922,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_sparse(output, GRID(x), flatten);
+						print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_sparse(output, GRID(x), flatten);
+							print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -927,7 +937,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_sparse(output, GRID(x), flatten);
+								print_sparse(output, GRID(x), flatten, field);
 				}
 			}
 			if (unsigned_char_type) {
@@ -936,14 +946,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_sparse(output, GRID(x), flatten);
+						print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<unsigned char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_sparse(output, GRID(x), flatten);
+							print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<unsigned char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -951,7 +961,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_sparse(output, GRID(x), flatten);
+								print_sparse(output, GRID(x), flatten, field);
 				}
 			}
 			if (int_type) {
@@ -960,14 +970,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_sparse(output, GRID(x), flatten);
+						print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_sparse(output, GRID(x), flatten);
+							print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -975,7 +985,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_sparse(output, GRID(x), flatten);
+								print_sparse(output, GRID(x), flatten, field);
 				}
 			}
 			if (unsigned_int_type) {
@@ -984,14 +994,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_sparse(output, GRID(x), flatten);
+						print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<unsigned int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_sparse(output, GRID(x), flatten);
+							print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<unsigned int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -999,7 +1009,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_sparse(output, GRID(x), flatten);
+								print_sparse(output, GRID(x), flatten, field);
 				}
 			}
 			if (long_type) {
@@ -1008,14 +1018,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_sparse(output, GRID(x), flatten);
+						print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_sparse(output, GRID(x), flatten);
+							print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -1023,7 +1033,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_sparse(output, GRID(x), flatten);
+								print_sparse(output, GRID(x), flatten, field);
 				}
 			}
 			if (unsigned_long_type) {
@@ -1032,14 +1042,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_sparse(output, GRID(x), flatten);
+						print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<unsigned long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_sparse(output, GRID(x), flatten);
+							print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<unsigned long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -1047,7 +1057,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_sparse(output, GRID(x), flatten);
+								print_sparse(output, GRID(x), flatten, field);
 				}
 			}
 			if (short_type) {
@@ -1056,14 +1066,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_sparse(output, GRID(x), flatten);
+						print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_sparse(output, GRID(x), flatten);
+							print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -1071,7 +1081,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_sparse(output, GRID(x), flatten);
+								print_sparse(output, GRID(x), flatten, field);
 				}
 			}
 			if (unsigned_short_type) {
@@ -1080,14 +1090,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_sparse(output, GRID(x), flatten);
+						print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<unsigned short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_sparse(output, GRID(x), flatten);
+							print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<unsigned short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -1095,7 +1105,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_sparse(output, GRID(x), flatten);
+								print_sparse(output, GRID(x), flatten, field);
 				}
 			}
 			if (float_type) {
@@ -1104,14 +1114,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_sparse(output, GRID(x), flatten);
+						print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<float> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_sparse(output, GRID(x), flatten);
+							print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<float> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -1119,7 +1129,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_sparse(output, GRID(x), flatten);
+								print_sparse(output, GRID(x), flatten, field);
 				}
 			}
 			if (double_type) {
@@ -1128,14 +1138,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_sparse(output, GRID(x), flatten);
+						print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_sparse(output, GRID(x), flatten);
+							print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -1143,7 +1153,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_sparse(output, GRID(x), flatten);
+								print_sparse(output, GRID(x), flatten, field);
 				}
 			}
 			if (long_double_type) {
@@ -1152,14 +1162,14 @@ int main(int argc, char* argv[])
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(1, 0);
 					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						print_sparse(output, GRID(x), flatten);
+						print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<long double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					MMSP::vector<int> x(2, 0);
 					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							print_sparse(output, GRID(x), flatten);
+							print_sparse(output, GRID(x), flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<long double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -1167,7 +1177,7 @@ int main(int argc, char* argv[])
 					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
 						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
 							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								print_sparse(output, GRID(x), flatten);
+								print_sparse(output, GRID(x), flatten, field);
 				}
 			}
 		}
