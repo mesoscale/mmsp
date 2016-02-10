@@ -26,6 +26,9 @@ utility : mmsp2vti mmsp2pvd \
 mmsp2vti: mmsp2vti.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
+mmsp2png: mmsp2png.cpp $(core) /usr/include/IL/devil_cpp_wrapper.hpp
+	$(compiler) $(flags) -std=c++11 -I /usr/include/IL -include il.h $< -o $@ -lz-lIL -lILU -lILUT
+
 mmsp2z: mmsp2z.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
