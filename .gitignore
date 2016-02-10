@@ -14,6 +14,7 @@ doc/MMSP.manual.pdf
 utility/MC2PF
 utility/MC2sPF
 utility/MC2vox
+utility/mmsp2png
 utility/mmsp2pvd
 utility/mmsp2vti
 utility/mmsp2xyz

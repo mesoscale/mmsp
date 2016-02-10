@@ -4,7 +4,7 @@
 
 # compilers/flags
 compiler = g++
-flags = -O3 -Wall -I ../include/
+flags = -O2 -Wall -I ../include/
 
 # dependencies
 core = ../include/MMSP.hpp \
@@ -16,6 +16,8 @@ core = ../include/MMSP.hpp \
 
 topo = ../algorithms/topology
 
+IL_PATH=/users/tnk10/.conda/envs/mmsp
+
 # conversion programs
 utility : mmsp2vti mmsp2pvd \
           MC2PF MC2sPF \
@@ -26,14 +28,14 @@ utility : mmsp2vti mmsp2pvd \
 mmsp2vti: mmsp2vti.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-mmsp2png: mmsp2png.cpp $(core) /usr/include/IL/devil_cpp_wrapper.hpp
-	$(compiler) $(flags) -std=c++11 -I /usr/include/IL -include il.h $< -o $@ -lz-lIL -lILU -lILUT
+mmsp2png: mmsp2png.cpp $(core) $(IL_PATH)/include/IL/devil_cpp_wrapper.hpp
+	$(compiler) $(flags) -I $(IL_PATH)/include/IL -include il.h $< -o $@ -L$(IL_PATH)/lib -lz -lIL -lILU -lILUT
 
 mmsp2z: mmsp2z.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-slicer: mmspslicer.cpp $(core) /usr/include/IL/devil_cpp_wrapper.hpp
-	$(compiler) $(flags) -I /usr/include/IL -include il.h $< -o $@ -lz-lIL -lILU -lILUT
+slicer: mmspslicer.cpp $(core) $(IL_PATH)/include/IL/devil_cpp_wrapper.hpp
+	$(compiler) $(flags) -I $(IL_PATH)/include/IL -include il.h $< -o $@ -L$(IL_PATH)/lib -lz -lIL -lILU -lILUT
 
 mmsp2topo: mmsp2topo.cpp $(core)
 	$(compiler) $(flags) -I $(topo) $< -o $@ -lz
