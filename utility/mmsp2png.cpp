@@ -20,22 +20,72 @@
 
 int writePNG(const int w, const int h, const int bpp, unsigned char* imData, const char* filename);
 
-template <int dim, typename T> void scalar_limits(const MMSP::grid<dim,MMSP::scalar<T> >& GRID, T& min, T& max)
+template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,MMSP::scalar<T> >& GRID,
+                                                    const int& mode, const int& sliceaxis, const int& slicelevel,
+                                                    const std::set<double>& levelset, const int& bufsize, unsigned char* buffer)
 {
-	min=0;
-	max=1;
+	T min=0;
+	T max=1;
 	for (int n=0; n<MMSP::nodes(GRID); n++) {
 		if (GRID(n)>max)
 			max=GRID(n);
 		else if (GRID(n)<min)
 			min=GRID(n);
 	}
+	if (dim==1) {
+		unsigned int n=0;
+		MMSP::vector<int> x(1, 0);
+		for (x[0] = MMSP::x0(GRID,0); x[0] < MMSP::x1(GRID,0); x[0]++) {
+			T val = GRID(x);
+			assert(n<bufsize);
+			buffer[n] = 255*((val-min)/(max-min));
+			if (mode==4) //contour
+				for (std::set<double>::iterator it=levelset.begin(); it!=levelset.end(); it++)
+					if (std::fabs(val-*it)/std::fabs(*it)<1.0e-2)
+						buffer[n] = 255-buffer[n];
+			n++;
+		}
+	} else if (dim==2) {
+		unsigned int n=0;
+		MMSP::vector<int> x(2, 0);
+		for (x[1] = MMSP::x0(GRID,1); x[1] < MMSP::x1(GRID,1); x[1]++)
+			for (x[0] = MMSP::x0(GRID,0); x[0] < MMSP::x1(GRID,0); x[0]++) {
+				T val = GRID(x);
+				assert(n<bufsize);
+				buffer[n] = 255*((val-min)/(max-min));
+				if (mode==4) //contour
+					for (std::set<double>::iterator it=levelset.begin(); it!=levelset.end(); it++)
+						if (std::fabs(val-*it)/std::fabs(*it)<1.0e-2)
+							buffer[n] = 255-buffer[n];
+				n++;
+			}
+	} else if (dim==3) {
+		unsigned int n=0;
+		MMSP::vector<int> x(3, 0);
+		for (x[2] = MMSP::x0(GRID,2); x[2] < MMSP::x1(GRID,2); x[2]++)
+			for (x[1] = MMSP::x0(GRID,1); x[1] < MMSP::x1(GRID,1); x[1]++)
+				for (x[0] = MMSP::x0(GRID,0); x[0] < MMSP::x1(GRID,0); x[0]++) {
+					if (x[sliceaxis]!=slicelevel) // clumsy, but effective
+						continue;
+					T val = GRID(x);
+					assert(n<bufsize);
+					buffer[n] = 255*((val-min)/(max-min));
+					if (mode==4) //contour
+						for (std::set<double>::iterator it=levelset.begin(); it!=levelset.end(); it++)
+							if (std::fabs(val-*it)/std::fabs(*it)<1.0e-2)
+								buffer[n] = 255-buffer[n];
+					n++;
+				}
+	}
 }
-template <int dim, typename T> void vector_limits(const MMSP::grid<dim,MMSP::vector<T> >& GRID,
-                                                  const int& mode, const std::set<int>& fieldset, T& min, T& max)
+
+template <int dim, typename T> void convert_vectors(const MMSP::grid<dim,MMSP::vector<T> >& GRID,
+                                                    const int& mode, const int& sliceaxis, const int& slicelevel,
+                                                    const std::set<double>& levelset, const std::set<int>& fieldset,
+                                                    const int& bufsize, unsigned char* buffer)
 {
-	min=0;
-	max=1;
+	T min=0;
+	T max=1;
 	int included = MMSP::fields(GRID) - fieldset.size();
 
 	for (int n=0; n<MMSP::nodes(GRID); n++) {
@@ -76,12 +126,157 @@ template <int dim, typename T> void vector_limits(const MMSP::grid<dim,MMSP::vec
 		else if (sum<min)
 			min=sum;
 	}
+
+	if (dim==1) {
+		unsigned int n=0;
+		MMSP::vector<int> x(1, 0);
+		for (x[0] = MMSP::x0(GRID,0); x[0] < MMSP::x1(GRID,0); x[0]++) {
+			double sum=0.0;
+			if (mode<2) { //          --mag
+				for (int i=0; i<MMSP::fields(GRID); i++)
+					sum += pow(GRID(n)[i],2.0);
+			} else if (mode==2) { //  --field
+				if (fieldset.size()==1)
+					sum = GRID(n)[*fieldset.begin()];
+				else
+					for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++)
+						sum += pow(GRID(n)[*it],2.0);
+			} else if (mode==3) { //  --exclude
+				for (int i=0; i<MMSP::fields(GRID); i++) {
+					std::set<int>::iterator it=fieldset.find(i);
+					if (it == fieldset.end())
+						if (included>1)
+							sum += pow(GRID(n)[i],2.0);
+						else
+							sum = GRID(n)[i];
+				}
+			} else if (mode==4) { //  --contour
+				// Same as --exclude
+				for (int i=0; i<MMSP::fields(GRID); i++) {
+					std::set<int>::iterator it=fieldset.find(i);
+					if (it == fieldset.end())
+						if (included>1)
+							sum += pow(GRID(n)[i],2.0);
+						else
+							sum = GRID(n)[i];
+				}
+			}
+			if (mode < 2 || fieldset.size()>1 || included>1)
+				sum = std::sqrt(sum);
+			assert(n<bufsize);
+			buffer[n] = 255*((sum-min)/(max-min));
+			if (mode==4) // --contour
+				for (std::set<int>::iterator itf=fieldset.begin(); itf!=fieldset.end(); itf++)
+					for (std::set<double>::iterator itl=levelset.begin(); itl!=levelset.end(); itl++)
+						if (std::fabs(GRID(x)[*itf]-*itl)/std::fabs(*itl)<1.0e-2)
+							buffer[n] = 255-buffer[n];
+			n++;
+		}
+	} else if (dim==2) {
+		unsigned int n=0;
+		MMSP::vector<int> x(2, 0);
+		for (x[1] = MMSP::x0(GRID,1); x[1] < MMSP::x1(GRID,1); x[1]++)
+			for (x[0] = MMSP::x0(GRID,0); x[0] < MMSP::x1(GRID,0); x[0]++) {
+				double sum=0.0;
+				if (mode<2) { //          --mag
+					for (int i=0; i<MMSP::fields(GRID); i++)
+						sum += pow(GRID(n)[i],2.0);
+				} else if (mode==2) { //  --field
+					if (fieldset.size()==1)
+						sum = GRID(n)[*fieldset.begin()];
+					else
+						for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++)
+							sum += pow(GRID(n)[*it],2.0);
+				} else if (mode==3) { //  --exclude
+					for (int i=0; i<MMSP::fields(GRID); i++) {
+						std::set<int>::iterator it=fieldset.find(i);
+						if (it == fieldset.end())
+							if (included>1)
+								sum += pow(GRID(n)[i],2.0);
+							else
+								sum = GRID(n)[i];
+					}
+				} else if (mode==4) { //  --contour
+					// Same as --exclude
+					for (int i=0; i<MMSP::fields(GRID); i++) {
+						std::set<int>::iterator it=fieldset.find(i);
+						if (it == fieldset.end())
+							if (included>1)
+								sum += pow(GRID(n)[i],2.0);
+							else
+								sum = GRID(n)[i];
+					}
+				}
+				if (mode < 2 || fieldset.size()>1 || included>1)
+					sum = std::sqrt(sum);
+				assert(n<bufsize);
+				buffer[n] = 255*((sum-min)/(max-min));
+				if (mode==4) // --contour
+					for (std::set<int>::iterator itf=fieldset.begin(); itf!=fieldset.end(); itf++)
+						for (std::set<double>::iterator itl=levelset.begin(); itl!=levelset.end(); itl++)
+							if (std::fabs(GRID(x)[*itf]-*itl)/std::fabs(*itl)<1.0e-2)
+								buffer[n] = 255-buffer[n];
+				n++;
+			}
+	} else if (dim==3) {
+		unsigned int n=0;
+		MMSP::vector<int> x(3, 0);
+		for (x[2] = MMSP::x0(GRID,2); x[2] < MMSP::x1(GRID,2); x[2]++)
+			for (x[1] = MMSP::x0(GRID,1); x[1] < MMSP::x1(GRID,1); x[1]++)
+				for (x[0] = MMSP::x0(GRID,0); x[0] < MMSP::x1(GRID,0); x[0]++) {
+					if (x[sliceaxis]!=slicelevel) // clumsy, but effective
+						continue;
+					double sum=0.0;
+					if (mode<2) { //          --mag
+						for (int i=0; i<MMSP::fields(GRID); i++)
+							sum += pow(GRID(n)[i],2.0);
+					} else if (mode==2) { //  --field
+						if (fieldset.size()==1)
+							sum = GRID(n)[*fieldset.begin()];
+						else
+							for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++)
+								sum += pow(GRID(n)[*it],2.0);
+					} else if (mode==3) { //  --exclude
+						for (int i=0; i<MMSP::fields(GRID); i++) {
+							std::set<int>::iterator it=fieldset.find(i);
+							if (it == fieldset.end())
+								if (included>1)
+									sum += pow(GRID(n)[i],2.0);
+								else
+									sum = GRID(n)[i];
+								}
+					} else if (mode==4) { //  --contour
+						// Same as --exclude
+						for (int i=0; i<MMSP::fields(GRID); i++) {
+							std::set<int>::iterator it=fieldset.find(i);
+							if (it == fieldset.end())
+								if (included>1)
+									sum += pow(GRID(n)[i],2.0);
+								else
+									sum = GRID(n)[i];
+						}
+					}
+					if (mode < 2 || fieldset.size()>1 || included>1)
+						sum = std::sqrt(sum);
+					assert(n<bufsize);
+					buffer[n] = 255*((sum-min)/(max-min));
+					if (mode==4) // --contour
+						for (std::set<int>::iterator itf=fieldset.begin(); itf!=fieldset.end(); itf++)
+							for (std::set<double>::iterator itl=levelset.begin(); itl!=levelset.end(); itl++)
+								if (std::fabs(GRID(x)[*itf]-*itl)/std::fabs(*itl)<1.0e-2)
+									buffer[n] = 255-buffer[n];
+					n++;
+				}
+	}
 }
-template <int dim, typename T> void sparse_limits(const MMSP::grid<dim,MMSP::sparse<T> >& GRID,
-                                                  const int& mode, const std::set<int>& fieldset, T& min, T& max)
+
+template <int dim, typename T> void convert_sparses(const MMSP::grid<dim,MMSP::sparse<T> >& GRID,
+                                                    const int& mode, const int& sliceaxis, const int& slicelevel,
+                                                    const std::set<double>& levelset, const std::set<int>& fieldset,
+                                                    const int& bufsize, unsigned char* buffer)
 {
-	min=0;
-	max=1;
+	T min=0;
+	T max=1;
 
 	for (int n=0; n<MMSP::nodes(GRID); n++) {
 		double sum=0.0;
@@ -96,7 +291,7 @@ template <int dim, typename T> void sparse_limits(const MMSP::grid<dim,MMSP::spa
 				int i=GRID(n).index(i);
 				std::set<int>::iterator it=fieldset.find(i);
 				if (it == fieldset.end())
-					sum += pow(GRID(n)[i],2.0);
+					sum += pow(GRID(n).value(h),2.0);
 			}
 		} else if (mode==4) { //  --contour
 			// Same as --exclude
@@ -104,7 +299,7 @@ template <int dim, typename T> void sparse_limits(const MMSP::grid<dim,MMSP::spa
 				int i=GRID(n).index(i);
 				std::set<int>::iterator it=fieldset.find(i);
 				if (it == fieldset.end())
-					sum += pow(GRID(n)[i],2.0);
+					sum += pow(GRID(n).value(h),2.0);
 			}
 		}
 		sum = std::sqrt(sum);
@@ -112,6 +307,124 @@ template <int dim, typename T> void sparse_limits(const MMSP::grid<dim,MMSP::spa
 			max=sum;
 		else if (sum<min)
 			min=sum;
+	}
+
+	if (dim==1) {
+		unsigned int n=0;
+		MMSP::vector<int> x(1, 0);
+		for (x[0] = MMSP::x0(GRID,0); x[0] < MMSP::x1(GRID,0); x[0]++) {
+			double sum=0.0;
+			if (mode<2) { //          --mag
+				for (int h=0; h<GRID(n).length(); h++)
+					sum += pow(GRID(n).value(h),2.0);
+			} else if (mode==2) { //  --field
+					for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++)
+						sum += pow(GRID(n)[*it],2.0);
+			} else if (mode==3) { //  --exclude
+				for (int h=0; h<MMSP::fields(GRID); h++) {
+					int i=GRID(n).index(i);
+					std::set<int>::iterator it=fieldset.find(i);
+					if (it == fieldset.end())
+						sum += pow(GRID(n).value(h),2.0);
+				}
+			} else if (mode==4) { //  --contour
+				// Same as --exclude
+				for (int h=0; h<MMSP::fields(GRID); h++) {
+					int i=GRID(n).index(i);
+					std::set<int>::iterator it=fieldset.find(i);
+					if (it == fieldset.end())
+						sum += pow(GRID(n).value(h),2.0);
+				}
+			}
+			sum = std::sqrt(sum);
+			assert(n<bufsize);
+			buffer[n] = 255*((sum-min)/(max-min));
+			if (mode==4) // --contour
+				for (std::set<int>::iterator itf=fieldset.begin(); itf!=fieldset.end(); itf++)
+					for (std::set<double>::iterator itl=levelset.begin(); itl!=levelset.end(); itl++)
+						if (std::fabs(GRID(x)[*itf]-*itl)/std::fabs(*itl)<1.0e-2)
+							buffer[n] = 255-buffer[n];
+			n++;
+		}
+	} else if (dim==2) {
+		unsigned int n=0;
+		MMSP::vector<int> x(2, 0);
+		for (x[1] = MMSP::x0(GRID,1); x[1] < MMSP::x1(GRID,1); x[1]++)
+			for (x[0] = MMSP::x0(GRID,0); x[0] < MMSP::x1(GRID,0); x[0]++) {
+				double sum=0.0;
+				if (mode<2) { //          --mag
+					for (int h=0; h<GRID(n).length(); h++)
+						sum += pow(GRID(n).value(h),2.0);
+				} else if (mode==2) { //  --field
+						for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++)
+							sum += pow(GRID(n)[*it],2.0);
+				} else if (mode==3) { //  --exclude
+					for (int h=0; h<MMSP::fields(GRID); h++) {
+						int i=GRID(n).index(i);
+						std::set<int>::iterator it=fieldset.find(i);
+						if (it == fieldset.end())
+							sum += pow(GRID(n).value(h),2.0);
+					}
+				} else if (mode==4) { //  --contour
+					// Same as --exclude
+					for (int h=0; h<MMSP::fields(GRID); h++) {
+						int i=GRID(n).index(i);
+						std::set<int>::iterator it=fieldset.find(i);
+						if (it == fieldset.end())
+							sum += pow(GRID(n).value(h),2.0);
+					}
+				}
+				sum = std::sqrt(sum);
+				assert(n<bufsize);
+				buffer[n] = 255*((sum-min)/(max-min));
+				if (mode==4) // --contour
+					for (std::set<int>::iterator itf=fieldset.begin(); itf!=fieldset.end(); itf++)
+						for (std::set<double>::iterator itl=levelset.begin(); itl!=levelset.end(); itl++)
+							if (std::fabs(GRID(x)[*itf]-*itl)/std::fabs(*itl)<1.0e-2)
+								buffer[n] = 255-buffer[n];
+				n++;
+			}
+	} else if (dim==3) {
+		unsigned int n=0;
+		MMSP::vector<int> x(3, 0);
+		for (x[2] = MMSP::x0(GRID,2); x[2] < MMSP::x1(GRID,2); x[2]++)
+			for (x[1] = MMSP::x0(GRID,1); x[1] < MMSP::x1(GRID,1); x[1]++)
+				for (x[0] = MMSP::x0(GRID,0); x[0] < MMSP::x1(GRID,0); x[0]++) {
+					if (x[sliceaxis]!=slicelevel) // clumsy, but effective
+						continue;
+					double sum=0.0;
+					if (mode<2) { //          --mag
+						for (int h=0; h<GRID(n).length(); h++)
+							sum += pow(GRID(n).value(h),2.0);
+					} else if (mode==2) { //  --field
+						for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++)
+							sum += pow(GRID(n)[*it],2.0);
+					} else if (mode==3) { //  --exclude
+						for (int h=0; h<MMSP::fields(GRID); h++) {
+							int i=GRID(n).index(i);
+							std::set<int>::iterator it=fieldset.find(i);
+							if (it == fieldset.end())
+								sum += pow(GRID(n).value(h),2.0);
+						}
+					} else if (mode==4) { //  --contour
+						// Same as --exclude
+						for (int h=0; h<MMSP::fields(GRID); h++) {
+							int i=GRID(n).index(i);
+							std::set<int>::iterator it=fieldset.find(i);
+							if (it == fieldset.end())
+								sum += pow(GRID(n).value(h),2.0);
+						}
+					}
+					sum = std::sqrt(sum);
+					assert(n<bufsize);
+					buffer[n] = 255*((sum-min)/(max-min));
+					if (mode==4) // --contour
+						for (std::set<int>::iterator itf=fieldset.begin(); itf!=fieldset.end(); itf++)
+							for (std::set<double>::iterator itl=levelset.begin(); itl!=levelset.end(); itl++)
+								if (std::fabs(GRID(x)[*itf]-*itl)/std::fabs(*itl)<1.0e-2)
+									buffer[n] = 255-buffer[n];
+					n++;
+				}
 	}
 }
 
@@ -136,7 +449,7 @@ int main(int argc, char* argv[])
 	int pngindex = 0; // in typical usage, output filename comes immediately after input
 	int mode = 0;
 	bool invert=false;
-	int slice = -1;
+	int sliceaxis = -1;
 	int slicelevel = -1;
 	std::set<int> fieldset; // for --field= or exclude=
 	std::set<double> levelset; // for contours
@@ -154,20 +467,20 @@ int main(int argc, char* argv[])
 				std::exit(-1);
 			}
 			switch(flag[8]) {
-				case 'x': slice=0;
+				case 'x': sliceaxis=0;
 				          break;
-				case 'y': slice=1;
+				case 'y': sliceaxis=1;
 				          break;
-				case 'z': slice=2;
+				case 'z': sliceaxis=2;
 				          break;
-				case 'X': slice=0;
+				case 'X': sliceaxis=0;
 				          break;
-				case 'Y': slice=1;
+				case 'Y': sliceaxis=1;
 				          break;
-				case 'Z': slice=2;
+				case 'Z': sliceaxis=2;
 				          break;
 			}
-			if (slice==-1) {
+			if (sliceaxis==-1) {
 				std::cerr<<"Error: axis "<<flag[8]<<" not recognized.\n"<<std::endl;
 				std::exit(-1);
 			}
@@ -180,7 +493,7 @@ int main(int argc, char* argv[])
 				std::cerr<<"Error: expected "<<flag<<"=n[,p,q,...]\n"<<std::endl;
 				std::exit(-1);
 			}
-			mode=2;
+			mode=std::max(2,mode);
 			std::string val = flag.substr(8,255);
 			char* cstr = strtok(val.c_str(),",");
 			while (cstr != NULL) {
@@ -192,7 +505,7 @@ int main(int argc, char* argv[])
 				std::cerr<<"Error: expected "<<flag<<"=n[,p,q,...]\n"<<std::endl;
 				std::exit(-1);
 			}
-			mode=3;
+			mode=std::max(3,mode);
 			std::string val = flag.substr(10,255);
 			char* cstr = strtok(val.c_str(),",");
 			while (cstr != NULL) {
@@ -204,7 +517,7 @@ int main(int argc, char* argv[])
 				std::cerr<<"Error: expected "<<flag<<"=n,a[,b,c,...]\n"<<std::endl;
 				std::exit(-1);
 			}
-			mode=4;
+			mode=std::max(4,mode);
 			std::string val = flag.substr(10,255);
 			char* cstr = strtok(val.c_str(),",");
 			fieldset.insert(atoi(cstr));
@@ -302,7 +615,7 @@ int main(int argc, char* argv[])
 	int image_size[2] = {1,1};
 	int i=0;
 	for (int d=0; d<dim; d++) {
-		if (d==slice)
+		if (d==sliceaxis)
 			continue;
 		image_size[i] = x1[d]-x0[d];
 		i++;
@@ -315,595 +628,291 @@ int main(int argc, char* argv[])
 			if (bool_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<bool> > GRID(argv[datindex]);
-					unsigned int n=0;
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++) {
-						buffer[n] = GRID(x);
-						n++;
-					}
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<bool> > GRID(argv[datindex]);
-					unsigned int n=0;
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++) {
-							buffer[n] = GRID(x);
-							n++;
-						}
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<bool> > GRID(argv[datindex]);
-					unsigned int n=0;
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++) {
-								buffer[n] = GRID(x);
-								n++;
-							}
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				}
 			}
 			if (char_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<char> > GRID(argv[datindex]);
-					unsigned int n=0;
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++) {
-						buffer[n] = GRID(x);
-						n++;
-					}
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<char> > GRID(argv[datindex]);
-					unsigned int n=0;
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++) {
-							buffer[n] = GRID(x);
-							n++;
-						}
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<char> > GRID(argv[datindex]);
-					unsigned int n=0;
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++) {
-								buffer[n] = GRID(x);
-								n++;
-							}
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				}
 			}
 			if (unsigned_char_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<unsigned char> > GRID(argv[datindex]);
-					unsigned int n=0;
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++) {
-						buffer[n] = GRID(x);
-						n++;
-					{
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<unsigned char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<unsigned char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				}
 			}
 			if (int_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				}
 			}
 			if (unsigned_int_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<unsigned int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<unsigned int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<unsigned int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				}
 			}
 			if (long_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				}
 			}
 			if (unsigned_long_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<unsigned long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<unsigned long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<unsigned long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				}
 			}
 			if (short_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				}
 			}
 			if (unsigned_short_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<unsigned short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<unsigned short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<unsigned short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								buffer[n] = GRID(x);
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				}
 			}
 			if (float_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<float> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						buffer[n] = GRID(x)<< " ";
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<float> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							buffer[n] = GRID(x)<< " ";
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<float> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								buffer[n] = GRID(x)<< " ";
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				}
 			}
 			if (double_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						buffer[n] = GRID(x)<< " ";
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							buffer[n] = GRID(x)<< " ";
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								buffer[n] = GRID(x)<< " ";
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				}
 			}
 			if (long_double_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<long double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						buffer[n] = GRID(x)<< " ";
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::scalar<long double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							buffer[n] = GRID(x)<< " ";
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<long double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								buffer[n] = GRID(x)<< " ";
+					convert_scalars(GRID, mode, sliceaxis, slicelevel, levelset, bufsize, buffer);
 				}
 			}
 		}
-
 		else if (vector_type) {
 			if (bool_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<bool> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<bool> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<bool> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (char_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (unsigned_char_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<unsigned char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<unsigned char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<unsigned char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (int_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (unsigned_int_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<unsigned int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<unsigned int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<unsigned int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (long_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (unsigned_long_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<unsigned long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<unsigned long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<unsigned long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (short_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (unsigned_short_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<unsigned short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<unsigned short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<unsigned short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (float_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<float> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<float> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<float> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (double_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (long_double_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<long double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::vector<long double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<long double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_vector(output, GRID(x), flatten, field);
+					convert_vectors(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 		}
@@ -912,292 +921,152 @@ int main(int argc, char* argv[])
 			if (bool_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<bool> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<bool> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<bool> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (char_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (unsigned_char_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<unsigned char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<unsigned char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<unsigned char> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (int_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (unsigned_int_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<unsigned int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<unsigned int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<unsigned int> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (long_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (unsigned_long_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<unsigned long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<unsigned long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<unsigned long> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (short_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (unsigned_short_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<unsigned short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<unsigned short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<unsigned short> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (float_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<float> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<float> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<float> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (double_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 			if (long_double_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<long double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(1, 0);
-					for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-						scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 2) {
 					MMSP::grid<2, MMSP::sparse<long double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(2, 0);
-					for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-						for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-							scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<long double> > GRID(argv[datindex]);
-					
-					MMSP::vector<int> x(3, 0);
-					for (x[2] = x0[2]; x[2] < x1[2]; x[2]++)
-						for (x[1] = x0[1]; x[1] < x1[1]; x[1]++)
-							for (x[0] = x0[0]; x[0] < x1[0]; x[0]++)
-								scale_sparse(output, GRID(x), flatten, field);
+					convert_sparses(GRID, mode, sliceaxis, slicelevel, levelset, fieldset, bufsize, buffer);
 				}
 			}
 		}
+
+	if (invert)
+		for (int n=0; n<theSize; n++)
+			buffer[n] = 255-buffer[n];
 
 	int result = writePNG(image_size[0], image_size[1], 1, buffer, pngname.c_str());
 
