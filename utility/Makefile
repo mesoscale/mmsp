@@ -19,7 +19,7 @@ topo = ../algorithms/topology
 IL_PATH=/users/tnk10/.conda/envs/mmsp
 
 # conversion programs
-utility : mmsp2vti mmsp2pvd mmsp2png \
+utility : mmsp2vti mmsp2pvd \
           MC2PF MC2sPF \
           PF2MC PF2sPF \
           sPF2MC sPF2PF \
@@ -69,4 +69,4 @@ wrongendian: wrongendian.cpp
 	$(compiler) $(flags) $< -o $@ -lz -pthread
 
 clean :
-	rm -f mmsp2vti mmsp2pvd mmsp2png MC2PF MC2sPF PF2MC PF2sPF sPF2MC sPF2PF vox2MC MC2vox wrongendian
+	rm -f mmsp2vti mmsp2pvd mmsp2png mmsp2topo mmsp2z MC2PF MC2sPF PF2MC PF2sPF sPF2MC sPF2PF vox2MC MC2vox wrongendian

@@ -21,16 +21,16 @@
 int writePNG(const int w, const int h, const int bpp, unsigned char* imData, const char* filename);
 
 template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,MMSP::scalar<T> >& GRID,
-                                                    const int& mode, const int& sliceaxis, const int& slicelevel,
+                                                    const int& mode, int sliceaxis, int slicelevel,
                                                     const std::set<double>& levelset, const unsigned int& bufsize, unsigned char* buffer);
 
 template <int dim, typename T> void convert_vectors(const MMSP::grid<dim,MMSP::vector<T> >& GRID,
-                                                    const int& mode, const int& sliceaxis, const int& slicelevel,
+                                                    const int& mode, int sliceaxis, int slicelevel,
                                                     const std::set<double>& levelset, const std::set<int>& fieldset,
                                                     const unsigned int& bufsize, unsigned char* buffer);
 
 template <int dim, typename T> void convert_sparses(const MMSP::grid<dim,MMSP::sparse<T> >& GRID,
-                                                    const int& mode, const int& sliceaxis, const int& slicelevel,
+                                                    const int& mode, int sliceaxis, int slicelevel,
                                                     const std::set<double>& levelset, const std::set<int>& fieldset,
                                                     const unsigned int& bufsize, unsigned char* buffer);
 
@@ -748,7 +748,7 @@ int writePNG(const int w, const int h, const int bpp, unsigned char* imData, con
 }
 
 template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,MMSP::scalar<T> >& GRID,
-                                                    const int& mode, const int& sliceaxis, const int& slicelevel,
+                                                    const int& mode, int sliceaxis, int slicelevel,
                                                     const std::set<double>& levelset, const unsigned int& bufsize, unsigned char* buffer)
 {
 	T min=0;
@@ -787,6 +787,10 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,MMSP::s
 				n++;
 			}
 	} else if (dim==3) {
+		if (sliceaxis<0)
+			sliceaxis=0;
+		if (slicelevel<MMSP::g0(GRID,sliceaxis))
+			slicelevel = (MMSP::g1(GRID,sliceaxis) - MMSP::g0(GRID,sliceaxis))/2;
 		unsigned int n=0;
 		MMSP::vector<int> x(3, 0);
 		for (x[2] = MMSP::x0(GRID,2); x[2] < MMSP::x1(GRID,2); x[2]++)
@@ -807,7 +811,7 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,MMSP::s
 }
 
 template <int dim, typename T> void convert_vectors(const MMSP::grid<dim,MMSP::vector<T> >& GRID,
-                                                    const int& mode, const int& sliceaxis, const int& slicelevel,
+                                                    const int& mode, int sliceaxis, int slicelevel,
                                                     const std::set<double>& levelset, const std::set<int>& fieldset,
                                                     const unsigned int& bufsize, unsigned char* buffer)
 {
@@ -953,6 +957,10 @@ template <int dim, typename T> void convert_vectors(const MMSP::grid<dim,MMSP::v
 				n++;
 			}
 	} else if (dim==3) {
+		if (sliceaxis<0)
+			sliceaxis=0;
+		if (slicelevel<MMSP::g0(GRID,sliceaxis))
+			slicelevel = (MMSP::g1(GRID,sliceaxis) - MMSP::g0(GRID,sliceaxis))/2;
 		unsigned int n=0;
 		MMSP::vector<int> x(3, 0);
 		for (x[2] = MMSP::x0(GRID,2); x[2] < MMSP::x1(GRID,2); x[2]++)
@@ -1007,7 +1015,7 @@ template <int dim, typename T> void convert_vectors(const MMSP::grid<dim,MMSP::v
 }
 
 template <int dim, typename T> void convert_sparses(const MMSP::grid<dim,MMSP::sparse<T> >& GRID,
-                                                    const int& mode, const int& sliceaxis, const int& slicelevel,
+                                                    const int& mode, int sliceaxis, int slicelevel,
                                                     const std::set<double>& levelset, const std::set<int>& fieldset,
                                                     const unsigned int& bufsize, unsigned char* buffer)
 {
@@ -1121,6 +1129,10 @@ template <int dim, typename T> void convert_sparses(const MMSP::grid<dim,MMSP::s
 				n++;
 			}
 	} else if (dim==3) {
+		if (sliceaxis<0)
+			sliceaxis=0;
+		if (slicelevel<MMSP::g0(GRID,sliceaxis))
+			slicelevel = (MMSP::g1(GRID,sliceaxis) - MMSP::g0(GRID,sliceaxis))/2;
 		unsigned int n=0;
 		MMSP::vector<int> x(3, 0);
 		for (x[2] = MMSP::x0(GRID,2); x[2] < MMSP::x1(GRID,2); x[2]++)
