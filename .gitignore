@@ -17,12 +17,10 @@ utility/MC2vox
 utility/mmsp2png
 utility/mmsp2pvd
 utility/mmsp2vti
-utility/mmsp2xyz
 utility/PF2MC
 utility/PF2sPF
 utility/sPF2MC
 utility/sPF2PF
-utility/TKmmsp2vti
 utility/vox2MC
 utility/wrongendian
 
