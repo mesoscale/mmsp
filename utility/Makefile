@@ -16,8 +16,6 @@ core = ../include/MMSP.hpp \
 
 topo = ../algorithms/topology
 
-IL_PATH=/users/tnk10/.conda/envs/mmsp
-
 # conversion programs
 utility : mmsp2vti mmsp2pvd \
           MC2PF MC2sPF \
@@ -31,9 +29,6 @@ mmsp2vti: mmsp2vti.cpp $(core)
 
 mmsp2pvd: mmsp2pvd.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
-
-mmsp2png: mmsp2png.cpp $(core) $(IL_PATH)/include/IL/devil_cpp_wrapper.hpp
-	$(compiler) $(flags) -I $(IL_PATH)/include/IL -include il.h $< -o $@ -L$(IL_PATH)/lib -lz -lIL -lILU -lILUT
 
 mmsp2topo: mmsp2topo.cpp $(core)
 	$(compiler) $(flags) -I $(topo) $< -o $@ -lz
@@ -67,6 +62,12 @@ MC2vox: MC2vox.cpp $(core)
 
 wrongendian: wrongendian.cpp
 	$(compiler) $(flags) $< -o $@ -lz -pthread
+
+# mmsp2png depends on the Developer's Image Library. After installation (libdevil-dev),
+# ensure libIL, libILU, and libILUT are on your LIBRARY_PATH and LD_LIB_PATH.
+# Then, make mmsp2png.
+mmsp2png: mmsp2png.cpp $(core)
+	$(compiler) $(flags) $< -o $@ -lz -lIL -lILU -lILUT
 
 clean :
 	rm -f mmsp2vti mmsp2pvd mmsp2png mmsp2topo mmsp2z MC2PF MC2sPF PF2MC PF2sPF sPF2MC sPF2PF vox2MC MC2vox wrongendian

@@ -14,7 +14,7 @@
 #include <IL/il.h>
 #include <IL/ilu.h>
 #include <IL/ilut.h>
-#include "devil_cpp_wrapper.hpp"
+#include <IL/devil_cpp_wrapper.hpp>
 
 #include"MMSP.hpp"
 
