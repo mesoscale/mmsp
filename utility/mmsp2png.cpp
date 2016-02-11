@@ -2,8 +2,8 @@
 // Convert MMSP grid data to grayscale PNG image format
 // Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
-#include <iostream>
-#include <cstdlib>
+#include<iostream>
+#include<cstdlib>
 #include<zlib.h>
 #include<string>
 #include<sstream>
@@ -11,10 +11,7 @@
 #include<vector>
 #include<set>
 #include<cmath>
-#include <IL/il.h>
-#include <IL/ilu.h>
-#include <IL/ilut.h>
-#include <IL/devil_cpp_wrapper.hpp>
+#include<png.h>
 
 #include"MMSP.hpp"
 
@@ -104,7 +101,7 @@ int main(int argc, char* argv[])
 	for (int i=1; i<argc; i++) {
 		std::string flag(argv[i]);
 		if (flag == "--mag") {
-			mode=1;
+			mode=std::max(1,mode);
 		} else if (flag == "--invert") {
 			invert=true;
 		} else if (flag.substr(0,6) == "--zoom") {
@@ -150,6 +147,8 @@ int main(int argc, char* argv[])
 				slicelevel = atoi(flag.substr(10,20).c_str());
 			else
 				std::cout<<"Slicing through the midpoint of "<<flag[8]<<" axis."<<std::endl;
+		} else if (flag.substr(0,8) == "--coninv") {
+			coninv = true;
 		} else if (flag.substr(0,8) == "--contol") {
 			if (flag.length()==8 || flag[8]!='=') {
 				std::cerr<<"Error: expected --contol=a\n"<<std::endl;
@@ -188,8 +187,8 @@ int main(int argc, char* argv[])
 				std::cerr<<"Error: expected "<<flag<<"=n[,p,q,...]\n"<<std::endl;
 				std::exit(-1);
 			}
-			mode=2;
-			std::string val = flag.substr(8,255);
+			mode=std::max(2,mode);
+ 			std::string val = flag.substr(8,255);
 			char* cstr = new char [val.length()+1];
 			std::strcpy(cstr, val.c_str());
 			char* ptr = strtok(cstr,",");
@@ -203,7 +202,7 @@ int main(int argc, char* argv[])
 				std::cerr<<"Error: expected --exclude=n[,p,q,...]\n"<<std::endl;
 				std::exit(-1);
 			}
-			mode=3;
+			mode=std::max(3,mode);
 			std::string val = flag.substr(10,255);
 			char* cstr = new char [val.length()+1];
 			std::strcpy(cstr, val.c_str());
@@ -770,26 +769,77 @@ int main(int argc, char* argv[])
 
 int writePNG(const int w, const int h, const int bpp, unsigned char* imData, const char* filename)
 {
-  int result = 0;
-  // Initialize image
-  ilInit();
-  ILenum Error;
-  ILuint imageID = ilGenImage() ;
-  ilBindImage(imageID);
-  ilTexImage(w, h, 1, bpp, IL_LUMINANCE, IL_UNSIGNED_BYTE, imData);
-  Error = ilGetError();
-  if (Error!=IL_NO_ERROR) {
-  	std::cout<<"Error making image: "<<iluErrorString(Error)<<std::endl;
-  	result = -1;
-  }
-  ilEnable(IL_FILE_OVERWRITE);
-  ilSave( IL_PNG, filename) ;
-  Error = ilGetError();
-  if (Error!=IL_NO_ERROR) {
-  	std::cout<<"Error saving image: "<<iluErrorString(Error)<<std::endl;
-  	result = -1;
-  }
-  return result;
+	// using libpng
+	// After "A simple libpng example program,"
+	// http://zarb.org/~gc/html/libpng.html
+	// and the libpng manual, http://www.libpng.org/pub/png
+
+	png_byte color_type = PNG_COLOR_TYPE_GRAY;
+	// valid choices: PNG_COLOR_TYPE_GRAY       (bit depths 1, 2, 4, 8, 16)
+	//                PNG_COLOR_TYPE_GRAY_ALPHA (bit depths 8, 16)
+	//                PNG_COLOR_TYPE_PALETTE    (bit depths 1, 2, 4, 8)
+	//                PNG_COLOR_TYPE_RGB        (bit_depths 8, 16)
+	//                PNG_COLOR_TYPE_RGB_ALPHA  (bit_depths 8, 16)
+	//                PNG_COLOR_MASK_PALETTE
+	//                PNG_COLOR_MASK_COLOR
+	//                PNG_COLOR_MASK_ALPHA
+
+	png_byte bit_depth = 8; // valid choices: 1, 2, 4, 8, 16
+	png_structp png_ptr;
+	png_infop info_ptr;
+
+	png_bytepp row_pointers = new png_bytep[h];
+	for (int j=0; j<h; j++)
+		row_pointers[j] = &imData[j*w];
+
+	// Setup PNG file
+	FILE *fp = fopen(filename, "wb");
+	if (!fp) {
+		std::cerr<<"Error making image: check permissions on "<<filename<<std::endl;
+		return (-1);
+	}
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if (!png_ptr) {
+		std::cerr<<"Error making image: png_create_write_struct failed."<<std::endl;
+		return (-1);
+	}
+	info_ptr = png_create_info_struct(png_ptr);
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		std::cerr<<"Error making image: unable to init_io."<<std::endl;
+		return (-1);
+	}
+	png_init_io(png_ptr, fp);
+
+	// Write PNG header
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		std::cerr<<"Error making image: unable to write header."<<std::endl;
+		return (-1);
+	}
+	png_set_IHDR(png_ptr, info_ptr, w, h,
+	                 bit_depth, color_type, PNG_INTERLACE_NONE,
+	                 PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+
+	png_write_info(png_ptr, info_ptr);
+
+	// Write image
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		std::cerr<<"Error making image: unable to write data."<<std::endl;
+		return (-1);
+	}
+	png_write_image(png_ptr, row_pointers);
+
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		std::cerr<<"Error making image: unable to finish writing."<<std::endl;
+		return (-1);
+	}
+	png_write_end(png_ptr, NULL);
+
+	// Clean up
+	delete [] row_pointers;
+
+	fclose(fp);
+
+	return 0;
 }
 
 template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,MMSP::scalar<T> >& GRID,

@@ -63,11 +63,9 @@ MC2vox: MC2vox.cpp $(core)
 wrongendian: wrongendian.cpp
 	$(compiler) $(flags) $< -o $@ -lz -pthread
 
-# mmsp2png depends on the Developer's Image Library. After installation (libdevil-dev),
-# ensure libIL, libILU, and libILUT are on your LIBRARY_PATH and LD_LIB_PATH.
-# Then, make mmsp2png.
+# mmsp2png depends on libpng.
 mmsp2png: mmsp2png.cpp $(core)
-	$(compiler) $(flags) $< -o $@ -lz -lIL -lILU -lILUT
+	$(compiler) $(flags) $< -o $@ -lz -lpng
 
 clean :
 	rm -f mmsp2vti mmsp2pvd mmsp2png mmsp2topo mmsp2z MC2PF MC2sPF PF2MC PF2sPF sPF2MC sPF2PF vox2MC MC2vox wrongendian
