@@ -17,6 +17,7 @@ namespace MMSP
 {
 void generate(int dim, const char* filename)
 {
+	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 	if (dim == 1) {
 		GRID1D initGrid(0, 0, 128);
 
@@ -174,8 +175,8 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 		else if (dim == 3) num_of_sublattices = 8;
 		for (int sublattice = 0; sublattice < num_of_sublattices; sublattice++) {
 
-			srand(time(NULL)); /* seed random number generator */
 			vector<int> x (dim, 0);
+			// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 
 			for (int hh = 0; hh < num_of_grids_to_flip[sublattice]; hh++) {
 				int cell_numbering = rand() % (number_of_lattice_cells); //choose a cell to flip, from 0 to num_of_cells_in_thread-1

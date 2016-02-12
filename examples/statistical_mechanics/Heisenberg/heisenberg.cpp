@@ -12,6 +12,7 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
+	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 	if (dim==1) {
 		GRID1D initGrid(3,0,128);
 
@@ -67,6 +68,7 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& spinGrid, int s
 	double pi = acos(-1.0);
 
 	int gss = (dim==1)?nodes(spinGrid):int(sqrt(nodes(spinGrid)));
+	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 
 	for (int step=0; step<steps; step++) {
 		if (rank==0)

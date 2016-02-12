@@ -12,6 +12,7 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
+	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 	if (dim==1) {
 		GRID1D initGrid(2,0,128);
 
@@ -59,7 +60,7 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 	grid<dim,vector<T> > newGrid(oldGrid);
 	grid<dim,T> wspace(oldGrid,1);
 
-	double dt = 0.01;
+	double dt = 0.001;
 	double L = 1.0;
 	double D = 1.0;
 

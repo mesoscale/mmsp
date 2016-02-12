@@ -12,6 +12,7 @@ namespace MMSP{
 
 double gaussian(double ave, double std)
 {
+	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 	static double u = 0;
 	static double v = 0;
 	static bool saved = false;

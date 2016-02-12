@@ -12,6 +12,7 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
+	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 	if (dim==1) {
 		GRID1D initGrid(1,0,128);
 
