@@ -1,5 +1,7 @@
 #!/bin/bash
 
+tstart=$(date +%s)
+
 cd ../examples
 
 while [[ $# > 0 ]]
@@ -220,7 +222,10 @@ pwd
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
+tfinish=$(date +%s)
+elapsed=$(echo "$tfinish-$tstart" | bc -l)
+
 echo
-echo "Examples built successfully."
+echo "Examples built successfully. ${elapsed} seconds elapsed."
 
 cd ../test/
