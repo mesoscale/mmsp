@@ -19,8 +19,8 @@ int main()
 	std::cin>>iterate;
 	std::cout<<""<<std::endl;
 
-	grid<1,scalar<float> > GRID(1,0,length);
-	grid<1,scalar<float> > update(1,0,length);
+	grid<1,scalar<double> > GRID(1,0,length);
+	grid<1,scalar<double> > update(1,0,length);
 
 	for (int x=x0(GRID); x<x1(GRID); x++)
 		if (x<length/2) {
