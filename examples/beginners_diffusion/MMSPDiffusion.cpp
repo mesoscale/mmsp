@@ -6,8 +6,9 @@ using namespace MMSP;
 
 
 //we start the program off the same way as before, but this time we do not need the offset length variable
-int main()
+int main(int argc, char* argv[])
 {
+	Init(argc, argv);
 	int length;
 	int iterate;
 
@@ -52,5 +53,6 @@ int main()
 		std::cout<<GRID[x]<<std::endl;
 
 	Finalize();
+	return 0;
 }
 
