@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 
 	// help diagnostic
 	if (std::string(argv[1]) == "--help") {
-		std::cout << argv[0] << ": convert MMSP grid data to ParaView PVD file format.\n";
+		std::cout << argv[0] << ": convert MMSP grid data to ParaView Data file format.\n";
 		std::cout << "Note: results in PVD file and a sequence of VTK image data files.\n";
 		std::cout << "Usage: " << argv[0] << " [--help] [--output=outfile] infile1 [infile2 [infile3 ... ]]\n\n";
 		std::cout << "Questions/comments to gruberja@gmail.com (Jason Gruber).\n\n";

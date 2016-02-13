@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 
 	// help diagnostic
 	if (std::string(argv[1]) == "--help") {
-		std::cout << argv[0] << ": convert MMSP grid data to VTK image data format.\n";
+		std::cout << argv[0] << ": convert MMSP grid data to PNG image format.\n";
 		std::cout << "Usage:    " << argv[0] << " [--help] [--slice=X,n] [--zoom] [--contour=n,a,b] [--mag|--field=n|--exclude=n] [--invert] infile [outfile]\n\n";
 		std::cout << "Examples: " << argv[0] << " --help\n"
 		          << "             displays this message.\n";

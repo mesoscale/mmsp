@@ -22,7 +22,6 @@
 #include "MMSP.hpp"
 
 using namespace std;
-typedef unsigned short id_type;
 
 template <int dim, class T>
 Point<T> getPoint(const MMSP::vector<T>& v) {
