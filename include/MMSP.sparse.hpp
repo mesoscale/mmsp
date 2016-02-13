@@ -9,8 +9,6 @@
 #include <cassert>
 #include"MMSP.utility.hpp"
 
-typedef unsigned int id_type;
-
 namespace MMSP {
 
 template <typename T>
@@ -109,7 +107,7 @@ public:
 				max_value = data[i].value;
 			}
 		}
-		assert(max_index < std::numeric_limits<id_type>::max());
+		assert(max_index < std::numeric_limits<unsigned int>::max());
 		return max_index;
 	}
 
