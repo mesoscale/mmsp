@@ -25,9 +25,9 @@ int main()
 	std::cin>>iterate;
 	std::cout<<""<<std::endl;
 
-	//here we define some 1 dimensional grids with float variable types
-	grid<1,scalar<float> > GRID(1,0,length);
-	grid<1,scalar<float> > GRID2(1,0,length);
+	//here we define some 1 dimensional grids with double variable types
+	grid<1,scalar<double> > GRID(1,0,length);
+	grid<1,scalar<double> > GRID2(1,0,length);
 	//this value is defined for looping control
 	offlength=x1(GRID)-3;
 

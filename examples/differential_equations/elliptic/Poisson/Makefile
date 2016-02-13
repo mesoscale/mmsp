@@ -16,10 +16,10 @@ core = $(incdir)/MMSP.hpp \
        $(incdir)/MMSP.grid.hpp
 
 # the program
-poisson: poisson.cpp multigrid.hpp $(core)
+poisson: poisson.cpp $(core)
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: poisson.cpp multigrid.hpp $(core)
+parallel: poisson.cpp $(core)
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

@@ -1,7 +1,7 @@
 #include"MMSP.hpp"
 using namespace MMSP;
 
-// Add in Laplacian funciton that is built in to MMSP
+// Add in Laplacian function that is built in to MMSP
 // Try using a grid of vectors >> one iterated with this code, one with laplacian
 
 
@@ -19,8 +19,8 @@ int main()
 	std::cin>>iterate;
 	std::cout<<""<<std::endl;
 
-	grid<2,scalar<float> > GRID(1,0,length,0,length);
-	grid<2,scalar<float> > update(1,0,length,0,length);
+	grid<2,scalar<double> > GRID(1,0,length,0,length);
+	grid<2,scalar<double> > update(1,0,length,0,length);
 
 	for (int x=x0(GRID); x<x1(GRID); x++) {
 		for (int y=y0(GRID); y<y1(GRID); y++) {

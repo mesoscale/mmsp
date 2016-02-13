@@ -90,8 +90,8 @@ void exact_voronoi(MMSP::grid<dim, MMSP::sparse<T> >& grid, const std::vector<st
   #ifdef DEBUG
   unsigned long tstart=time(NULL);
   #endif
-	if (id==0) print_progress(0,nodes(grid));
 	for (int n=0; n<nodes(grid); ++n) {
+		if (id==0) print_progress(n,nodes(grid));
 		const MMSP::vector<int> x=position(grid,n);
 		int min_distance=std::numeric_limits<int>::max();
 		int identity=-1, min_identity=identity;
@@ -115,7 +115,6 @@ void exact_voronoi(MMSP::grid<dim, MMSP::sparse<T> >& grid, const std::vector<st
 				}
 			}
 		}
-		if (id==0) print_progress(n+1,nodes(grid));
 		MMSP::set(grid(n), min_identity) = 1.;
 	}
 	#ifdef DEBUG
@@ -601,27 +600,5 @@ void tessellate(MMSP::grid<dim, MMSP::sparse<T> >& grid, const int& nseeds) {
 	MPI::COMM_WORLD.Barrier();
 	#endif
 } // tessellate
-
-void print_progress(const int i, const int N) {
-  char* timestring;
-  static unsigned long tstart;
-  struct tm* timeinfo;
-
-  if (i==0) {
-    tstart = time(NULL);
-    std::time_t rawtime;
-    std::time( &rawtime );
-    timeinfo = std::localtime( &rawtime );
-    timestring = std::asctime(timeinfo);
-    timestring[std::strlen(timestring)-1] = '\0';
-    std::cout<<timestring<<" ["<<std::flush;
-  } else if (i==N) {
-    unsigned long deltat = time(NULL)-tstart;
-    std::cout<<"•] "<<std::setw(2)<<std::right<<deltat/3600<<"h:"
-                    <<std::setw(2)<<std::right<<(deltat%3600)/60<<"m:"
-                    <<std::setw(2)<<std::right<<deltat%60<<"s"
-                    <<'.'<<std::endl;
-  } else if ((20 * i) % N == 0) std::cout<<"• "<<std::flush;
-}
 
 #endif // _GENERATORS_

@@ -5,6 +5,8 @@ CCOPTS = -g
 PGOPTS = 
 LIBS = -lm
 
+core = ../../include
+
 # If you have gnuplot pipes on your system, change this
 # value to 'yes' and change the options in the source
 # code to get graphical output.
@@ -39,12 +41,12 @@ go : $(OBJECTS)
 
 # Object defs below here.
 1stDiffusion.o : 1stDiffusion.cpp
-	$(CC) $(CCOPTIONS) -c 1stDiffusion.cpp
+	$(CC) $(CCOPTIONS) -I$(core) -c 1stDiffusion.cpp
 
 gnuplot_i.hpp.gch : gnuplot_i.hpp
 	$(CC) $(CCOPTIONS) -c gnuplot_i.hpp
 
 
 clean :
-	rm *.o *~ *.gch
+	rm -rf go *.o *~ *.gch
 

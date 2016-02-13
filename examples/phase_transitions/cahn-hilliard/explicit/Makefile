@@ -3,7 +3,7 @@
 # Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 # includes
-incdir = ../../../include
+incdir = ../../../../include
 
 # compilers/flags
 compiler = g++

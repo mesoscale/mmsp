@@ -1,7 +1,7 @@
 This directory contains MMSP code for phase field simulation of solidification, with coupled phase and heat equations. 
 Modeled after FiPy examples.phase.anisotropy.
 
-Send questions or comments to kellet@rpi.edu (Trevor Keller)
+Send questions or comments to trevor.keller@gmail.com (Trevor Keller)
 
 References:
 

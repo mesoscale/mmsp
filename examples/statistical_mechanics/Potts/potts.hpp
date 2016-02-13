@@ -1,4 +1,4 @@
-// potts.cpp
+// potts.hpp
 // Q-state Potts model using MMSP
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

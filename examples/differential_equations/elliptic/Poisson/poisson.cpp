@@ -1,4 +1,4 @@
-// poisson.hpp
+// poisson.cpp
 // smooth() and defect() functions for multigrid solution of Poisson equation
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
@@ -11,7 +11,29 @@
 namespace MMSP {
 
 template <typename T>
-void smooth(MMSP::grid<2,T>& u, const MMSP::grid<2,T>& f, int stride, int iterations=1)
+void smooth(grid<1,T>& u, const grid<1,T>& f, int stride, int iterations=1)
+{
+	// red-black Gauss-Seidel iteration
+	int s = stride;
+	double dx = s*MMSP::dx(u);
+	double x1 = MMSP::x1(u);
+	double dx2 = dx*dx;
+	double w   = 1.0/(2.0/dx2);
+	double wx  = w/dx2;
+
+	for (int i=0; i<iterations; i++) {
+		for (int x=s; x<x1-1; x+=s)
+			if (x%2==0)
+				u[x] = -w*f[x]+wx*(u[x-s]+u[x+s]);
+
+		for (int x=s; x<x1-1; x+=s)
+			if (x%2==1)
+				u[x] = -w*f[x]+wx*(u[x-s]+u[x+s]);
+	}
+}
+
+template <typename T>
+void smooth(grid<2,T>& u, const grid<2,T>& f, int stride, int iterations=1)
 {
 	// red-black Gauss-Seidel iteration
 	int s = stride;
@@ -40,7 +62,7 @@ void smooth(MMSP::grid<2,T>& u, const MMSP::grid<2,T>& f, int stride, int iterat
 }
 
 template <typename T>
-void smooth(MMSP::grid<3,T>& u, const MMSP::grid<3,T>& f, int stride, int iterations=1)
+void smooth(grid<3,T>& u, const grid<3,T>& f, int stride, int iterations=1)
 {
 	// red-black Gauss-Seidel iteration
 	int s = stride;
@@ -77,7 +99,26 @@ void smooth(MMSP::grid<3,T>& u, const MMSP::grid<3,T>& f, int stride, int iterat
 }
 
 template <typename T>
-void defect(const MMSP::grid<2,T>& u, const MMSP::grid<2,T>& f, MMSP::grid<2,T>& d, int stride)
+void defect(const grid<1,T>& u, const grid<1,T>& f, grid<1,T>& d, int stride)
+{
+	// compute defect for Poisson equation lap(u) = f
+	int s = stride;
+	double dx = s*MMSP::dx(u);
+	double x1 = MMSP::x1(u);
+	double dx2 = dx*dx;
+	double wx  = 1.0/dx2;
+
+	for (int x=s; x<x1-1; x+=s)
+		d[x] = f[x]-wx*(u[x-s]-2.0*u[x]+u[x+s]);
+
+	for (int x=s; x<x1-1; x+=s) {
+		d[0] = 0.0;
+		d[x1-1] = 0.0;
+	}
+}
+
+template <typename T>
+void defect(const grid<2,T>& u, const grid<2,T>& f, grid<2,T>& d, int stride)
 {
 	// compute defect for Poisson equation lap(u) = f
 	int s = stride;
@@ -106,7 +147,7 @@ void defect(const MMSP::grid<2,T>& u, const MMSP::grid<2,T>& f, MMSP::grid<2,T>&
 }
 
 template <typename T>
-void defect(const MMSP::grid<3,T>& u, const MMSP::grid<3,T>& f, MMSP::grid<3,T>& d, int stride)
+void defect(const grid<3,T>& u, const grid<3,T>& f, grid<3,T>& d, int stride)
 {
 	// compute defect for Poisson equation lap(u) = f
 	int s = stride;
@@ -150,96 +191,57 @@ void defect(const MMSP::grid<3,T>& u, const MMSP::grid<3,T>& f, MMSP::grid<3,T>&
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		MMSP::grid<1,double> grid(1,0,128);
-		int x0 = MMSP::x0(grid);
-		int x1 = MMSP::x1(grid);
+		grid<1,double> initGrid(1,0,128);
 
-		for (int x=x0; x<x1; x++)
-			double X = double(x)/128.0;
-			grid[x] = exp(X);
+		for (int n=0; n<nodes(initGrid); n++) {
+			vector<int> x = position(initGrid, n);
+			double X = double(x[0])/128.0;
+			initGrid(n) = exp(X);
 		}
 
-		MMSP::output(grid,filename);
+		output(initGrid,filename);
 	}
 
 	if (dim==2) {
-		MMSP::grid<2,double> grid(1,0,128,0,128);
-		int x0 = MMSP::x0(grid);
-		int x1 = MMSP::x1(grid);
-		int y0 = MMSP::y0(grid);
-		int y1 = MMSP::y1(grid);
+		grid<2,double> initGrid(1,0,128,0,128);
 
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++) {
-				double X = double(x)/128.0;
-				double Y = double(y)/128.0;
-				grid[x][y] = exp(X*Y);
-			}
+		for (int n=0; n<nodes(initGrid); n++) {
+			vector<int> x = position(initGrid, n);
+			double X = double(x[0])/128.0;
+			double Y = double(x[1])/128.0;
+			initGrid(n) = exp(X*Y);
+		}
 
-		MMSP::output(grid,filename);
+		output(initGrid,filename);
 	}
 
 	if (dim==3) {
-		MMSP::grid<3,double> grid(1,0,64,0,64,0,64);
-		int x0 = MMSP::x0(grid);
-		int x1 = MMSP::x1(grid);
-		int y0 = MMSP::y0(grid);
-		int y1 = MMSP::y1(grid);
-		int z0 = MMSP::z0(grid);
-		int z1 = MMSP::z1(grid);
+		grid<3,double> initGrid(1,0,64,0,64,0,64);
 
-		for (int x=x0; x<x1; x++)
-			for (int y=y0; y<y1; y++)
-				for (int z=z0; z<z1; z++) {
-					double X = double(x)/128.0;
-					double Y = double(y)/128.0;
-					double Z = double(z)/128.0;
-					grid[x][y][z] = exp(X*Y*Z);
-				}
+		for (int n=0; n<nodes(initGrid); n++) {
+			vector<int> x = position(initGrid, n);
+			double X = double(x[0])/128.0;
+			double Y = double(x[1])/128.0;
+			double Z = double(x[2])/128.0;
+			initGrid(n) = exp(X*Y*Z);
+		}
 
-		MMSP::output(grid,filename);
+		output(initGrid,filename);
 	}
 }
 
-void update(MMSP::grid<2,double>& grid, int steps)
+template <int dim, typename T> void update(grid<dim,T>& multiGrid, int steps)
 {
-	const MMSP::grid<2,double>& f = grid;
+	const grid<dim,T>& f = multiGrid;
 
-	MMSP::grid<2,double> u(f);
-	int x0 = MMSP::x0(u);
-	int x1 = MMSP::x1(u);
-	int y0 = MMSP::y0(u);
-	int y1 = MMSP::y1(u);
+	grid<dim,T> u(f);
 
-	for (int x=x0; x<x1; x++)
-		for (int y=y0; y<y1; y++)
-			u[x][y] = 0.0;
+	for (int n=0; n<nodes(u); n++)
+		u(n) = 0.0;
 
 	FMG(u,f,1,2,2);
 
-	MMSP::swap(grid,u);
-}
-
-void update(MMSP::grid<3,double>& grid, int steps)
-{
-	const MMSP::grid<3,double>& f = grid;
-
-	MMSP::grid<3,double> u(f);
-	int x0 = MMSP::x0(u);
-	int x1 = MMSP::x1(u);
-	int y0 = MMSP::y0(u);
-	int y1 = MMSP::y1(u);
-	int z0 = MMSP::z0(u);
-	int z1 = MMSP::z1(u);
-
-	for (int x=x0; x<x1; x++)
-		for (int y=y0; y<y1; y++)
-			for (int z=z0; z<z1; z++)
-				u[x][y][z] = 0.0;
-
-	FMG(u,f,1,2,2);
-
-	MMSP::swap(grid,u);
+	swap(multiGrid,u);
 }
 
 } // namespace MMSP

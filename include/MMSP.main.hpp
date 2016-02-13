@@ -33,10 +33,10 @@
 #include<sstream>
 #include<cstdlib>
 #include<cctype>
+#include<time.h>
 
 int main(int argc, char* argv[]) {
 	MMSP::Init(argc, argv);
-
 
 	// check argument list
 	if (argc < 2) {
@@ -46,6 +46,13 @@ int main(int argc, char* argv[]) {
 		exit(-1);
 	}
 
+	// Many of the example programs call rand(). srand() must be called
+	// _exactly once_, making this the proper place for it.
+	int rank = 0;
+	#ifdef MPI_VERSION
+	rank = MPI::COMM_WORLD.Get_rank();
+	#endif
+	srand(time(NULL)+rank);
 
 	// print help message and exit
 	if (std::string(argv[1]) == std::string("--help")) {
@@ -80,7 +87,6 @@ int main(int argc, char* argv[]) {
 		std::cout << "The resulting files are \nnamed \"final.0100\", \"final.0200\", ... \"final.1000\".\n\n";
 		exit(0);
 	}
-
 
 	// generate example grid
 	else if (std::string(argv[1]) == std::string("--example")) {
