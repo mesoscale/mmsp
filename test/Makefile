@@ -7,7 +7,7 @@ incdir = ../include
 
 # compilers/flags
 compiler = g++
-flags = -g -I$(incdir)
+flags = -O2 -I$(incdir)
 pcompiler = mpic++
 pflags = $(flags) -include mpi.h 
 
@@ -17,7 +17,6 @@ test: test.cpp
 
 parallel: test.cpp
 	$(pcompiler) $(pflags) $< -o $@
-
 
 
 # Unit testing depends on the Google C++ testing framework, gtest.
@@ -31,8 +30,8 @@ parallel: test.cpp
 
 gtdir  = gtest/googletest
 
-gflags = -isystem $(gtdir)/include -I$(gtdir) $(flags) \
-         -I$(gtdir)/include -pthread
+gflags = -isystem $(gtdir)/include \
+         -I$(gtdir) $(flags) -I$(gtdir)/include -pthread
 
 gthdr = $(gtdir)/include/gtest/*.h \
         $(gtdir)/include/gtest/internal/*.h
@@ -50,6 +49,12 @@ unitTestSuite: MMSP.unitTestSuite.cpp gtest-all.o
 
 parallelTestSuite: MMSP.unitTestSuite.cpp gtest-all.o
 	$(pcompiler) $(gflags) -include mpi.h $^ -o $@ -lpthread -lz
+
+# example testing program
+exampleTestSuite: MMSP.exampleTestSuite.cpp gtest-all.o
+	$(compiler) $(gflags) -DUNITTESTING \
+	-include ../examples/coarsening/grain_growth/isotropic/phase_field/graingrowth.cpp \
+	$^ -o $@ -lpthread -lz
 
 clean:
 	rm -f test parallel unitTestSuite parallelTestSuite gtest-all.o

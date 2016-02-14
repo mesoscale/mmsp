@@ -78,8 +78,10 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 	double dt = 0.01;
 
 	for (int step=0; step<steps; step++) {
+		#ifndef UNITTESTING
 		if (rank==0)
 			print_progress(step, steps);
+		#endif
 		for (int i=0; i<nodes(oldGrid); i++) {
 			// compute laplacian
 			vector<T> lap = laplacian(oldGrid,i);
@@ -106,4 +108,6 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 
 #endif
 
+#ifndef UNITTESTING
 #include"MMSP.main.hpp"
+#endif
