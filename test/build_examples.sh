@@ -47,16 +47,22 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd ../phase_field/
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd ../sparsePF/
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -66,16 +72,22 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd ../phase_field/
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd ../sparsePF/
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -88,6 +100,8 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -100,16 +114,22 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd ../phase_field/
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd ../sparsePF/
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -119,16 +139,22 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd ../phase_field/
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd ../sparsePF/
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -141,6 +167,8 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -151,6 +179,8 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -160,11 +190,15 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd ../explicit/
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -172,6 +206,8 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -179,6 +215,8 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -186,6 +224,8 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -195,6 +235,8 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -205,6 +247,8 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -212,6 +256,8 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
@@ -219,6 +265,8 @@ pwd
 	pwd
 	make -Bs || exit $?
 	make -Bs parallel || exit $?
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && for f in *.dat; do mmsp2png $f >/dev/null; done
+	rm test.*.dat
 	if $CLEAN; then make -s clean; fi
 	cd $examples
 
