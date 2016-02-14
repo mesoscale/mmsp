@@ -109,5 +109,80 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 #endif
 
 #ifndef UNITTESTING
+
 #include"MMSP.main.hpp"
+
+#else
+
+/* validation with Google Test suite
+ * http://github.com/google/googletest
+ */
+#include<gtest/gtest.h>
+
+TEST(grid1DTest, Finite) {
+	MMSP::vector<double> length(2,0.0);
+	MMSP::generate(1, "short1.00000.dat");
+	GRID1D myGrid1D("short1.00000.dat");
+	for (int n=0; n<MMSP::nodes(myGrid1D); n++)
+		length[0] += myGrid1D(n)[1];
+	MMSP::update(myGrid1D, 20000);
+	for (int n=0; n<MMSP::nodes(myGrid1D); n++)
+		length[1] += myGrid1D(n)[1];
+	myGrid1D.output("short1.20000.dat");
+	#ifdef MPI_VERSION
+	for (int i=0; i<2; i++) {
+		double myLen(length[i]);
+		MPI::COMM_WORLD.Allreduce(&myLen,&length[i],1,MPI_DOUBLE,MPI_SUM);
+	}
+	#endif
+	for (int n=0; n<MMSP::nodes(myGrid1D); n++)
+		for (int i=0; i<MMSP::fields(myGrid1D); i++)
+			EXPECT_PRED1(std::isfinite<double>,myGrid1D(n)[i]);
+	EXPECT_NEAR(length[1],length[0],1.0);
+}
+
+TEST(grid2DTest, Finite) {
+	MMSP::vector<double> area(2,0.0);
+	MMSP::generate(2, "short2.0000.dat");
+	GRID2D myGrid2D("short2.0000.dat");
+	for (int n=0; n<MMSP::nodes(myGrid2D); n++)
+		area[0] += myGrid2D(n)[1];
+	MMSP::update(myGrid2D, 4000);
+	for (int n=0; n<MMSP::nodes(myGrid2D); n++)
+		area[1] += myGrid2D(n)[1];
+	myGrid2D.output("short2.4000.dat");
+	#ifdef MPI_VERSION
+	for (int i=0; i<2; i++) {
+		double myAre(area[i]);
+		MPI::COMM_WORLD.Allreduce(&myAre,&area[i],1,MPI_DOUBLE,MPI_SUM);
+	}
+	#endif
+	for (int n=0; n<MMSP::nodes(myGrid2D); n++)
+		for (int i=0; i<MMSP::fields(myGrid2D); i++)
+			EXPECT_PRED1(std::isfinite<double>,myGrid2D(n)[i]);
+	EXPECT_LE(area[1],area[0]);
+}
+
+TEST(grid3DTest, Finite) {
+	MMSP::vector<double> volume(2,0.0);
+	MMSP::generate(3, "short3.0000.dat");
+	GRID3D myGrid3D("short3.0000.dat");
+	for (int n=0; n<MMSP::nodes(myGrid3D); n++)
+		volume[0] += myGrid3D(n)[1];
+	MMSP::update(myGrid3D, 1000);
+	for (int n=0; n<MMSP::nodes(myGrid3D); n++)
+		volume[1] += myGrid3D(n)[1];
+	myGrid3D.output("short3.1000.dat");
+	#ifdef MPI_VERSION
+	for (int i=0; i<1; i++) {
+		double myVol(volume[i]);
+		MPI::COMM_WORLD.Allreduce(&myAre,&volume[i],1,MPI_DOUBLE,MPI_SUM);
+	}
+	#endif
+	for (int n=0; n<MMSP::nodes(myGrid3D); n++)
+		for (int i=0; i<MMSP::fields(myGrid3D); i++)
+			EXPECT_PRED1(std::isfinite<double>,myGrid3D(n)[i]);
+	EXPECT_LE(volume[1],volume[0]);
+}
+
 #endif
