@@ -7,7 +7,9 @@
 *.dvi
 *.log
 *.out
+*.png
 *.toc
+*.directory
 doc/MMSP.manual.pdf
 
 # MMSP utility binaries
