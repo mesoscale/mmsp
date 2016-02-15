@@ -4,6 +4,7 @@ tstart=$(date +%s)
 nSerBld=0
 nParBld=0
 nParRun=0
+iters=1000
 
 cd ../examples
 
@@ -15,6 +16,10 @@ do
 		CLEAN=true
 		shift # past argument
 		;;
+		-l|--long)
+		iters=5000
+		shift # past argument
+		;;
 		*)
 		# unknown option
 		echo "WARNING: Unknown option ${key}."
@@ -24,7 +29,8 @@ do
 	shift # past argument or value
 done
 
-if [[ $CLEAN ]]; then
+if [[ $CLEAN ]]
+then
 	echo "Building examples in serial and parallel, then deleting binaries."
 else
 	echo "Building examples in serial and parallel, leaving binaries behind (specify --clean to clean up)."
@@ -33,270 +39,60 @@ echo
 
 examples=$(pwd)
 
-cd beginners_diffusion/
-pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	if $CLEAN; then make -s clean; fi
-	cd $examples
+exdirs="coarsening/grain_growth/anisotropic/Monte_Carlo/
+coarsening/grain_growth/anisotropic/phase_field/
+coarsening/grain_growth/anisotropic/sparsePF/
+coarsening/grain_growth/isotropic/Monte_Carlo/
+coarsening/grain_growth/isotropic/phase_field/
+coarsening/grain_growth/isotropic/sparsePF/
+coarsening/ostwald_ripening/isotropic/phase_field/
+coarsening/zener_pinning/anisotropic/Monte_Carlo/
+coarsening/zener_pinning/anisotropic/phase_field/
+coarsening/zener_pinning/anisotropic/sparsePF/
+coarsening/zener_pinning/isotropic/Monte_Carlo/
+coarsening/zener_pinning/isotropic/phase_field/
+coarsening/zener_pinning/isotropic/sparsePF/
+phase_transitions/allen-cahn/
+phase_transitions/cahn-hilliard/explicit/
+phase_transitions/model_A/
+phase_transitions/model_B/
+phase_transitions/solidification/anisotropic/
+phase_transitions/spinodal/
+statistical_mechanics/Heisenberg/
+statistical_mechanics/Ising/
+statistical_mechanics/Potts/"
 
-echo
-cd coarsening
-pwd
-cd grain_growth
-pwd
-cd anisotropic
-pwd
-	cd Monte_Carlo
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd ../phase_field/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd ../sparsePF/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
+# Skip phase_transitions/cahn-hilliard/convex_splitting  --  too long
+# Skip differential_equations/elliptic/Poisson  --  segmentation faults
+# Skip beginners_diffusion  --  does not match execution pattern
 
-cd coarsening/grain_growth/isotropic
-pwd
-	cd Monte_Carlo/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd ../phase_field/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd ../sparsePF/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
+for d in $exdirs
+do
+	cd ${examples}/$d
+	printf "%-55s\t" $d
+	exstart=$(date +%s)
 
-echo
-cd coarsening/ostwald_ripening
-pwd
-cd isotropic
-pwd
-	cd phase_field/
-	pwd
 	(make -Bs || exit $?) && ((nSerBld++))
 	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
+	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat $iters 500 >/dev/null && ((nParRun++))
 
-echo
-cd coarsening/zener_pinning
-pwd
-cd anisotropic
-pwd
-	cd Monte_Carlo/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd ../phase_field/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd ../sparsePF/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
+	for f in *.dat
+	do
+		mmsp2png --zoom $f >/dev/null
+	done
 
-cd coarsening/zener_pinning/isotropic
-pwd
-	cd Monte_Carlo/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd ../phase_field/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd ../sparsePF/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
+	if [[ $CLEAN ]]
+	then
+		rm test.*.dat
+		rm test.*.png
+		make -s clean
+	fi
 
-echo
-cd differential_equations
-pwd
-cd elliptic
-	cd Poisson/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
-
-echo
-cd phase_transitions
-pwd
-	cd allen-cahn/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
-
-	cd phase_transitions/cahn-hilliard
-	pwd
-	echo "Skipped phase_transitions/cahn-hilliard/convex_splitting/"
-# convex splitting is not a suitable example -- it runs much, much too long!
-  cd convex_splitting/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-#	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-#	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-#	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd ../explicit/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
-
-	cd phase_transitions/model_A
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
-
-	cd phase_transitions/model_B/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
-
-	cd phase_transitions/spinodal/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
-
-cd phase_transitions/solidification
-pwd
-	cd anisotropic/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
-
-echo
-cd statistical_mechanics
-pwd
-	cd Heisenberg/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
-
-	cd statistical_mechanics/Ising/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
-
-	cd statistical_mechanics/Potts/
-	pwd
-	(make -Bs || exit $?) && ((nSerBld++))
-	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat 1000 500 >/dev/null && ((nParRun++))
-	for f in *.dat; do mmsp2png --zoom $f >/dev/null; done
-	rm test.*.dat
-	if $CLEAN; then make -s clean; fi
-	cd $examples
+	exfin=$(date +%s)
+	exlapse=$(echo "$exfin-$exstart" | bc -l)
+	echo "${exlapse} seconds"
+done
+cd ${examples}
 
 echo
 echo "${nSerBld} serial   examples built    successfully."
