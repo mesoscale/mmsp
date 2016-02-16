@@ -92,8 +92,8 @@ do
 	(make -Bs parallel || exit $?) && ((nParBld++))
 	if [[ $EXEC ]]
 	then
-		mpirun -np $CORES ./parallel --example 2 test.0000.dat && mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER >/dev/null && ((nParRun++))
 		rm test.*.png
+		mpirun -np $CORES ./parallel --example 2 test.0000.dat && mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER >/dev/null && ((nParRun++))
 		for f in *.dat
 		do
 			mmsp2png --zoom $f >/dev/null
@@ -105,7 +105,7 @@ do
 		rm test.*.dat
 		if [[ $PURGE ]]
 		then
-			rm test.*.png
+				rm -f test.*.png
 		fi
 	fi
 
