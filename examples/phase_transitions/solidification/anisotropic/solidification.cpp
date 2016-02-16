@@ -14,12 +14,12 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
-  const int edge=1024;
+  const int L=128;
   const double deltaX=0.025;
   const double undercooling=-0.5;
   if (dim==2)
   {
-    GRID2D initGrid(2,0,edge,0,edge);
+    GRID2D initGrid(2,0,L,0,L);
     for (int d=0; d<dim; ++d) dx(initGrid,d)=deltaX;
 
     // Seed a circle of radius N*dx
@@ -28,7 +28,7 @@ void generate(int dim, const char* filename)
     {
       initGrid(i)[1]=undercooling; // Initial undercooling
       vector<int> x = position(initGrid,i);
-      int r=sqrt(pow(x[0]-edge/2,2)+pow(x[1]-edge/2,2));
+      int r=sqrt(pow(x[0]-L/2,2)+pow(x[1]-L/2,2));
       if (r<=R) initGrid(i)[0]=1.;
       else initGrid(i)[0]=0.;
     }

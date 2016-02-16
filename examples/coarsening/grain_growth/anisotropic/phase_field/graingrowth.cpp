@@ -31,7 +31,8 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		GRID2D initGrid(4,0,128,0,128);
+		int L=128;
+		GRID2D initGrid(4,0,L,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			for (int h=0; h<fields(initGrid); h++)
@@ -39,16 +40,16 @@ void generate(int dim, const char* filename)
 
 			vector<int> x = position(initGrid,i);
 
-			if (x[0]<32) {
-				if (x[1]<64) initGrid(i)[2] = 1.0;
+			if (x[0]<L/4) {
+				if (x[1]<L/2) initGrid(i)[2] = 1.0;
 				else initGrid(i)[3] = 1.0;
 			}
-			else if (x[0]>96) {
-				if (x[1]<64) initGrid(i)[2] = 1.0;
+			else if (x[0]>3*L/4) {
+				if (x[1]<L/2) initGrid(i)[2] = 1.0;
 				else initGrid(i)[3] = 1.0;
 			}
 			else {
-				if (x[1]<32 or x[1]>96) initGrid(i)[1] = 1.0;
+				if (x[1]<L/4 or x[1]>3*L/4) initGrid(i)[1] = 1.0;
 				else initGrid(i)[0] = 1.0;
 			}
 		}

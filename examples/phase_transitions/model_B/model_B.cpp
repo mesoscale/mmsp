@@ -41,7 +41,7 @@ double gaussian(double ave, double std)
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		GRID1D initGrid(1,0,128);
+		GRID1D initGrid(0,0,128);
 
 		for (int i=0; i<nodes(initGrid); i++)
 			initGrid(i) = 0.0;
@@ -50,7 +50,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		GRID2D initGrid(1,0,128,0,128);
+		GRID2D initGrid(0,0,256,0,256);
 
 		for (int i=0; i<nodes(initGrid); i++)
 			initGrid(i) = 0.0;
@@ -59,7 +59,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		GRID3D initGrid(1,0,64,0,64,0,64);
+		GRID3D initGrid(0,0,64,0,64,0,64);
 
 		for (int i=0; i<nodes(initGrid); i++)
 			initGrid(i) = 0.0;
