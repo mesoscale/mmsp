@@ -4,21 +4,43 @@ tstart=$(date +%s)
 nSerBld=0
 nParBld=0
 nParRun=0
-iters=1000
+ITERS=1000
+INTER=500
+CORES=4
+EXEC=true
 
 cd ../examples
+examples=$(pwd)
+
+echo -n "Building examples in serial and parallel"
+
 
 while [[ $# > 0 ]]
 do
 	key="$1"
 	case $key in
 		-c|--clean)
+		echo -n ", cleaning up after"
 		CLEAN=true
-		shift # past argument
+		;;
+		-p|--purge)
+		echo -n ", cleaning up after"
+		CLEAN=true
+		PURGE=true
+		;;
+		-n|--noexec)
+		echo -n ", not executing"
+		EXEC=false
 		;;
 		-l|--long)
-		iters=5000
-		shift # past argument
+		echo -n ", taking 5,000 steps"
+		ITERS=5000
+		INTER=1000
+		;;
+		-x|--extra)
+		echo -n ", taking 25,000 steps"
+		ITERS=25000
+		INTER=5000
 		;;
 		*)
 		# unknown option
@@ -29,63 +51,62 @@ do
 	shift # past argument or value
 done
 
-if [[ $CLEAN ]]
-then
-	echo "Building examples in serial and parallel, then deleting binaries."
-else
-	echo "Building examples in serial and parallel, leaving binaries behind (specify --clean to clean up)."
-fi
 echo
 
-examples=$(pwd)
-
-exdirs="coarsening/grain_growth/anisotropic/Monte_Carlo/
-coarsening/grain_growth/anisotropic/phase_field/
-coarsening/grain_growth/anisotropic/sparsePF/
-coarsening/grain_growth/isotropic/Monte_Carlo/
-coarsening/grain_growth/isotropic/phase_field/
-coarsening/grain_growth/isotropic/sparsePF/
-coarsening/ostwald_ripening/isotropic/phase_field/
-coarsening/zener_pinning/anisotropic/Monte_Carlo/
-coarsening/zener_pinning/anisotropic/phase_field/
-coarsening/zener_pinning/anisotropic/sparsePF/
-coarsening/zener_pinning/isotropic/Monte_Carlo/
-coarsening/zener_pinning/isotropic/phase_field/
-coarsening/zener_pinning/isotropic/sparsePF/
-phase_transitions/allen-cahn/
-phase_transitions/cahn-hilliard/explicit/
-phase_transitions/model_A/
-phase_transitions/model_B/
-phase_transitions/solidification/anisotropic/
-phase_transitions/spinodal/
-statistical_mechanics/Heisenberg/
-statistical_mechanics/Ising/
-statistical_mechanics/Potts/"
+exdirs=("coarsening/grain_growth/anisotropic/Monte_Carlo/" \
+"coarsening/grain_growth/anisotropic/phase_field/" \
+"coarsening/grain_growth/anisotropic/sparsePF/" \
+"coarsening/grain_growth/isotropic/Monte_Carlo/" \
+"coarsening/grain_growth/isotropic/phase_field/" \
+"coarsening/grain_growth/isotropic/sparsePF/" \
+"coarsening/ostwald_ripening/isotropic/phase_field/" \
+"coarsening/zener_pinning/anisotropic/Monte_Carlo/" \
+"coarsening/zener_pinning/anisotropic/phase_field/" \
+"coarsening/zener_pinning/anisotropic/sparsePF/" \
+"coarsening/zener_pinning/isotropic/Monte_Carlo/" \
+"coarsening/zener_pinning/isotropic/phase_field/" \
+"coarsening/zener_pinning/isotropic/sparsePF/" \
+"phase_transitions/allen-cahn/" \
+"phase_transitions/cahn-hilliard/explicit/" \
+"phase_transitions/model_A/" \
+"phase_transitions/model_B/" \
+"phase_transitions/solidification/anisotropic/" \
+"phase_transitions/spinodal/" \
+"statistical_mechanics/Heisenberg/" \
+"statistical_mechanics/Ising/" \
+"statistical_mechanics/Potts/")
 
 # Skip phase_transitions/cahn-hilliard/convex_splitting  --  too long
 # Skip differential_equations/elliptic/Poisson  --  segmentation faults
 # Skip beginners_diffusion  --  does not match execution pattern
 
-for d in $exdirs
+n=${#exdirs[@]}
+for (( i=0; i<$n; i++ ))
 do
-	cd ${examples}/$d
-	printf "%-55s\t" $d
 	exstart=$(date +%s)
+	j=$(($i+1))
+	cd $examples/${exdirs[$i]}
+	printf "%2d/%2d %-50s\t" $j $n ${exdirs[$i]}
 
 	(make -Bs || exit $?) && ((nSerBld++))
 	(make -Bs parallel || exit $?) && ((nParBld++))
-	mpirun -np 4 ./parallel --example 2 test.0000.dat && mpirun -np 4 ./parallel test.0000.dat $iters 500 >/dev/null && ((nParRun++))
-
-	for f in *.dat
-	do
-		mmsp2png --zoom $f >/dev/null
-	done
-
+	if [[ $EXEC ]]
+	then
+		mpirun -np $CORES ./parallel --example 2 test.0000.dat && mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER >/dev/null && ((nParRun++))
+		rm test.*.png
+		for f in *.dat
+		do
+			mmsp2png --zoom $f >/dev/null
+		done
+	fi
 	if [[ $CLEAN ]]
 	then
-		rm test.*.dat
-		rm test.*.png
 		make -s clean
+		rm test.*.dat
+		if [[ $PURGE ]]
+		then
+			rm test.*.png
+		fi
 	fi
 
 	exfin=$(date +%s)
