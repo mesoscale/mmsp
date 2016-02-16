@@ -1561,7 +1561,7 @@ public:
 		unsigned int np = MPI::COMM_WORLD.Get_size();
 		MPI_Request request;
 		MPI_Status status;
-		int mpi_err;
+		int mpi_err = 0;
 
 		// Read filesystem block size (using statvfs). Default to 4096 B.
 		struct statvfs buf;
@@ -1575,10 +1575,10 @@ public:
 			MPI_File output;
 			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
-				char error_string[256];
-				int length_of_error_string=256;
-				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
-				fprintf(stderr, "%3d: %s\n", rank, error_string);
+				if (rank==0)
+					MPI_File_delete(fname,MPI_INFO_NULL);
+				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+				assert(mpi_err==MPI_SUCCESS);
 			}
 			if (!output) {
 				std::cerr << "File output error: could not open " << fname << "." << std::endl;
@@ -1895,17 +1895,16 @@ public:
 			MPI_File output;
 			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
-				char error_string[256];
-				int length_of_error_string=256;
-				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
-				fprintf(stderr, "%3d: %s\n", rank, error_string);
+				if (rank==0)
+					MPI_File_delete(fname,MPI_INFO_NULL);
+				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+				assert(mpi_err==MPI_SUCCESS);
 			}
 			if (!output) {
 				if (rank==0) std::cerr << "File output error: could not open " << fname << "." << std::endl;
 				if (rank==0) std::cerr << "                   If it already exists, delete it and try again." << std::endl;
 				exit(-1);
 			}
-			//mpi_err = MPI_File_set_size(output, 0);
 			if (mpi_err != MPI_SUCCESS) {
 				char error_string[256];
 				int length_of_error_string=256;
@@ -2497,7 +2496,7 @@ template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& 
 	return laplacian(GRID, x);
 }
 
-template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& GRID, int i, int f)
+template <int dim, typename T> T laplacian(const grid<dim, vector<T> >& GRID, int i, int f)
 {
 	vector<int> x = GRID.position(i);
 	return laplacian(GRID, x, f);
