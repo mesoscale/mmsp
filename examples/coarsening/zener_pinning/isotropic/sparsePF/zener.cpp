@@ -38,12 +38,13 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		GRID2D initGrid(0,0,128,0,128);
+		int L=256;
+		GRID2D initGrid(0,0,L,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
-			double d = sqrt(pow(64.0-x[0],2)+pow(64.0-x[1],2));
-			if (d<32.0) set(initGrid(i),2) = 1.0;
+			double d = sqrt(pow(L/2-x[0],2)+pow(L/2-x[1],2));
+			if (d<L/4.0) set(initGrid(i),2) = 1.0;
 			else set(initGrid(i),1) = 1.0;
 		}
 

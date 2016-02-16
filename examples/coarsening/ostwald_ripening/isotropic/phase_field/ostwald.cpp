@@ -26,7 +26,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		GRID2D initGrid(2,0,128,0,128);
+		GRID2D initGrid(2,0,256,0,256);
 
 		for (int n=0; n<nodes(initGrid); n++) {
 				double r = double(rand())/double(RAND_MAX);

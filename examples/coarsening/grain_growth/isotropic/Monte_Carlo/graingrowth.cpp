@@ -28,13 +28,14 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim == 2) {
-		GRID2D initGrid(2, 0, 64, 0, 64);
+		int L=256;
+		GRID2D initGrid(0, 0, L, 0, L);
 
 		for (int i = 0; i < nodes(initGrid); i++)
 			initGrid(i) = rand() % 20;
 		output(initGrid, filename);
 	} else if (dim == 3) {
-		GRID3D initGrid(2, 0, 32, 0, 32, 0, 32);
+		GRID3D initGrid(0, 0, 32, 0, 32, 0, 32);
 
 		for (int i = 0; i < nodes(initGrid); i++)
 			initGrid(i) = rand() % 20;

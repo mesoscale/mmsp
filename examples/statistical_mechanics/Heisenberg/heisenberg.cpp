@@ -28,7 +28,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		GRID2D initGrid(3,0,128,0,128);
+		GRID2D initGrid(3,0,256,0,256);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			double psi = 2.0*acos(-1.0)*double(rand())/double(RAND_MAX);

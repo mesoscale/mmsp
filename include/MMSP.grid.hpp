@@ -1572,7 +1572,13 @@ public:
 			if (rank==0) std::cout<<"Bug: using normal IO, instead of BGQ IO!"<<std::endl;
 			#endif
 			MPI_File output;
-			MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_EXCL|MPI::MODE_CREATE, MPI::INFO_NULL, &output);
+			int mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+			if (mpi_err != MPI_SUCCESS) {
+				if (rank==0)
+					MPI_File_delete(fname,MPI_INFO_NULL);
+				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+				assert(mpi_err==MPI_SUCCESS);
+			}
 			if (!output) {
 				std::cerr << "File output error: could not open " << fname << "." << std::endl;
 				exit(-1);
@@ -1886,12 +1892,12 @@ public:
 			if (rank==0) std::cout<<"  Opening "<<std::string(fname)<<" for output."<<std::endl;
 			#endif
 			MPI_File output;
-			mpi_err = MPI_File_open(MPI::COMM_WORLD, fname, MPI::MODE_WRONLY|MPI::MODE_EXCL|MPI::MODE_CREATE, MPI::INFO_NULL, &output);
+			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
-				char error_string[256];
-				int length_of_error_string=256;
-				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
-				fprintf(stderr, "%3d: %s\n", rank, error_string);
+				if (rank==0)
+					MPI_File_delete(fname,MPI_INFO_NULL);
+				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+				assert(mpi_err==MPI_SUCCESS);
 			}
 			if (!output) {
 				if (rank==0) std::cerr << "File output error: could not open " << fname << "." << std::endl;

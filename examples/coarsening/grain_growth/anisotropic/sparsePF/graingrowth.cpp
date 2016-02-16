@@ -28,21 +28,22 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		GRID2D initGrid(0,0,128,0,128);
+		int L=128;
+		GRID2D initGrid(0,0,L,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
 
-			if (x[0]<32) {
-				if (x[1]<64) set(initGrid(i),2) = 1.0;
+			if (x[0]<L/4) {
+				if (x[1]<L/2) set(initGrid(i),2) = 1.0;
 				else set(initGrid(i),3) = 1.0;
 			}
-			else if (x[0]>96) {
-				if (x[1]<64) set(initGrid(i),2) = 1.0;
+			else if (x[0]>3*L/4) {
+				if (x[1]<L/2) set(initGrid(i),2) = 1.0;
 				else set(initGrid(i),3) = 1.0;
 			}
 			else {
-				if (x[1]<32 or x[1]>96) set(initGrid(i),1) = 1.0;
+				if (x[1]<L/4 or x[1]>3*L/4) set(initGrid(i),1) = 1.0;
 				else set(initGrid(i),0) = 1.0;
 			}
 		}

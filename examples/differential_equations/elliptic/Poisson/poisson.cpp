@@ -203,12 +203,13 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		grid<2,double> initGrid(1,0,128,0,128);
+		int L=256;
+		grid<2,double> initGrid(1,0,L,0,L);
 
 		for (int n=0; n<nodes(initGrid); n++) {
 			vector<int> x = position(initGrid, n);
-			double X = double(x[0])/128.0;
-			double Y = double(x[1])/128.0;
+			double X = double(x[0])/L;
+			double Y = double(x[1])/L;
 			initGrid(n) = exp(X*Y);
 		}
 
@@ -216,13 +217,14 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		grid<3,double> initGrid(1,0,64,0,64,0,64);
+		int L=64;
+		grid<3,double> initGrid(1,0,L,0,L,0,L);
 
 		for (int n=0; n<nodes(initGrid); n++) {
 			vector<int> x = position(initGrid, n);
-			double X = double(x[0])/128.0;
-			double Y = double(x[1])/128.0;
-			double Z = double(x[2])/128.0;
+			double X = double(x[0])/L;
+			double Y = double(x[1])/L;
+			double Z = double(x[2])/L;
 			initGrid(n) = exp(X*Y*Z);
 		}
 
