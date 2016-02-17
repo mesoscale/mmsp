@@ -1576,12 +1576,15 @@ public:
 			if (mpi_err != MPI_SUCCESS) {
 				if (rank==0)
 					MPI_File_delete(fname,MPI_INFO_NULL);
+				MPI::COMM_WORLD.Barrier();
 				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
-				assert(mpi_err==MPI_SUCCESS);
-			}
-			if (!output) {
-				std::cerr << "File output error: could not open " << fname << "." << std::endl;
-				exit(-1);
+				if (mpi_err != MPI_SUCCESS) {
+					char error_string[256];
+					int length_of_error_string=256;
+					MPI_Error_string(mpi_err, error_string, &length_of_error_string);
+					fprintf(stderr, "%3d: %s\n", rank, error_string);
+					std::exit(-1);
+				}
 			}
 
 			// Generate MMSP header from rank 0
@@ -1697,7 +1700,6 @@ public:
 			unsigned int* writeranks=NULL;
 			MPI_Request* recvrequests = NULL;
 			MPI_Status* recvstatuses = NULL;
-			int mpi_err = 0;
 
 			// get grid data to write
 			const unsigned long size=write_buffer(databuffer);
@@ -1892,24 +1894,19 @@ public:
 			if (rank==0) std::cout<<"  Opening "<<std::string(fname)<<" for output."<<std::endl;
 			#endif
 			MPI_File output;
-			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+			int mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
 				if (rank==0)
 					MPI_File_delete(fname,MPI_INFO_NULL);
+				MPI::COMM_WORLD.Barrier();
 				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
-				assert(mpi_err==MPI_SUCCESS);
-			}
-			if (!output) {
-				if (rank==0) std::cerr << "File output error: could not open " << fname << "." << std::endl;
-				if (rank==0) std::cerr << "                   If it already exists, delete it and try again." << std::endl;
-				exit(-1);
-			}
-			//mpi_err = MPI_File_set_size(output, 0);
-			if (mpi_err != MPI_SUCCESS) {
-				char error_string[256];
-				int length_of_error_string=256;
-				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
-				fprintf(stderr, "%3d: %s\n", rank, error_string);
+				if (mpi_err != MPI_SUCCESS) {
+					char error_string[256];
+					int length_of_error_string=256;
+					MPI_Error_string(mpi_err, error_string, &length_of_error_string);
+					fprintf(stderr, "%3d: %s\n", rank, error_string);
+					std::exit(-1);
+				}
 			}
 
 			// Write to disk
