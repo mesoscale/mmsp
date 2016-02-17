@@ -74,7 +74,10 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
     #ifdef MPI_VERSION
     rank = MPI::COMM_WORLD.Get_rank();
     #endif
-    	grid<dim,vector<T> > newGrid(oldGrid);
+
+	ghostswap(oldGrid);
+
+   	grid<dim,vector<T> > newGrid(oldGrid);
 
 	double dt = 0.01;
 
@@ -100,8 +103,8 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 				newGrid(i)[j] = phi-dt*(-phi-pow(phi,3)+2.0*(phi*sum-lap[j]));
 			}
 		}
-		swap(oldGrid,newGrid);
 		ghostswap(oldGrid);
+		swap(oldGrid,newGrid);
 	}
 }
 

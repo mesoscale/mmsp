@@ -89,6 +89,8 @@ template <int dim> void update(grid<dim,int>& mcGrid, int steps)
     rank = MPI::COMM_WORLD.Get_rank();
     #endif
 
+	ghostswap(mcGrid);
+
 	const double kT = (dim==3)?0.75:0.50;
 	int gss = int(nodes(mcGrid));
 
@@ -188,11 +190,14 @@ template <int dim> void update(grid<dim,int>& mcGrid, int steps)
 
 					// attempt a spin flip
 					double r = double(rand())/double(RAND_MAX);
-					if (dE<=0.0 and r<M*E) mcGrid(p) = spin2;
-					if (dE>0.0 and r<M*E*exp(-dE/(E*kT))) mcGrid(p) = spin2;
+					if (dE<=0.0 and r<M*E)
+						mcGrid(p) = spin2;
+					if (dE>0.0 and r<M*E*exp(-dE/(E*kT)))
+						mcGrid(p) = spin2;
 				}
 			}
-			if (h%gss==0) ghostswap(mcGrid);
+			if (h%gss==0)
+				ghostswap(mcGrid);
 		}
 	}
 }

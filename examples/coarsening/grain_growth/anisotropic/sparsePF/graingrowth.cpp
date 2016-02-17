@@ -85,11 +85,14 @@ template <int dim, typename T> void update(grid<dim,sparse<T> >& oldGrid, int st
 	double width = 8.0;
 	double epsilon = 1.0e-8;
 
+	ghostswap(oldGrid);
+
+	grid<dim,sparse<T> > newGrid(oldGrid);
+
 	for (int step=0; step<steps; step++) {
 		if (rank==0)
 			print_progress(step, steps);
 		// newGrid grid must be overwritten each time
-		grid<dim,sparse<T> > newGrid(oldGrid);
 
 		for (int n=0; n<nodes(oldGrid); n++) {
 			vector<int> x = position(oldGrid,n);

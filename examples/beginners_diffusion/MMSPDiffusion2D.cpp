@@ -45,6 +45,7 @@ int main(int argc, char* argv[])
 	b0(update,1) = Dirichlet;
 	b1(update,1) = Dirichlet;
 
+	ghostswap(GRID);
 
 	for (int k=0; k<iterate; k++) {
 		for (int i=0; i<nodes(GRID); i++) {

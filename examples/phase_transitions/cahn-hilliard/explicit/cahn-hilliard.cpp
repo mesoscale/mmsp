@@ -48,6 +48,8 @@ template <int dim, typename T> void update(grid<dim,T>& oldGrid, int steps)
     rank = MPI::COMM_WORLD.Get_rank();
     #endif
 
+	ghostswap(oldGrid);
+
 	grid<dim,T> newGrid(oldGrid);
 	grid<dim,T> temp(oldGrid);
 

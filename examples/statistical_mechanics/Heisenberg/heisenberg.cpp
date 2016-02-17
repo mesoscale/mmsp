@@ -63,6 +63,8 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& spinGrid, int s
     rank = MPI::COMM_WORLD.Get_rank();
     #endif
 
+	ghostswap(spinGrid);
+
 	double J = 1.0;
 	double kT = (dim==3)?0.75:0.50;
 	double pi = acos(-1.0);
@@ -128,10 +130,13 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& spinGrid, int s
 
 			// attempt a spin flip
 			double r = double(rand())/double(RAND_MAX);
-			if (dE<=0.0) spinGrid(p) = s2;
-			else if (r<exp(-dE/kT)) spinGrid(p) = s2;
+			if (dE<=0.0)
+				spinGrid(p) = s2;
+			else if (r<exp(-dE/kT))
+				spinGrid(p) = s2;
 
-			if (h%gss==0) ghostswap(spinGrid);
+			if (h%gss==0)
+				ghostswap(spinGrid);
 		}
 	}
 }

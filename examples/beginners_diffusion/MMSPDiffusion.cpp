@@ -39,6 +39,8 @@ int main(int argc, char* argv[])
 	b0(update,0) = Dirichlet;
 	b1(update,0) = Dirichlet;
 
+	ghostswap(GRID);
+
 	for (int k=0; k<iterate; k++) {
 		for (int i=0; i<nodes(GRID); i++) {
 			//we can use MMSP's definition for laplacian instead of hard coding it.

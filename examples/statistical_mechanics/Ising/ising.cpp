@@ -48,6 +48,8 @@ template <int dim> void update(grid<dim,int>& spinGrid, int steps)
     rank = MPI::COMM_WORLD.Get_rank();
     #endif
 
+	ghostswap(spinGrid);
+
 	double J = 2.0;
 	double H = 1.0;
 	double kT = (dim==2)?0.50:0.75;
@@ -108,10 +110,13 @@ template <int dim> void update(grid<dim,int>& spinGrid, int steps)
 
 			// attempt a spin flip
 			double r = double(rand())/double(RAND_MAX);
-			if (dE<=0.0) spinGrid(p) = spin2;
-			else if (r<exp(-dE/kT)) spinGrid(p) = spin2;
+			if (dE<=0.0)
+				spinGrid(p) = spin2;
+			else if (r<exp(-dE/kT))
+				spinGrid(p) = spin2;
 
-			if (h%gss==0) ghostswap(spinGrid);
+			if (h%gss==0)
+				ghostswap(spinGrid);
 		}
 	}
 }

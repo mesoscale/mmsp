@@ -33,21 +33,25 @@ void generate(int dim, const char* filename)
 
 		for (int i = 0; i < nodes(initGrid); i++)
 			initGrid(i) = rand() % 20;
+
 		output(initGrid, filename);
+
 	} else if (dim == 3) {
 		GRID3D initGrid(0, 0, 32, 0, 32, 0, 32);
 
 		for (int i = 0; i < nodes(initGrid); i++)
 			initGrid(i) = rand() % 20;
+
 		output(initGrid, filename);
+
 	}
 }
 
-template <int dim> bool OutsideDomainCheck(grid<dim, int >& mcGrid, vector<int>* x)
+template <int dim> bool isOutsideDomain(const grid<dim,int>& mcGrid, const vector<int>& x)
 {
 	bool outside_domain = false;
 	for (int i = 0; i < dim; i++) {
-		if ((*x)[i] < x0(mcGrid, i) || (*x)[i] > x1(mcGrid, i)) {
+		if (x[i] < x0(mcGrid, i) || x[i] > x1(mcGrid, i)) {
 			outside_domain = true;
 			break;
 		}
@@ -65,8 +69,10 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 	MPI::COMM_WORLD.Barrier();
 	#endif
 
+	ghostswap(mcGrid);
+
 	/*---------------generate cells------------------*/
-	int dimension_length = 0, number_of_lattice_cells = 1;
+	int dimension_length = 0, num_lattice_cells = 1;
 	int lattice_cells_each_dimension[dim];
 	for (int i = 0; i < dim; i++) {
 		dimension_length = x1(mcGrid, i) - x0(mcGrid, i);
@@ -74,7 +80,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 			lattice_cells_each_dimension[i] = dimension_length / 2 + 1;
 		else
 			lattice_cells_each_dimension[i] = 1 + (dimension_length % 2 == 0 ? dimension_length / 2 : dimension_length / 2 + 1);
-		number_of_lattice_cells *= lattice_cells_each_dimension[i];
+		num_lattice_cells *= lattice_cells_each_dimension[i];
 	}
 
 	vector<int> x (dim, 0);
@@ -90,7 +96,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 	}
 
 
-	for (int j = 0; j < number_of_lattice_cells; j++) {
+	for (int j = 0; j < num_lattice_cells; j++) {
 		int cell_coords_selected[dim];
 		if (dim == 2) {
 			cell_coords_selected[dim - 1] = j % lattice_cells_each_dimension[dim - 1]; //1-indexed
@@ -106,57 +112,57 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 
 		if (dim == 2) {
 			x_prim = x;
-			if (!OutsideDomainCheck<dim>(mcGrid, &x_prim)) num_of_grids_to_flip[0] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[0] += 1;
 
 			x_prim = x;
 			x_prim[1] = x[1] + 1; //0,1
-			if (!OutsideDomainCheck<dim>(mcGrid, &x_prim)) num_of_grids_to_flip[1] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[1] += 1;
 
 			x_prim = x;
 			x_prim[0] = x[0] + 1; //1,0
-			if (!OutsideDomainCheck<dim>(mcGrid, &x_prim)) num_of_grids_to_flip[2] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[2] += 1;
 
 			x_prim = x;
 			x_prim[0] = x[0] + 1;
 			x_prim[1] = x[1] + 1; //1,1
-			if (!OutsideDomainCheck<dim>(mcGrid, &x_prim)) num_of_grids_to_flip[3] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[3] += 1;
 
 		} else if (dim == 3) {
 			x_prim = x;//0,0,0
-			if (!OutsideDomainCheck<dim>(mcGrid, &x_prim)) num_of_grids_to_flip[0] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[0] += 1;
 
 			x_prim = x;
 			x_prim[2] = x[2] + 1; //0,0,1
-			if (!OutsideDomainCheck<dim>(mcGrid, &x_prim)) num_of_grids_to_flip[1] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[1] += 1;
 
 			x_prim = x;
 			x_prim[1] = x[1] + 1; //0,1,0
-			if (!OutsideDomainCheck<dim>(mcGrid, &x_prim)) num_of_grids_to_flip[2] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[2] += 1;
 
 			x_prim = x;
 			x_prim[2] = x[2] + 1;
 			x_prim[1] = x[1] + 1; //0,1,1
-			if (!OutsideDomainCheck<dim>(mcGrid, &x_prim)) num_of_grids_to_flip[3] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[3] += 1;
 
 			x_prim = x;
 			x_prim[0] = x[0] + 1; //1,0,0
-			if (!OutsideDomainCheck<dim>(mcGrid, &x_prim)) num_of_grids_to_flip[4] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[4] += 1;
 
 			x_prim = x;
 			x_prim[2] = x[2] + 1;
 			x_prim[0] = x[0] + 1; //1,0,1
-			if (!OutsideDomainCheck<dim>(mcGrid, &x_prim)) num_of_grids_to_flip[5] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[5] += 1;
 
 			x_prim = x;
 			x_prim[1] = x[1] + 1;
 			x_prim[0] = x[0] + 1; //1,1,0
-			if (!OutsideDomainCheck<dim>(mcGrid, &x_prim)) num_of_grids_to_flip[6] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[6] += 1;
 
 			x_prim = x;
 			x_prim[2] = x[2] + 1;
 			x_prim[1] = x[1] + 1;
 			x_prim[0] = x[0] + 1; //1,1,1
-			if (!OutsideDomainCheck<dim>(mcGrid, &x_prim)) num_of_grids_to_flip[7] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[7] += 1;
 
 		}
 	}// for int j
@@ -180,7 +186,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 			// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 
 			for (int hh = 0; hh < num_of_grids_to_flip[sublattice]; hh++) {
-				int cell_numbering = rand() % (number_of_lattice_cells); //choose a cell to flip, from 0 to num_of_cells_in_thread-1
+				int cell_numbering = rand() % (num_lattice_cells); //choose a cell to flip, from 0 to num_of_cells_in_thread-1
 				int cell_coords_selected[dim];
 				if (dim == 2) {
 					cell_coords_selected[dim - 1] = cell_numbering % lattice_cells_each_dimension[dim - 1]; //1-indexed
@@ -244,7 +250,6 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 				bool site_out_of_domain = false;
 				for (int i = 0; i < dim; i++) {
 					if (x[i] < x0(mcGrid, i) || x[i] >= x1(mcGrid, i)) {
-//        if (x[i]<x0(mcGrid, i) || x[i]>x1(mcGrid, i)-1){
 						site_out_of_domain = true;
 						break;//break from the for int i loop
 					}
@@ -259,24 +264,25 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 				double rd = double(rand()) / double(RAND_MAX);
 				if (rd > site_selection_probability) continue; //this site wont be selected
 
-				int spin1 = (mcGrid)(x);
-				// determine neighboring spinsss
+				int spin1 = mcGrid(x);
+				// determine neighboring spins
 				vector<int> r(dim, 0);
 				std::vector<int> neighbors;
 				neighbors.clear();
-				unsigned int number_of_same_neighours = 0;
+				unsigned int num_same_neighbors = 0;
 				if (dim == 2) {
 					for (int i = -1; i <= 1; i++) {
 						for (int j = -1; j <= 1; j++) {
 							if (!(i == 0 && j == 0)) {
 								r[0] = x[0] + i;
 								r[1] = x[1] + j;
-								if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) || r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ) // not periodic BC
-									continue;// neighbour outside the global boundary, skip it.
-								int spin = (mcGrid)(r);
+								if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) ||
+								    r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ) // not periodic BC
+									continue;// neighbor outside the global boundary, skip it.
+								int spin = mcGrid(r);
 								neighbors.push_back(spin);
 								if (spin == spin1)
-									number_of_same_neighours++;
+									num_same_neighbors++;
 							}
 						}
 					}
@@ -288,13 +294,14 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 									r[0] = x[0] + i;
 									r[1] = x[1] + j;
 									r[2] = x[2] + k;
-									if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) || r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ||
-									        r[2] < g0(mcGrid, 2) || r[2] >= g1(mcGrid, 2)) // not periodic BC
-										continue;// neighbour outside the global boundary, skip it.
-									int spin = (mcGrid)(r);
+									if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) ||
+									    r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ||
+									    r[2] < g0(mcGrid, 2) || r[2] >= g1(mcGrid, 2)) // not periodic BC
+										continue;// neighbor outside the global boundary, skip it.
+									int spin = mcGrid(r);
 									neighbors.push_back(spin);
 									if (spin == spin1)
-										number_of_same_neighours++;
+										num_same_neighbors++;
 								}
 							}
 						}
@@ -302,7 +309,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 				}
 
 				//check if inside a grain
-				if (number_of_same_neighours == neighbors.size()) { //inside a grain
+				if (num_same_neighbors == neighbors.size()) { //inside a grain
 					continue;//continue for
 				}
 				//choose a random neighbor spin
@@ -317,10 +324,11 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 								if (!(i == 0 && j == 0)) {
 									r[0] = x[0] + i;
 									r[1] = x[1] + j;
-									if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) || r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ) // not periodic BC
-										continue;// neighbour outside the global boundary, skip it.
-									int spin = (mcGrid)(r);
-									dE += 1.0 / 2 * ((spin != spin2) - (spin != spin1));
+									if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) ||
+									    r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ) // not periodic BC
+										continue;// neighbor outside the global boundary, skip it.
+									int spin = mcGrid(r);
+									dE += 0.5 * ((spin != spin2) - (spin != spin1));
 								}// if (!(i==0 && j==0))
 							}
 						}
@@ -333,11 +341,12 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 										r[0] = x[0] + i;
 										r[1] = x[1] + j;
 										r[2] = x[2] + k;
-										if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) || r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ||
-										        r[2] < g0(mcGrid, 2) || r[2] >= g1(mcGrid, 2)) // not periodic BC
-											continue;// neighbour outside the global boundary, skip it.
-										int spin = (mcGrid)(r);
-										dE += 1.0 / 2 * (spin != spin2) - (spin != spin1);
+										if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) ||
+										    r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ||
+										    r[2] < g0(mcGrid, 2) || r[2] >= g1(mcGrid, 2)) // not periodic BC
+											continue;// neighbor outside the global boundary, skip it.
+										int spin = mcGrid(r);
+										dE += 0.5 * ((spin != spin2) - (spin != spin1));
 									}
 								}
 							}
@@ -345,19 +354,19 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 					}
 					// attempt a spin flip
 					double r = double(rand()) / double(RAND_MAX);
-					double kT = 1.3803288e-23 * 273;
-					if (dE <= 0.0) (mcGrid)(x) = spin2;
-					else if (r < exp(-dE / kT)) (mcGrid)(x) = spin2;
+					double kT = 1.3803288e-23 * 273.0;
+
+					if (dE <= 0.0)
+						mcGrid(x) = spin2;
+					else if (r < exp(-dE / kT))
+						mcGrid(x) = spin2;
 				}//spin1!=spin2
 			} // hh
 
-#ifdef MPI_VERSION
+			#ifdef MPI_VERSION
 			MPI::COMM_WORLD.Barrier();
-#endif
+			#endif
 			ghostswap(mcGrid, sublattice); // once looped over a "color", ghostswap.
-#ifdef MPI_VERSION
-			MPI::COMM_WORLD.Barrier();
-#endif
 		}//loop over sublattice
 	}//loop over step
 }//update

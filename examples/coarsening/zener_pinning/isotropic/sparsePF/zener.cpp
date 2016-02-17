@@ -97,15 +97,16 @@ template <int dim, typename T> void update(grid<dim,sparse<T> >& oldGrid, int st
     rank = MPI::COMM_WORLD.Get_rank();
     #endif
 
+	ghostswap(oldGrid);
+
+	grid<dim,sparse<T> > newGrid(oldGrid);
+
 	double dt = 0.01;
 	double epsilon = 1.0e-8;
 
 	for (int step=0; step<steps; step++) {
 		if (rank==0)
 			print_progress(step, steps);
-
-		// update grid must be overwritten each time
-		grid<dim,sparse<T> > newGrid(oldGrid);
 
 		for (int n=0; n<nodes(oldGrid); n++) {
 			vector<int> x = position(oldGrid,n);

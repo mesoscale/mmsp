@@ -57,6 +57,8 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
     rank = MPI::COMM_WORLD.Get_rank();
     #endif
 
+	ghostswap(oldGrid);
+
 	grid<dim,vector<T> > newGrid(oldGrid);
 	grid<dim,T> wspace(oldGrid,1);
 

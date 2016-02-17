@@ -98,6 +98,10 @@ template <int dim, typename T> void update(grid<dim,sparse<T> >& oldGrid, int st
     rank = MPI::COMM_WORLD.Get_rank();
     #endif
 
+	ghostswap(oldGrid);
+
+	grid<dim,sparse<T> > newGrid(oldGrid);
+
 	double dt = 0.01;
 	double width = 8.0;
 	double epsilon = 1.0e-8;
@@ -106,10 +110,8 @@ template <int dim, typename T> void update(grid<dim,sparse<T> >& oldGrid, int st
 		if (rank==0)
 			print_progress(step, steps);
 
-		grid<dim,sparse<T> > newGrid(oldGrid);
-
 		for (int n=0; n<nodes(oldGrid); n++) {
-			// determine nonzero fields within 
+			// determine nonzero fields within
 			// the neighborhood of this node
 			sparse<int> s;
 			vector<int> x = position(oldGrid,n);
