@@ -180,7 +180,8 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 		for (int sublattice = 0; sublattice < num_sublattices; sublattice++) {
 
 			vector<int> x (dim, 0);
-			// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
+			// This particular algorithm requires that srand() be called here.
+			srand(time(NULL)); // Also, time(NULL)+rank is an INCORRECT seed for this purpose.
 
 			for (int hh = 0; hh < num_grids_to_flip[sublattice]; hh++) {
 				int cell_numbering = rand() % (num_lattice_cells); //choose a cell to flip, from 0 to num_cells_in_thread-1
