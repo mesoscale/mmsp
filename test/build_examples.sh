@@ -16,17 +16,12 @@
 
 # Valid flags are:
 # --noexec: build in serial and parallel, but do not execute
+# --force:  pass -B flag to make
 # --clean:  delete binary files after test completes
 # --purge:  delete binaries, data, and images after test completes
 # --long:   execute tests  5x longer than default
 # --extra:  execute tests 25x longer than default
-
-if [[ $(which mmsp2png) == "" ]]
-then
-	# Necessary check for a valid installation.
-	# Consult doc/MMSP.manual.pdf if this fails.
-	echo "mmsp2png utility not found. Please check your installation."
-fi
+# --noviz:  do not convert data for visualization
 
 # Initialize timer and completion counters
 tstart=$(date +%s)
@@ -50,28 +45,36 @@ while [[ $# > 0 ]]
 do
 	key="$1"
 	case $key in
-		-c|--clean)
+		--force)
+		echo -n ", forcing build"
+		MFLAG="-B"
+		;;
+		--clean)
 		echo -n ", cleaning up after"
 		CLEAN=true
 		;;
-		-p|--purge)
+		--purge)
 		echo -n ", cleaning up after"
 		CLEAN=true
 		PURGE=true
 		;;
-		-n|--noexec)
+		--noexec)
 		echo -n ", not executing"
 		NEXEC=true
 		;;
-		-l|--long)
+		--long)
 		echo -n ", taking 5,000 steps"
 		ITERS=5000
 		INTER=1000
 		;;
-		-x|--extra)
+		--extra)
 		echo -n ", taking 25,000 steps"
 		ITERS=25000
 		INTER=5000
+		;;
+		--noviz)
+		echo -n ", not converting to PNG"
+		NOVIZ=true
 		;;
 		*)
 		echo "WARNING: Unknown option ${key}."
@@ -82,6 +85,15 @@ do
 done
 
 echo
+
+if [[ ! $NOVIZ ]]
+then
+	if [[ $(which mmsp2png) == "" ]]
+	then
+		# Consult doc/MMSP.manual.pdf if this fails.
+		echo "mmsp2png utility not found. Please check your installation."
+	fi
+fi
 
 exdirs=("coarsening/grain_growth/anisotropic/Monte_Carlo/" \
 "coarsening/grain_growth/anisotropic/phase_field/" \
@@ -115,8 +127,8 @@ do
 	cd $examples/${exdirs[$i]}
 	printf "%2d/%2d %-50s\t" $j $n ${exdirs[$i]}
 	echo $(date) >test.log
-	(make -B >>test.log || exit $?) && ((nSerBld++))
-	(make -B parallel >>test.log || exit $?) && ((nParBld++))
+	(make $MFLAG >>test.log || exit $?) && ((nSerBld++))
+	(make $MFLAG parallel >>test.log || exit $?) && ((nParBld++))
 	if [[ ! $NEXEC ]]
 	then
 		# Remove existing images first. If the test fails,
@@ -126,11 +138,14 @@ do
 		mpirun -np $CORES ./parallel --example 2 test.0000.dat >>test.log \
 		&& mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER >>test.log \
 		&& ((nParRun++))
-		# Show the result
-		for f in *.dat
-		do
-			mmsp2png --zoom $f >>test.log
-		done
+		if [[ ! $NOVIZ ]]
+		then
+			# Show the result
+			for f in *.dat
+			do
+				mmsp2png --zoom $f >>test.log
+			done
+		fi
 	fi
 	# Clean up binaries and images
 	if [[ $CLEAN ]]

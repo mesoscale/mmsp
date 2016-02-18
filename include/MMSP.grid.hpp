@@ -1572,19 +1572,16 @@ public:
 			if (rank==0) std::cout<<"Bug: using normal IO, instead of BGQ IO!"<<std::endl;
 			#endif
 			MPI_File output;
-			int mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+			if (rank==0)
+				MPI_File_delete(fname,MPI_INFO_NULL);
+			MPI::COMM_WORLD.Barrier();
+			int mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
-				if (rank==0)
-					MPI_File_delete(fname,MPI_INFO_NULL);
-				MPI::COMM_WORLD.Barrier();
-				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
-				if (mpi_err != MPI_SUCCESS) {
-					char error_string[256];
-					int length_of_error_string=256;
-					MPI_Error_string(mpi_err, error_string, &length_of_error_string);
-					fprintf(stderr, "%3d: %s\n", rank, error_string);
-					std::exit(-1);
-				}
+				char error_string[256];
+				int length_of_error_string=256;
+				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
+				fprintf(stderr, "Error opening output file %s on rank %3d: %s\n", fname, rank, error_string);
+				std::exit(-1);
 			}
 
 			// Generate MMSP header from rank 0
@@ -1894,19 +1891,16 @@ public:
 			if (rank==0) std::cout<<"  Opening "<<std::string(fname)<<" for output."<<std::endl;
 			#endif
 			MPI_File output;
-			int mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+			if (rank==0)
+				MPI_File_delete(fname,MPI_INFO_NULL);
+			MPI::COMM_WORLD.Barrier();
+			int mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
-				if (rank==0)
-					MPI_File_delete(fname,MPI_INFO_NULL);
-				MPI::COMM_WORLD.Barrier();
-				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
-				if (mpi_err != MPI_SUCCESS) {
-					char error_string[256];
-					int length_of_error_string=256;
-					MPI_Error_string(mpi_err, error_string, &length_of_error_string);
-					fprintf(stderr, "%3d: %s\n", rank, error_string);
-					std::exit(-1);
-				}
+				char error_string[256];
+				int length_of_error_string=256;
+				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
+				fprintf(stderr, "Error opening output file %s on rank %3d: %s\n", fname, rank, error_string);
+				std::exit(-1);
 			}
 
 			// Write to disk

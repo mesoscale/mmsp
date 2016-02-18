@@ -22,18 +22,15 @@ void generate(int dim, const char* filename)
 	if (dim == 1) {
 		GRID1D initGrid(0, 0, 128);
 
-		for (int i = 0; i < nodes(initGrid); i++) {
-			vector<int> x = position(initGrid, i);
-			if      (x[0] < 32) initGrid(i) = 3;
-			else if (x[0] > 96) initGrid(i) = 2;
-			else                initGrid(i) = 0;
-		}
+		for (int i = 0; i < nodes(initGrid); i++)
+			initGrid(i) = rand() % 100;
 
 		output(initGrid, filename);
 	}
 
 	if (dim == 2) {
-		GRID2D initGrid(0, 0, 128, 0, 128);
+		int L=256;
+		GRID2D initGrid(0, 0, L, 0, L);
 
 		for (int i = 0; i < nodes(initGrid); i++)
 			initGrid(i) = rand() % 20;
@@ -49,7 +46,7 @@ void generate(int dim, const char* filename)
 	}
 }
 
-template <int dim> bool isOutsideDomain(const grid<dim, int >& mcGrid, const vector<int>& x)
+template <int dim> bool isOutsideDomain(const grid<dim,int>& mcGrid, const vector<int>& x)
 {
 	bool outside_domain = false;
 	for (int i = 0; i < dim; i++) {
@@ -87,7 +84,6 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 
 	vector<int> x (dim, 0);
 	vector<int> x_prim (dim, 0);
-	int coordinates_of_cell[dim];
 	int initial_coordinates[dim];
 
 	int num_grids_to_flip[( static_cast<int>(pow(2, dim)) )];
@@ -249,14 +245,14 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 					}
 				}
 
-				bool site_out_of_domain = false;
+				bool site_outside_domain = false;
 				for (int i = 0; i < dim; i++) {
 					if (x[i] < x0(mcGrid, i) || x[i] >= x1(mcGrid, i)) {
-						site_out_of_domain = true;
+						site_outside_domain = true;
 						break;//break from the for int i loop
 					}
 				}
-				if (site_out_of_domain == true) {
+				if (site_outside_domain == true) {
 					hh--;
 					continue; //continue the int hh loop
 				}
@@ -281,7 +277,8 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 							if (!(i == 0 && j == 0)) {
 								r[0] = x[0] + i;
 								r[1] = x[1] + j;
-								if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) || r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ) // not periodic BC
+								if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) ||
+								    r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ) // not periodic BC
 									continue;// neighbor outside the global boundary, skip it.
 								int spin = mcGrid(r);
 								neighbors.push_back(spin);
@@ -298,8 +295,9 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 									r[0] = x[0] + i;
 									r[1] = x[1] + j;
 									r[2] = x[2] + k;
-									if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) || r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ||
-									        r[2] < g0(mcGrid, 2) || r[2] >= g1(mcGrid, 2)) // not periodic BC
+									if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) ||
+									    r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ||
+									    r[2] < g0(mcGrid, 2) || r[2] >= g1(mcGrid, 2)) // not periodic BC
 										continue;// neighbor outside the global boundary, skip it.
 									int spin = mcGrid(r);
 									neighbors.push_back(spin);
@@ -327,7 +325,8 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 								if (!(i == 0 && j == 0)) {
 									r[0] = x[0] + i;
 									r[1] = x[1] + j;
-									if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) || r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ) // not periodic BC
+									if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) ||
+									    r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ) // not periodic BC
 										continue;// neighbor outside the global boundary, skip it.
 									int spin = mcGrid(r);
 									dE += 0.5 * ((spin != spin2) - (spin != spin1));
@@ -343,11 +342,12 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 										r[0] = x[0] + i;
 										r[1] = x[1] + j;
 										r[2] = x[2] + k;
-										if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) || r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ||
-										        r[2] < g0(mcGrid, 2) || r[2] >= g1(mcGrid, 2)) // not periodic BC
+										if (r[0] < g0(mcGrid, 0) || r[0] >= g1(mcGrid, 0) ||
+										    r[1] < g0(mcGrid, 1) || r[1] >= g1(mcGrid, 1) ||
+										    r[2] < g0(mcGrid, 2) || r[2] >= g1(mcGrid, 2)) // not periodic BC
 											continue;// neighbor outside the global boundary, skip it.
 										int spin = mcGrid(r);
-										dE += 0.5 * (spin != spin2) - (spin != spin1);
+										dE += 0.5 * ((spin != spin2) - (spin != spin1));
 									}
 								}
 							}

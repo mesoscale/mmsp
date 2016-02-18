@@ -1,6 +1,6 @@
 /* graingrowth.cpp
 ** Algorithms for 2D and 3D isotropic Monte Carlo grain growth
-** Ghost communiation is performed on 1/4 of all boundaries each time.
+** Ghost communication is performed on 1/4 of all boundaries each time.
 ** Parallel algorithm: Wright, Steven A., et al. "Potts-model grain growth simulations: Parallel algorithms and applications." SAND Report (1997): 1925.
 **
 ** Questions/comments to tany3@rpi.edu (Yixuan Tan)
@@ -8,10 +8,10 @@
 
 #ifndef GRAINGROWTH_UPDATE
 #define GRAINGROWTH_UPDATE
-#include"MMSP.hpp"
 #include<cmath>
-#include"graingrowth.hpp"
 #include <vector>
+#include"MMSP.hpp"
+#include"graingrowth.hpp"
 
 namespace MMSP
 {
@@ -35,7 +35,6 @@ void generate(int dim, const char* filename)
 			initGrid(i) = rand() % 20;
 
 		output(initGrid, filename);
-
 	} else if (dim == 3) {
 		GRID3D initGrid(0, 0, 32, 0, 32, 0, 32);
 
@@ -43,7 +42,6 @@ void generate(int dim, const char* filename)
 			initGrid(i) = rand() % 20;
 
 		output(initGrid, filename);
-
 	}
 }
 
@@ -85,10 +83,9 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 
 	vector<int> x (dim, 0);
 	vector<int> x_prim (dim, 0);
-	int coordinates_of_cell[dim];
 	int initial_coordinates[dim];
 
-	int num_of_grids_to_flip[( static_cast<int>(pow(2, dim)) )];
+	int num_grids_to_flip[( static_cast<int>(pow(2, dim)) )];
 	int first_cell_start_coordinates[dim];
 	for (int kk = 0; kk < dim; kk++) first_cell_start_coordinates[kk] = x0(mcGrid, kk);
 	for (int i = 0; i < dim; i++) {
@@ -112,58 +109,57 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 
 		if (dim == 2) {
 			x_prim = x;
-			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[0] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_grids_to_flip[0] += 1;
 
 			x_prim = x;
 			x_prim[1] = x[1] + 1; //0,1
-			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[1] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_grids_to_flip[1] += 1;
 
 			x_prim = x;
 			x_prim[0] = x[0] + 1; //1,0
-			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[2] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_grids_to_flip[2] += 1;
 
 			x_prim = x;
 			x_prim[0] = x[0] + 1;
 			x_prim[1] = x[1] + 1; //1,1
-			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[3] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_grids_to_flip[3] += 1;
 
 		} else if (dim == 3) {
 			x_prim = x;//0,0,0
-			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[0] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_grids_to_flip[0] += 1;
 
 			x_prim = x;
 			x_prim[2] = x[2] + 1; //0,0,1
-			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[1] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_grids_to_flip[1] += 1;
 
 			x_prim = x;
 			x_prim[1] = x[1] + 1; //0,1,0
-			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[2] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_grids_to_flip[2] += 1;
 
 			x_prim = x;
 			x_prim[2] = x[2] + 1;
 			x_prim[1] = x[1] + 1; //0,1,1
-			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[3] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_grids_to_flip[3] += 1;
 
 			x_prim = x;
 			x_prim[0] = x[0] + 1; //1,0,0
-			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[4] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_grids_to_flip[4] += 1;
 
 			x_prim = x;
 			x_prim[2] = x[2] + 1;
 			x_prim[0] = x[0] + 1; //1,0,1
-			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[5] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_grids_to_flip[5] += 1;
 
 			x_prim = x;
 			x_prim[1] = x[1] + 1;
 			x_prim[0] = x[0] + 1; //1,1,0
-			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[6] += 1;
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_grids_to_flip[6] += 1;
 
 			x_prim = x;
 			x_prim[2] = x[2] + 1;
 			x_prim[1] = x[1] + 1;
 			x_prim[0] = x[0] + 1; //1,1,1
-			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_of_grids_to_flip[7] += 1;
-
+			if (!isOutsideDomain<dim>(mcGrid, x_prim)) num_grids_to_flip[7] += 1;
 		}
 	}// for int j
 
@@ -177,16 +173,16 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 	for (int step = 0; step < steps; step++) {
 		if (rank == 0)
 			print_progress(step, steps);
-		int num_of_sublattices = 0;
-		if (dim == 2) num_of_sublattices = 4;
-		else if (dim == 3) num_of_sublattices = 8;
-		for (int sublattice = 0; sublattice < num_of_sublattices; sublattice++) {
+		int num_sublattices = 0;
+		if (dim == 2) num_sublattices = 4;
+		else if (dim == 3) num_sublattices = 8;
+		for (int sublattice = 0; sublattice < num_sublattices; sublattice++) {
 
 			vector<int> x (dim, 0);
 			// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 
-			for (int hh = 0; hh < num_of_grids_to_flip[sublattice]; hh++) {
-				int cell_numbering = rand() % (num_lattice_cells); //choose a cell to flip, from 0 to num_of_cells_in_thread-1
+			for (int hh = 0; hh < num_grids_to_flip[sublattice]; hh++) {
+				int cell_numbering = rand() % (num_lattice_cells); //choose a cell to flip, from 0 to num_cells_in_thread-1
 				int cell_coords_selected[dim];
 				if (dim == 2) {
 					cell_coords_selected[dim - 1] = cell_numbering % lattice_cells_each_dimension[dim - 1]; //1-indexed
@@ -244,17 +240,18 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 						x[2]++;
 						x[1]++;
 						x[0]++; //1,1,1
+						break;
 					}
 				}
 
-				bool site_out_of_domain = false;
+				bool site_outside_domain = false;
 				for (int i = 0; i < dim; i++) {
 					if (x[i] < x0(mcGrid, i) || x[i] >= x1(mcGrid, i)) {
-						site_out_of_domain = true;
+						site_outside_domain = true;
 						break;//break from the for int i loop
 					}
 				}
-				if (site_out_of_domain == true) {
+				if (site_outside_domain == true) {
 					hh--;
 					continue; //continue the int hh loop
 				}
