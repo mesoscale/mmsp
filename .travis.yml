@@ -17,8 +17,8 @@ addons:
   sources:
   - ubuntu-toolchain-r-test
   packages:
-  		- gcc-4.8
-  		- g++-4.8
+      - gcc-4.8
+      - g++-4.8
 
 before_install:
   export CXX="g++-4.8" CC="gcc-4.8"
@@ -30,4 +30,5 @@ install:
 before_script:
   - cd test
 
-script: ./build_examples.sh --noexec --noviz && ./build_examples.sh --noviz --clean
+script:
+  ./build_examples.sh --noexec --noviz && ./build_examples.sh --noviz --clean
