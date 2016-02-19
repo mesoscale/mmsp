@@ -15,11 +15,10 @@ before_install:
   - test -n $CXX && unset CXX
 
 install:
-  - sudo apt-get update -qq -y
   - sh test/travis-mpi.sh $MPI
 
 before_script:
   - test $MPI == mpich2 && MPIEXEC='mpiexec -launcher fork' || true
   - cd test
 
-script: ./build_examples --noviz --clean
+script: ./build_examples.sh --noviz --clean
