@@ -16,7 +16,7 @@ before_install:
 
 install:
   - sudo apt-get update -qq -y
-  -sh test/travis-mpi.sh
+  - sh test/travis-mpi.sh
 
 before_script:
   - cd test
