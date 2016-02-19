@@ -7,21 +7,15 @@ incdir = ../../../../../include
 
 # compilers/flags
 compiler = g++
-flags = -O3 -I $(incdir)
 pcompiler = mpic++
-pflags = -O3 -I $(incdir) -include mpi.h
-
-# dependencies
-core = $(incdir)/MMSP.main.hpp \
-       $(incdir)/MMSP.utility.hpp \
-       $(incdir)/MMSP.grid.hpp \
-       $(incdir)/MMSP.vector.hpp
+flags = -O3 -I $(incdir)
+pflags = $(flags) -include mpi.h
 
 # the program
-ostwald: ostwald.cpp $(core)
+ostwald: ostwald.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: ostwald.cpp $(core)
+parallel: ostwald.cpp
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

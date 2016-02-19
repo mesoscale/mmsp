@@ -5,7 +5,7 @@ CCOPTS = -g
 PGOPTS = 
 LIBS = -lm
 
-core = ../../include
+incdir = ../../include
 
 # If you have gnuplot pipes on your system, change this
 # value to 'yes' and change the options in the source
@@ -51,13 +51,13 @@ MMSPDiffusion2D : $(OBJECT2)
 
 # Object defs below here.
 1stDiffusion.o : 1stDiffusion.cpp
-	$(CC) $(CCOPTIONS) -I$(core) -c $<
+	$(CC) $(CCOPTIONS) -I$(incdir) -c $<
 
 MMSPDiffusion.o : MMSPDiffusion.cpp
-	$(CC) $(CCOPTIONS) -I$(core) -c $<
+	$(CC) $(CCOPTIONS) -I$(incdir) -c $<
 
 MMSPDiffusion2D.o : MMSPDiffusion2D.cpp
-	$(CC) $(CCOPTIONS) -I$(core) -c $<
+	$(CC) $(CCOPTIONS) -I$(incdir) -c $<
 
 gnuplot_i.hpp.gch : gnuplot_i.hpp
 	$(CC) $(CCOPTIONS) -c gnuplot_i.hpp

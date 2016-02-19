@@ -7,20 +7,15 @@ incdir = ../../../include/
 
 # compilers/flags
 compiler = g++
-flags = -O3 -I $(incdir)
 pcompiler = mpic++
-pflags = -O3 -I $(incdir) -include mpi.h
-
-# dependencies
-core = $(incdir)/MMSP.main.hpp \
-       $(incdir)/MMSP.utility.hpp \
-       $(incdir)/MMSP.grid.hpp
+flags = -O3 -I $(incdir)
+pflags = $(flags) -include mpi.h
 
 # the program
-potts: potts.cpp $(core)
+potts: potts.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: potts.cpp $(core)
+parallel: potts.cpp
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

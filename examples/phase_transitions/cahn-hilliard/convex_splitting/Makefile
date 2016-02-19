@@ -8,25 +8,20 @@ incdir = ../../../../include
 
 # compilers/flags
 compiler = g++
+pcompiler = mpic++
 flags = -O3 -DVANILLA -I $(incdir)
 gflags = -pg -O2 -DVANILLA -Wall -I $(incdir)
-pcompiler = mpic++
 pflags = $(flags) -include mpi.h
 
-# dependencies
-core = $(incdir)/MMSP.main.hpp \
-       $(incdir)/MMSP.utility.hpp \
-       $(incdir)/MMSP.grid.hpp
-
 # the program
-cahn-hilliard: cahn-hilliard.cpp $(core)
+cahn-hilliard: cahn-hilliard.cpp
 	$(compiler) $(flags) -fopenmp $< -o $@ -lz
 
-parallel: cahn-hilliard.cpp $(core)
+parallel: cahn-hilliard.cpp
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 # for profiling
-debug: cahn-hilliard.cpp $(core)
+debug: cahn-hilliard.cpp
 	$(compiler) $(gflags) $< -o $@ -lz
 
 clean:

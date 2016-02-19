@@ -31,6 +31,7 @@ RunERR=0
 nSerBld=0
 nParBld=0
 nParRun=0
+MFLAG="-s"
 
 # Set execution parameters
 ITERS=1000
@@ -50,7 +51,7 @@ do
 	case $key in
 		--force)
 		echo -n ", forcing build"
-		MFLAG="-B"
+		MFLAG="-Bs"
 		;;
 		--clean)
 		echo -n ", cleaning up after"
@@ -130,17 +131,30 @@ do
 	cd $examples/${exdirs[$i]}
 	printf "%2d/%2d %-50s\t" $j $n ${exdirs[$i]}
 	echo $(date) >test.log
-	make $MFLAG          >>test.log && ((nSerBld++)) || (((SerERR++)) && tail test.log)
-	make $MFLAG parallel >>test.log && ((nParBld++)) || (((ParERR++)) && tail test.log)
-	if [[ ! $NEXEC ]]
+	if make $MFLAG
+	then
+		((nSerBld++))
+	else
+		((SerERR++))
+		tail test.log
+	fi
+	if make $MFLAG parallel
+	then
+		((nParBld++))
+	else
+		((ParERR++))
+		tail test.log
+	fi
+	if [[ -f parallel ]] && [[ ! $NEXEC ]]
 	then
 		# Remove existing images first. If the test fails,
 		# no images in the directory is an obvious red flag.
 		rm -f test.*.png
 		# Run the example in parallel, for speed.
-		mpirun -np $CORES ./parallel --example 2 test.0000.dat >>test.log && \
-		mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER >>test.log && \
-		((nParRun++)) || (((RunERR++)) && tail test.log)
+		mpirun -np $CORES ./parallel --example 2 test.0000.dat >>test.log \
+		&& mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER >>test.log \
+		&& ((nParRun++)) \
+		|| ((RunERR++))
 		if [[ ! $NOVIZ ]]
 		then
 			# Show the result

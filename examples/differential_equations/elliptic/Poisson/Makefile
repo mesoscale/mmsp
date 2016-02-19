@@ -6,20 +6,15 @@ incdir = ../../../../include
 
 # compilers/flags
 compiler = g++
-flags = -O3 -ansi -I $(incdir)
 pcompiler = mpic++
-pflags = -O3 -ansi -I $(incdir) -include mpi.h 
-
-# dependencies
-core = $(incdir)/MMSP.hpp \
-       $(incdir)/MMSP.utility.hpp \
-       $(incdir)/MMSP.grid.hpp
+flags = -O3 -I $(incdir)
+pflags = $(flags) -include mpi.h 
 
 # the program
-poisson: poisson.cpp $(core)
+poisson: poisson.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: poisson.cpp $(core)
+parallel: poisson.cpp
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

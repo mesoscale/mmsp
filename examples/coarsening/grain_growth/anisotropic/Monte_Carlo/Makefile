@@ -7,22 +7,20 @@ incdir = ../../../../../include
 
 # compilers/flags
 compiler = g++
-flags = -O3 -I $(incdir)
 pcompiler = mpic++
+flags = -O1 -I $(incdir)
+gflags = -g -I $(incdir)
 pflags = $(flags) -include mpi.h 
 
-# dependencies
-core = $(incdir)/MMSP.main.hpp \
-       $(incdir)/MMSP.utility.hpp \
-       $(incdir)/MMSP.grid.hpp \
-       $(incdir)/MMSP.vector.hpp
-
 # the program
-graingrowth: graingrowth.cpp $(core)
+graingrowth: graingrowth.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: graingrowth.cpp $(core)
+debug: graingrowth.cpp
+	$(compiler) $(gflags) $< -o $@ -lz
+
+parallel: graingrowth.cpp
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
-	rm -f graingrowth parallel
+	rm -f graingrowth debug parallel
