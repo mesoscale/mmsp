@@ -9,7 +9,7 @@
 #ifndef GRAINGROWTH_UPDATE
 #define GRAINGROWTH_UPDATE
 #include<cmath>
-#include <vector>
+#include<vector>
 #include"MMSP.hpp"
 #include"graingrowth.hpp"
 
@@ -71,7 +71,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 
 	/*---------------generate cells------------------*/
 	int dimension_length = 0, num_lattice_cells = 1;
-	int lattice_cells_each_dimension[dim];
+	vector<int> lattice_cells_each_dimension(dim,0);
 	for (int i = 0; i < dim; i++) {
 		dimension_length = x1(mcGrid, i) - x0(mcGrid, i);
 		if (x0(mcGrid, 0) % 2 == 0)
@@ -83,10 +83,10 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 
 	vector<int> x (dim, 0);
 	vector<int> x_prim (dim, 0);
-	int initial_coordinates[dim];
+	vector<int> initial_coordinates(dim,0);
 
-	int num_grids_to_flip[( static_cast<int>(pow(2, dim)) )];
-	int first_cell_start_coordinates[dim];
+	vector<int> num_grids_to_flip(int(pow(2, dim)),0);
+	vector<int> first_cell_start_coordinates(dim,0);
 	for (int kk = 0; kk < dim; kk++) first_cell_start_coordinates[kk] = x0(mcGrid, kk);
 	for (int i = 0; i < dim; i++) {
 		if (x0(mcGrid, i) % 2 != 0) first_cell_start_coordinates[i]--;
@@ -94,7 +94,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 
 
 	for (int j = 0; j < num_lattice_cells; j++) {
-		int cell_coords_selected[dim];
+		vector<int> cell_coords_selected(dim,0);
 		if (dim == 2) {
 			cell_coords_selected[dim - 1] = j % lattice_cells_each_dimension[dim - 1]; //1-indexed
 			cell_coords_selected[0] = (j / lattice_cells_each_dimension[dim - 1]);
@@ -188,7 +188,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 
 			for (int hh = 0; hh < num_grids_to_flip[sublattice]; hh++) {
 				int cell_numbering = rand() % (num_lattice_cells); //choose a cell to flip, from 0 to num_cells_in_thread-1
-				int cell_coords_selected[dim];
+				vector<int> cell_coords_selected(dim,0);
 				if (dim == 2) {
 					cell_coords_selected[dim - 1] = cell_numbering % lattice_cells_each_dimension[dim - 1]; //1-indexed
 					cell_coords_selected[0] = (cell_numbering / lattice_cells_each_dimension[dim - 1]);

@@ -8,7 +8,7 @@ incdir = ../../../../../include
 # compilers/flags
 compiler = g++
 pcompiler = mpic++
-flags = -O1 -I $(incdir)
+flags = -O3 -I $(incdir)
 pflags = $(flags) -include mpi.h 
 
 # the program
