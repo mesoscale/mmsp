@@ -33,7 +33,7 @@
  **/
 
 // Spatial constants
-int edge = 200;
+int edge = 128;
 double deltaX = 1.0;
 
 #ifdef VANILLA
