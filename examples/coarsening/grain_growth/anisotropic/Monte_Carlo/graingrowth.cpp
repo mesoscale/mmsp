@@ -29,7 +29,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim == 2) {
-		int L=256;
+		int L=64;
 		GRID2D initGrid(0, 0, L, 0, L);
 
 		for (int i = 0; i < nodes(initGrid); i++)
@@ -181,7 +181,11 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 
 			vector<int> x (dim, 0);
 			// This particular algorithm requires that srand() be called here.
-			srand(time(NULL)); // Also, time(NULL)+rank is an INCORRECT seed for this purpose.
+			unsigned long seed=time(NULL);
+			#ifdef MPI_VERSION
+			MPI::COMM_WORLD.Bcast(&seed, 1, MPI_UNSIGNED_LONG, 0);
+			#endif
+			srand(seed); // Also, time(NULL)+rank is an INCORRECT seed for this purpose.
 
 			for (int hh = 0; hh < num_grids_to_flip[sublattice]; hh++) {
 				int cell_numbering = rand() % (num_lattice_cells); //choose a cell to flip, from 0 to num_cells_in_thread-1
