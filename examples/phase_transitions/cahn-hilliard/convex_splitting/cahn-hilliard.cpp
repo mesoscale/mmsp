@@ -32,15 +32,15 @@
  ** 	flags = -O3 -Wall ...
  **/
 
-// Spatial constants
-int edge = 128;
-double deltaX = 1.0;
-
 #ifdef VANILLA
+int edge = 64;
+double deltaX = 1.0;
 double C0 = 0.0; // system composition
 double D  = 1.0; // diffusivity
 double K  = 1.0; // gradient energy coefficient
 #else
+int edge = 200;
+double deltaX = 1.0;
 double C0 = 0.45; // mean composition
 double Ca = 0.05; // alpha-phase solvus composition
 double Cb = 0.95; // beta-phase solvus composition

@@ -22,7 +22,6 @@ install:
   - sh test/travis-mpi.sh $MPI
 
 before_script:
-  - test $MPI == mpich2 && MPIEXEC='mpiexec -launcher fork' || true
   - cd test
 
-script: ./build_examples.sh --noviz --clean
+script: ./build_examples.sh --noexec --noviz && ./build_examples.sh --noviz --clean
