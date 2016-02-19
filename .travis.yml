@@ -16,9 +16,10 @@ before_install:
 
 install:
   - sudo apt-get update -qq -y
-  - sh test/travis-mpi.sh
+  - sh test/travis-mpi.sh $MPI
 
 before_script:
+  - test $MPI == mpich2 && MPIEXEC='mpiexec -launcher fork' || true
   - cd test
 
 script: ./build_examples --noviz --clean
