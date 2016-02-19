@@ -61,11 +61,8 @@ template <int dim> bool isOutsideDomain(const grid<dim,int>& mcGrid, const vecto
 template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 {
 	int rank = 0;
-	unsigned int np = 0;
 	#ifdef MPI_VERSION
 	rank = MPI::COMM_WORLD.Get_rank();
-	np = MPI::COMM_WORLD.Get_size();
-	MPI::COMM_WORLD.Barrier();
 	#endif
 
 	ghostswap(mcGrid);

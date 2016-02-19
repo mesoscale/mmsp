@@ -9,7 +9,7 @@ incdir = ../../../../../include
 compiler = g++
 flags = -O3 -I $(incdir)
 pcompiler = mpic++
-pflags = -O3 -I $(incdir) -include mpi.h 
+pflags = $(flags) -include mpi.h 
 
 # dependencies
 core = $(incdir)/MMSP.main.hpp \

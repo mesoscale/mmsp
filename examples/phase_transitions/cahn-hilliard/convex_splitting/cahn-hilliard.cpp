@@ -16,7 +16,6 @@
 #include<cmath>
 #include<cfloat>
 #include<fstream>
-#include<random>
 #include"cahn-hilliard.hpp"
 
 /** This code sets parameters for the evolution of two different energy configurations.
@@ -192,12 +191,6 @@ void generate(int dim, const char* filename)
 	rank = MPI::COMM_WORLD.Get_rank();
 	#endif
 
-	#ifdef VANILLA
-	// Call the Mersenne Twister. ***NOTE: Requires C++11 (or a compatible MT19937_64 include)***
-	std::mt19937_64 mt_rand(time(NULL)+rank);
-	std::uniform_real_distribution<double> real_gen(0,1);
-	#endif
-
 	if (dim==2) {
 		grid<2,vector<double> > initGrid(2,0,edge,0,edge); // field 0 is c, field 1 is mu
 		for (int d=0; d<dim; d++)
@@ -205,7 +198,7 @@ void generate(int dim, const char* filename)
 
 		#ifdef VANILLA
 		for (int n=0; n<nodes(initGrid); n++)
-			initGrid(n)[0] = C0 + 0.25*real_gen(mt_rand) - 0.125; // produces noise with amplitude 0.125 about C=C0
+			initGrid(n)[0] = C0 + 0.25*(double(rand())/RAND_MAX) - 0.125; // produces noise with amplitude 0.125 about C=C0
 		#else
 		double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)}; // produces stripes oriented 45 degrees to horizontal
 		for (int n=0; n<nodes(initGrid); n++) {

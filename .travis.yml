@@ -1,7 +1,6 @@
 language: cpp
-
-os:
-  - linux
+dist: trusty
+sudo: required
 
 compiler:
   - gcc
@@ -13,23 +12,13 @@ env:
 notifications:
   email: false
 
-addons:
-  sources:
-  - ubuntu-toolchain-r-test
-  packages:
-      - gcc-4.8
-      - g++-4.8
-
-before_install:
-  export CXX="g++-4.8" CC="gcc-4.8"
-
 install:
   - sudo apt-get update -qq -y
   - sh test/travis-mpi.sh $MPI
-  - source test/travis-alias.sh
 
 before_script:
   - cd test
+  - nproc
 
 script:
   ./build_examples.sh --noexec --noviz && ./build_examples.sh --noviz --clean

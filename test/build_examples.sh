@@ -25,7 +25,9 @@
 
 # Initialize timer and completion counters
 tstart=$(date +%s)
-ERR=0
+SerERR=0
+ParERR=0
+RunERR=0
 nSerBld=0
 nParBld=0
 nParRun=0
@@ -128,17 +130,17 @@ do
 	cd $examples/${exdirs[$i]}
 	printf "%2d/%2d %-50s\t" $j $n ${exdirs[$i]}
 	echo $(date) >test.log
-	(make $MFLAG >>test.log || ((ERR++))) && ((nSerBld++))
-	(make $MFLAG parallel >>test.log || ((ERR++))) && ((nParBld++))
+	make $MFLAG          >>test.log && ((nSerBld++)) || (((SerERR++)) && tail test.log)
+	make $MFLAG parallel >>test.log && ((nParBld++)) || (((ParERR++)) && tail test.log)
 	if [[ ! $NEXEC ]]
 	then
 		# Remove existing images first. If the test fails,
 		# no images in the directory is an obvious red flag.
 		rm -f test.*.png
 		# Run the example in parallel, for speed.
-		(mpirun -np $CORES ./parallel --example 2 test.0000.dat >>test.log || ((ERR++))) \
-		&& (mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER >>test.log || ((ERR++))) \
-		&& ((nParRun++))
+		mpirun -np $CORES ./parallel --example 2 test.0000.dat >>test.log && \
+		mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER >>test.log && \
+		((nParRun++)) || (((RunERR++)) && tail test.log)
 		if [[ ! $NOVIZ ]]
 		then
 			# Show the result
@@ -172,15 +174,16 @@ elapsed=$(echo "$tfinish-$tstart" | bc -l)
 
 echo
 echo "${elapsed} seconds elapsed."
-echo "${nSerBld} serial   examples built    successfully."
-echo "${nParBld} parallel examples built    successfully."
-echo "${nParRun} parallel examples executed successfully."
+echo "${nSerBld} serial   examples built    successfully, ${SerERR} failed."
+echo "${nParBld} parallel examples built    successfully, ${ParERR} failed."
+echo "${nParRun} parallel examples executed successfully, ${RunERR} failed."
 echo
 cd ../test/
 
-if [[ $ERR>0 ]]
+AllERR=$(echo "$SerERR+$ParERR+$RunERR" | bc -l)
+if [[ $AllERR > 0 ]]
 then
-	echo "${ERR} tests failed."
+	echo "${AllERR} tests failed."
 	echo
 	exit 1
 fi
