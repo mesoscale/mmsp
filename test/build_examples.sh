@@ -33,8 +33,8 @@ nParBld=0
 nParRun=0
 
 # Set execution parameters
-ITERS=100
-INTER=100
+ITERS=1000
+INTER=500
 CORES=2
 
 # Get going
