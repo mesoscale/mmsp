@@ -360,7 +360,7 @@ void print_progress(const int step, const int steps) {
     std::cout<<"No. "<<1+iterations/steps<<":\t"<<timestring<<" ["<<std::flush;
   } else if (step==steps-1) {
     unsigned long deltat = time(NULL)-tstart;
-    printf("•] %2uh:%2um:%2us",deltat/3600,(deltat%3600)/60,deltat%60);
+    printf("•] %2luh:%2lum:%2lus",deltat/3600,(deltat%3600)/60,deltat%60);
     std::cout<<std::endl;
   } else if ((20 * step) % steps == 0) std::cout<<"• "<<std::flush;
   iterations++;
