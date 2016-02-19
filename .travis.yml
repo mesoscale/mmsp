@@ -21,4 +21,4 @@ before_script:
   - nproc
 
 script:
-  ./build_examples.sh --noexec --noviz && ./build_examples.sh --noviz --clean
+  ./build_examples.sh -n 2 --noviz

@@ -16,12 +16,14 @@
 
 # Valid flags are:
 # --noexec: build in serial and parallel, but do not execute
+# --noviz:  do not convert data for visualization
 # --force:  pass -B flag to make
+# -n X:     pass mpirun X ranks (e.g., -n 3 yields mpirun -np 3)
+# --short:  execute tests .1x default
+# --long:   execute tests  5x longer  than default
+# --extra:  execute tests 25x longer  than default
 # --clean:  delete binary files after test completes
 # --purge:  delete binaries, data, and images after test completes
-# --long:   execute tests  5x longer than default
-# --extra:  execute tests 25x longer than default
-# --noviz:  do not convert data for visualization
 
 # Initialize timer and completion counters
 tstart=$(date +%s)
@@ -36,7 +38,8 @@ MFLAG="-s"
 # Set execution parameters
 ITERS=1000
 INTER=500
-CORES=2
+CORES=4
+COREMAX=$(nproc)
 
 # Get going
 cd ../examples
@@ -66,6 +69,11 @@ do
 		echo -n ", not executing"
 		NEXEC=true
 		;;
+		--short)
+		echo -n ", taking 100 steps"
+		ITERS=100
+		INTER=100
+		;;
 		--long)
 		echo -n ", taking 5,000 steps"
 		ITERS=5000
@@ -80,6 +88,11 @@ do
 		echo -n ", not converting to PNG"
 		NOVIZ=true
 		;;
+		-n)
+		shift
+		CORES=$1
+		echo -n ", $CORES/$COREMAX MPI ranks"
+		;;
 		*)
 		echo "WARNING: Unknown option ${key}."
 		echo
@@ -92,10 +105,14 @@ echo
 
 if [[ ! $NOVIZ ]]
 then
+	# Remove existing images first. If the test fails,
+	# no images in the directory is an obvious red flag.
+	rm -f test.*.png
 	if [[ $(which mmsp2png) == "" ]]
 	then
 		# Consult doc/MMSP.manual.pdf if this fails.
-		echo "mmsp2png utility not found. Please check your installation."
+		echo "mmsp2png utility not found. Please check your installation,"
+		echo " or pass --noviz flag to suppress PNG output."
 	fi
 fi
 
@@ -147,14 +164,17 @@ do
 	fi
 	if [[ -f parallel ]] && [[ ! $NEXEC ]]
 	then
-		# Remove existing images first. If the test fails,
-		# no images in the directory is an obvious red flag.
-		rm -f test.*.png
 		# Run the example in parallel, for speed.
 		mpirun -np $CORES ./parallel --example 2 test.0000.dat >>test.log \
-		&& mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER >>test.log \
-		&& ((nParRun++)) \
-		|| ((RunERR++))
+		&& mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER >>test.log
+		# Return codes are tricky! Try testing bash $? variable
+		if [[ $? ]]
+		then
+			((nParRun++))
+		else
+			((RunERR++))
+			tail test.log
+		fi
 		if [[ ! $NOVIZ ]]
 		then
 			# Show the result
@@ -178,7 +198,7 @@ do
 
 	exfin=$(date +%s)
 	exlapse=$(echo "$exfin-$exstart" | bc -l)
-	echo "${exlapse} seconds"
+	printf "%3d seconds\n" $exlapse
 done
 
 cd ${examples}
@@ -186,8 +206,7 @@ cd ${examples}
 tfinish=$(date +%s)
 elapsed=$(echo "$tfinish-$tstart" | bc -l)
 
-echo
-echo "${elapsed} seconds elapsed."
+printf "%67d seconds elapsed.\n" $elapsed
 echo "${nSerBld} serial   examples built    successfully, ${SerERR} failed."
 echo "${nParBld} parallel examples built    successfully, ${ParERR} failed."
 echo "${nParRun} parallel examples executed successfully, ${RunERR} failed."

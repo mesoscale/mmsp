@@ -8,7 +8,6 @@
 #include<cstring>
 #include<cstdlib>
 #include<iostream>
-#include<iomanip>
 #include<ciso646>
 #include<ctime>
 
@@ -26,6 +25,14 @@ void Finalize() {
 #ifdef MPI_VERSION
 	MPI::Finalize();
 #endif
+}
+
+// MMSP Abort function
+void Abort(int err) {
+#ifdef MPI_VERSION
+	MPI::COMM_WORLD.Abort(err);
+#endif
+	exit(err);
 }
 
 
@@ -353,9 +360,8 @@ void print_progress(const int step, const int steps) {
     std::cout<<"No. "<<1+iterations/steps<<":\t"<<timestring<<" ["<<std::flush;
   } else if (step==steps-1) {
     unsigned long deltat = time(NULL)-tstart;
-    std::cout<<"•] "<<std::setw(2)<<std::right<<deltat/3600<<"h:"
-                    <<std::setw(2)<<std::right<<(deltat%3600)/60<<"m:"
-                    <<std::setw(2)<<std::right<<deltat%60<<"s"<<std::endl;
+    printf("•] %2uh:%2um:%2us",deltat/3600,(deltat%3600)/60,deltat%60);
+    std::cout<<std::endl;
   } else if ((20 * step) % steps == 0) std::cout<<"• "<<std::flush;
   iterations++;
 }

@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
 		std::cout << PROGRAM << ": bad argument list.  Use\n\n";
 		std::cout << "    " << PROGRAM << " --help\n\n";
 		std::cout << "to generate help message.\n\n";
-		exit(-1);
+		MMSP::Abort(-1);
 	}
 
 	// Many of the example programs call rand(). srand() must be called
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 			std::cout << PROGRAM << ": bad argument list.  Use\n\n";
 			std::cout << "    " << PROGRAM << " --help\n\n";
 			std::cout << "to generate help message.\n\n";
-			exit(-1);
+			MMSP::Abort(-1);
 		}
 
 		// check problem dimension
@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
 			std::cout << PROGRAM << ": example grid must have integral dimension.  Use\n\n";
 			std::cout << "    " << PROGRAM << " --help\n\n";
 			std::cout << "to generate help message.\n\n";
-			exit(-1);
+			MMSP::Abort(-1);
 		}
 
 		int dim = atoi(argv[2]);
@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
 			std::cout << PROGRAM << ": bad argument list.  Use\n\n";
 			std::cout << "    " << PROGRAM << " --help\n\n";
 			std::cout << "to generate help message.\n\n";
-			exit(-1);
+			MMSP::Abort(-1);
 		}
 
 		int steps;
@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
 				std::cout << PROGRAM << ": number of time steps must have integral value.  Use\n\n";
 				std::cout << "    " << PROGRAM << " --help\n\n";
 				std::cout << "to generate help message.\n\n";
-				exit(-1);
+				MMSP::Abort(-1);
 			}
 
 			steps = atoi(argv[2]);
@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
 					std::cout << PROGRAM << ": output increment must have integral value.  Use\n\n";
 					std::cout << "    " << PROGRAM << " --help\n\n";
 					std::cout << "to generate help message.\n\n";
-					exit(-1);
+					MMSP::Abort(-1);
 				}
 
 				increment = atoi(argv[3]);
@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
 					std::cout << PROGRAM << ": output increment must be smaller than number of time steps.  Use\n\n";
 					std::cout << "    " << PROGRAM << " --help\n\n";
 					std::cout << "to generate help message.\n\n";
-					exit(-1);
+					MMSP::Abort(-1);
 				}
 			}
 		}
@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
 				std::cout << PROGRAM << ": number of time steps must have integral value.  Use\n\n";
 				std::cout << "    " << PROGRAM << " --help\n\n";
 				std::cout << "to generate help message.\n\n";
-				exit(-1);
+				MMSP::Abort(-1);
 			}
 
 			steps = atoi(argv[3]);
@@ -194,7 +194,7 @@ int main(int argc, char* argv[]) {
 					std::cout << PROGRAM << ": output increment must have integral value.  Use\n\n";
 					std::cout << "    " << PROGRAM << " --help\n\n";
 					std::cout << "to generate help message.\n\n";
-					exit(-1);
+					MMSP::Abort(-1);
 				}
 
 				increment = atoi(argv[4]);
@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
 					std::cout << PROGRAM << ": output increment must be smaller than number of time steps.  Use\n\n";
 					std::cout << "    " << PROGRAM << " --help\n\n";
 					std::cout << "to generate help message.\n\n";
-					exit(-1);
+					MMSP::Abort(-1);
 				}
 			}
 		}
@@ -213,7 +213,7 @@ int main(int argc, char* argv[]) {
 		std::ifstream input(argv[1]);
 		if (!input) {
 			std::cerr << "File input error: could not open " << argv[1] << ".\n\n";
-			exit(-1);
+			MMSP::Abort(-1);
 		}
 
 		// read data type
@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
 		// grid type error check
 		if (type.substr(0, 4) != "grid") {
 			std::cerr << "File input error: file does not contain grid data." << std::endl;
-			exit(-1);
+			MMSP::Abort(-1);
 		}
 
 		// read grid dimension

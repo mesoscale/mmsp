@@ -183,7 +183,7 @@ void generate(int dim, const char* filename)
 
 	if (dim!=2) {
 		std::cerr<<"ERROR: Convex splitting discretization is only 2-D, for now."<<std::endl;
-		std::exit(-1);
+		MMSP::MMSP::Abort(-1);
 	}
 
 	int rank=0;
@@ -241,7 +241,6 @@ void generate(int dim, const char* filename)
 		MPI::COMM_WORLD.Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0);
 		MPI::COMM_WORLD.Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0);
 		#endif
-		std::cout<<std::setprecision(12);
 		if (rank==0)
 			std::cout<<'0'<<'\t'<<dV*energy<<'\t'<<dV*mass<<std::endl;
 
@@ -429,7 +428,7 @@ void update(grid<dim,vector<T> >& oldGrid, int steps)
 		if (iter==max_iter) {
 			if (rank==0)
 				std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" iterations with residual="<<residual<<std::endl;
-			std::exit(-1);
+				MMSP::MMSP::Abort(-1);
 		}
 
 		double energy = 0.0;
@@ -450,7 +449,6 @@ void update(grid<dim,vector<T> >& oldGrid, int steps)
 		MPI::COMM_WORLD.Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0);
 		MPI::COMM_WORLD.Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0);
 		#endif
-		std::cout<<std::setprecision(12);
 		if (rank==0)
 			std::cout<<iter<<'\t'<<dV*energy<<'\t'<<dV*mass<<std::endl;
 

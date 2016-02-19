@@ -9,7 +9,6 @@
 #include<cstdarg>
 #include<sstream>
 #include<cmath>
-#include<iomanip>
 #include<limits>
 #include<cassert>
 #include <sys/statvfs.h>
@@ -1340,7 +1339,7 @@ public:
 		if (!input) {
 			std::cerr << "File input error: could not open ";
 			std::cerr << filename << "." << std::endl;
-			exit(-1);
+			MMSP::Abort(-1);
 		}
 
 		// grid data type error check
@@ -1348,7 +1347,7 @@ public:
 		getline(input, type, '\n');
 		if (type != name(*this)) {
 			std::cerr << "File read error: wrong data type (" << type << ")." << std::endl;
-			exit(-2);
+			MMSP::Abort(-2);
 		}
 
 		// dimension error check
@@ -1356,7 +1355,7 @@ public:
 		input >> dimen;
 		if (dimen != dim) {
 			std::cerr << "File read error: wrong dimension (" << dimen << ")." << std::endl;
-			exit(-3);
+			MMSP::Abort(-3);
 		}
 
 		// read number of fields
@@ -1455,7 +1454,7 @@ public:
 				if (size_in_mem!=size_on_disk) {
 					#ifdef RAW
 					std::cerr<<"Unable to uncompress data: compiled without zlib."<<std::endl;
-					exit(1);
+					MMSP::Abort(1);
 					#else
 					// Uncompress data
 					char* raw = new char[size_in_mem];
@@ -1465,11 +1464,11 @@ public:
 						break;
 					case Z_MEM_ERROR:
 						std::cerr << "Uncompress: out of memory." << std::endl;
-						exit(1);    // quit.
+						MMSP::Abort(1);    // quit.
 						break;
 					case Z_BUF_ERROR:
 						std::cerr << "Uncompress: output buffer wasn't large enough." << std::endl;
-						exit(1);    // quit.
+						MMSP::Abort(1);    // quit.
 						break;
 					}
 					GRID.from_buffer(raw);
@@ -1513,7 +1512,7 @@ public:
 		if (!output) {
 			std::cerr << "File output error: could not open ";
 			std::cerr << filename << "." << std::endl;
-			exit(-1);
+			MMSP::Abort(-1);
 		}
 
 		std::stringstream outstr;
@@ -1581,7 +1580,7 @@ public:
 				int length_of_error_string=256;
 				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
 				fprintf(stderr, "Error opening output file %s on rank %3d: %s\n", fname, rank, error_string);
-				std::exit(-1);
+				MMSP::Abort(-1);
 			}
 
 			// Generate MMSP header from rank 0
@@ -1900,7 +1899,7 @@ public:
 				int length_of_error_string=256;
 				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
 				fprintf(stderr, "Error opening output file %s on rank %3d: %s\n", fname, rank, error_string);
-				std::exit(-1);
+				MMSP::Abort(-1);
 			}
 
 			// Write to disk
@@ -2022,11 +2021,11 @@ public:
 			break;
 		case Z_MEM_ERROR:
 			std::cerr << "Compress: out of memory." << std::endl;
-			exit(1);
+			MMSP::Abort(1);
 			break;
 		case Z_BUF_ERROR:
 			std::cerr << "Compress: output buffer wasn't large enough." << std::endl;
-			exit(1);
+			MMSP::Abort(1);
 			break;
 		}
 		assert(size_on_disk<=size_in_mem); // otherwise, what's the point?

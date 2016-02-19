@@ -34,7 +34,7 @@ void generate(int dim, const char* filename)
 		output(initGrid,filename);
 	} else {
 		std::cerr<<"Anisotropic solidification code is only implemented for 2D."<<std::endl;
-		exit(1);
+		MMSP::Abort(-1);
 	}
 }
 

@@ -44,7 +44,7 @@ int seeds_to_buffer(const std::vector<MMSP::vector<int> >& vp, int* &q) {
   // q should already point to an array of T[size]
   if (q == NULL) {
     std::cerr << "\nError in seeds_to_buffer: send_buffer not initialized." << std::endl;
-    exit(1);
+    MMSP::Abort(-1);
   }
   int* p = q;
   for (unsigned int i=0; i<vp.size(); ++i) {
@@ -61,7 +61,7 @@ int seeds_to_buffer(const std::vector<MMSP::vector<int> >& vp, int* &q) {
 void seeds_from_buffer(std::vector<MMSP::vector<int> >& vp, int* &q, const int& size) {
   if (q == NULL) {
     std::cerr << "\nError in seeds_from_buffer: recv_buffer not initialized." << std::endl;
-    exit(1);
+    MMSP::Abort(-1);
   }
   MMSP::vector<int> v(3);
   for (int* p = q + 2; p < q + size; p += 3) {
@@ -396,7 +396,7 @@ void approximate_voronoi(MMSP::grid<dim, MMSP::sparse<T> >& grid, const std::vec
   else
   {
     std::cerr << "Error: Invalid dimension (" << dim << ") in tessellation." << std::endl;
-    std::exit(1);
+    MMSP::Abort(-1);
   }
 	#ifdef DEBUG
 	#ifdef MPI_VERSION
@@ -512,13 +512,13 @@ void seeds_from_file(const int x0[dim], const int x1[dim], const int g0[dim], co
 	std::ifstream input(seedfilename);
 	if (!input) {
 		std::cerr<<"\nError: "<<seedfilename<<" does not exist.\n"<<std::endl;
-		std::exit(-1);
+		MMSP::Abort(-1);
 	}
 	int seed_dim;
 	input >> seed_dim;
 	if (dim!=seed_dim) {
 		std::cerr<<"\nError: "<<seedfilename<<" is "<<seed_dim<<"-dimensional.\n"<<std::endl;
-		std::exit(-1);
+		MMSP::Abort(-1);
 	}
   std::vector<MMSP::vector<int> > local_seeds; // blank for now
   seeds.clear();
@@ -531,7 +531,7 @@ void seeds_from_file(const int x0[dim], const int x1[dim], const int g0[dim], co
 			input >> s;
 			if (s>1.0001) {
 				std::cerr<<"\nError: Seeds in "<<seedfilename<<" need to be normalized (found s="<<s<<").\n"<<std::endl;
-				std::exit(-1);
+				MMSP::Abort(-1);
 			}
 			// Seeds in file should be normalized (unit line, square, or cube).
 			seed[d]=g0[d]+(g1[d]-g0[d]-1)*s;
@@ -569,7 +569,7 @@ void honeycomb_seeds(const int x0[dim], const int x1[dim], const int g0[dim], co
 		}
 	} else {
 		std::cerr<<"\nError: "<<dim<<"-dimensional honeycomb is not implemented yet.\n"<<std::endl;
-		std::exit(-1);
+		MMSP::Abort(-1);
 	}
 	seedswap(seeds);
 }
