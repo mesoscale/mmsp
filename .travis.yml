@@ -13,9 +13,15 @@ env:
 notifications:
   email: false
 
+addons:
+  sources:
+  - ubuntu-toolchain-r-test
+  packages:
+  		- gcc-4.8
+  		- g++-4.8
+
 before_install:
-  - test -n $CC  && unset CC
-  - test -n $CXX && unset CXX
+  export CXX="g++-4.8" CC="gcc-4.8"
 
 install:
   - sudo apt-get update -qq -y
