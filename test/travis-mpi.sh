@@ -7,7 +7,7 @@ case $1 in
   mpich2) set -x;
     sudo apt-get -y install -qq mpich2 libmpich2-dev;;
   openmpi) set -x;
-    sudo apt-get -y install -qq openmpi-bin openmpi-dev;;
+    sudo apt-get -y install -qq openmpi-bin libopenmpi-dev;;
   *)
     echo "Unknown MPI implementation:" $1; exit 1;;
 esac
