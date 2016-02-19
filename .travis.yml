@@ -10,11 +10,15 @@ env:
   - MPI=mpich2
   - MPI=openmpi
 
+notifications:
+  email: false
+
 before_install:
   - test -n $CC  && unset CC
   - test -n $CXX && unset CXX
 
 install:
+  - sudo apt-get update -qq -y
   - sh test/travis-mpi.sh $MPI
 
 before_script:
