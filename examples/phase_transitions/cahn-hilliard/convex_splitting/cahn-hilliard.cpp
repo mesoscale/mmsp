@@ -183,7 +183,7 @@ void generate(int dim, const char* filename)
 
 	if (dim!=2) {
 		std::cerr<<"ERROR: Convex splitting discretization is only 2-D, for now."<<std::endl;
-		MMSP::MMSP::Abort(-1);
+		MMSP::Abort(-1);
 	}
 
 	int rank=0;
@@ -428,7 +428,7 @@ void update(grid<dim,vector<T> >& oldGrid, int steps)
 		if (iter==max_iter) {
 			if (rank==0)
 				std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" iterations with residual="<<residual<<std::endl;
-				MMSP::MMSP::Abort(-1);
+				MMSP::Abort(-1);
 		}
 
 		double energy = 0.0;
