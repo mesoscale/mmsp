@@ -1,6 +1,6 @@
 Mesoscale Microstructure Simulation Project
 ====
-[![Build Status](https://travis-ci.org/tkphd/mmsp.svg?branch=master)](https://travis-ci.org/tkphd/mmsp)
+[![Build Status](https://travis-ci.org/mesoscale/mmsp.svg?branch=develop)](https://travis-ci.org/mesoscale/mmsp)
 
 The goal of the Mesoscale Microstructure Simulation Project (MMSP) is to provide a simple,
 consistent, and extensible programming interface for all grid and mesh based microstructure
