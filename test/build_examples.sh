@@ -15,21 +15,21 @@
 # beginners_diffusion  --  does not match execution pattern
 
 # Valid flags are:
-# --noexec: build in serial and parallel, but do not execute
-# --noviz:  do not convert data for visualization
-# --force:  pass -B flag to make
-# -n X:     pass mpirun X ranks (e.g., -n 3 yields mpirun -np 3)
-# --short:  execute tests .1x default
-# --long:   execute tests  5x longer  than default
-# --extra:  execute tests 25x longer  than default
-# --clean:  delete binary files after test completes
-# --purge:  delete binaries, data, and images after test completes
+# --noexec  build in serial and parallel, but do not execute
+# --noviz   do not convert data for visualization
+# --force   pass -B flag to make
+# --np X    pass mpirun X ranks (e.g., --np 3 yields mpirun -np 3)
+# --short   execute tests .1x default
+# --long    execute tests  5x longer  than default
+# --extra   execute tests 25x longer  than default
+# --clean   delete binary files after test completes
+# --purge   delete binaries, data, and images after test completes
 
 # Initialize timer and completion counters
 tstart=$(date +%s)
-SerERR=0
-ParERR=0
-RunERR=0
+nSerErr=0
+nParErr=0
+nRunErr=0
 nSerBld=0
 nParBld=0
 nParRun=0
@@ -40,6 +40,10 @@ ITERS=1000
 INTER=500
 CORES=4
 COREMAX=$(nproc)
+if [[ $CORES > $COREMAX ]]
+then
+	CORES=$COREMAX
+fi
 
 # Get going
 cd ../examples
@@ -53,55 +57,56 @@ do
 	key="$1"
 	case $key in
 		--force)
-		echo -n ", forcing build"
-		MFLAG="-Bs"
+			echo -n ", forcing build"
+			MFLAG="-Bs"
 		;;
-		--clean)
-		echo -n ", cleaning up after"
+			--clean)
+			echo -n ", cleaning up after"
 		CLEAN=true
 		;;
 		--purge)
-		echo -n ", cleaning up after"
-		CLEAN=true
-		PURGE=true
+			echo -n ", cleaning up after"
+			CLEAN=true
+			PURGE=true
 		;;
 		--noexec)
-		echo -n ", not executing"
-		NEXEC=true
+			echo -n ", not executing"
+			NEXEC=true
 		;;
 		--short)
-		echo -n ", taking 100 steps"
-		ITERS=100
-		INTER=100
+			ITERS=$(($ITERS/10))
+			INTER=100
 		;;
 		--long)
-		echo -n ", taking 5,000 steps"
-		ITERS=5000
-		INTER=1000
+			ITERS=$((5*$ITERS))
+			INTER=1000
 		;;
 		--extra)
-		echo -n ", taking 25,000 steps"
-		ITERS=25000
-		INTER=5000
+			ITERS=$((25*$ITERS))
+			INTER=5000
 		;;
 		--noviz)
-		echo -n ", not converting to PNG"
-		NOVIZ=true
+			echo -n ", no PNG output"
+			NOVIZ=true
 		;;
-		-n)
-		shift
-		CORES=$1
-		echo -n ", $CORES/$COREMAX MPI ranks"
+		--np)
+			shift
+			CORES=$1
 		;;
 		*)
-		echo "WARNING: Unknown option ${key}."
-		echo
-    	;;
+			echo "WARNING: Unknown option ${key}."
+			echo
+    ;;
 	esac
 	shift # pop first entry from command-line argument list, reduce $# by 1
 done
 
-echo
+if [[ ! $NEXEC ]]
+then
+		echo ", taking $ITERS steps, using $CORES/$COREMAX MPI ranks"
+else
+	echo
+fi
 
 if [[ ! $NOVIZ ]]
 then
@@ -146,34 +151,37 @@ do
 	exstart=$(date +%s)
 	j=$(($i+1))
 	cd $examples/${exdirs[$i]}
-	printf "%2d/%2d %-50s\t" $j $n ${exdirs[$i]}
+	printf "%2d/%2d %-52s\t" $j $n ${exdirs[$i]}
 	echo $(date) >test.log
 	if make $MFLAG
 	then
 		((nSerBld++))
 	else
-		((SerERR++))
-		tail test.log
+		((nSerErr++))
 	fi
 	if make $MFLAG parallel
 	then
 		((nParBld++))
 	else
-		((ParERR++))
-		tail test.log
+		((nParErr++))
 	fi
 	if [[ -f parallel ]] && [[ ! $NEXEC ]]
 	then
 		# Run the example in parallel, for speed.
-		mpirun -np $CORES ./parallel --example 2 test.0000.dat >>test.log \
-		&& mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER >>test.log
-		# Return codes are tricky! Try testing bash $? variable
-		if [[ $? ]]
+		mpirun -np $CORES ./parallel --example 2 test.0000.dat 1>test.log 2>error.log \
+		&& mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER 1>>test.log 2>>error.log
+		# Return codes are not reliable. Litter the hard drive with files instead.
+		if [[ -f error.log ]] && [[ $(wc -w error.log) > 1 ]]
 		then
-			((nParRun++))
+			((nRunErr++))
+			wc -w error.log
+			if [[ -f error.log ]]
+			then
+				head error.log
+			fi
 		else
-			((RunERR++))
-			tail test.log
+			((nParRun++))
+			rm -f error.log
 		fi
 		if [[ ! $NOVIZ ]]
 		then
@@ -189,10 +197,11 @@ do
 	then
 		make -s clean
 		rm -f test.*.dat
+		rm -f test.log
+		rm -f error.log
 		if [[ $PURGE ]]
 		then
 			rm -f test.*.png
-			rm -f test.log
 		fi
 	fi
 
@@ -206,14 +215,14 @@ cd ${examples}
 tfinish=$(date +%s)
 elapsed=$(echo "$tfinish-$tstart" | bc -l)
 
-printf "%67d seconds elapsed.\n" $elapsed
-echo "${nSerBld} serial   examples built    successfully, ${SerERR} failed."
-echo "${nParBld} parallel examples built    successfully, ${ParERR} failed."
-echo "${nParRun} parallel examples executed successfully, ${RunERR} failed."
+printf "Elapsed time: %53d seconds\n" $elapsed
 echo
+printf "%2d serial   examples compiled successfully, %2d failed.\n" $nSerBld $nSerErr
+printf "%2d parallel examples compiled successfully, %2d failed.\n" $nParBld $nParErr
+printf "%2d parallel examples executed successfully, %2d failed.\n" $nParRun $nRunErr
 cd ../test/
 
-AllERR=$(echo "$SerERR+$ParERR+$RunERR" | bc -l)
+AllERR=$(echo "$nSerErr+$nParErr+$nRunErr" | bc -l)
 if [[ $AllERR > 0 ]]
 then
 	echo "${AllERR} tests failed."

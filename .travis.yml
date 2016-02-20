@@ -18,7 +18,6 @@ install:
 
 before_script:
   - cd test
-  - nproc
 
 script:
-  ./build_examples.sh -n 2 --noviz
+  ./build_examples.sh --np 2 --noviz --clean
