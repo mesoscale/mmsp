@@ -1,3 +1,7 @@
+# Mesoscale Microstructure Simulation Project
+# Travis Continuous Integration build script
+# Questions/comments to trevor.keller@gmail.com (Trevor Keller)
+
 language: cpp
 dist: trusty
 sudo: required
