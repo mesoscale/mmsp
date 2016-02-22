@@ -11,7 +11,7 @@
 # Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
 # * Canonical examples exclude the following directories:
-# differential_equations/elliptic/Poisson  --  segmentation faults
+# differential_equations/elliptic/Poisson  --  failing due to memory errors
 # beginners_diffusion  --  does not match execution pattern
 
 # Valid flags are:
@@ -22,8 +22,12 @@
 # --short   execute tests .1x default
 # --long    execute tests  5x longer  than default
 # --extra   execute tests 25x longer  than default
-# --clean   delete binary files after test completes
-# --purge   delete binaries, data, and images after test completes
+# --clean   delete generated files (binaries, data, imges) after test completes
+
+# Set output colors
+RED='\033[0;31m'
+GRN='\033[0;32m'
+WHT='\033[0m' # No Color
 
 # Initialize timer and completion counters
 tstart=$(date +%s)
@@ -40,7 +44,7 @@ ITERS=1000
 INTER=500
 CORES=4
 COREMAX=$(nproc)
-if [[ $CORES > $COREMAX ]]
+if [[ $CORES -gt $COREMAX ]]
 then
 	CORES=$COREMAX
 fi
@@ -52,7 +56,7 @@ examples=$(pwd)
 echo -n "Building examples in serial and parallel"
 
 
-while [[ $# > 0 ]]
+while [[ $# -gt 0 ]]
 do
 	key="$1"
 	case $key in
@@ -63,11 +67,6 @@ do
 			--clean)
 			echo -n ", cleaning up after"
 		CLEAN=true
-		;;
-		--purge)
-			echo -n ", cleaning up after"
-			CLEAN=true
-			PURGE=true
 		;;
 		--noexec)
 			echo -n ", not executing"
@@ -121,6 +120,8 @@ then
 	fi
 fi
 
+echo "---------------------------------------------------------------------------"
+
 exdirs=("coarsening/grain_growth/anisotropic/Monte_Carlo/" \
 "coarsening/grain_growth/anisotropic/phase_field/" \
 "coarsening/grain_growth/anisotropic/sparsePF/" \
@@ -170,27 +171,35 @@ do
 		# Run the example in parallel, for speed.
 		mpirun -np $CORES ./parallel --example 2 test.0000.dat 1>test.log 2>error.log \
 		&& mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER 1>>test.log 2>>error.log
-		# Return codes are not reliable. Litter the hard drive with files instead.
+		# Return codes are not reliable. Save errors to disk for postmortem.
 		if [[ -f error.log ]] && [[ $(wc -w error.log) > 1 ]]
 		then
+			echo -e "${RED} --FAILED--${WHT}"
 			((nRunErr++))
-			wc -w error.log
 			if [[ -f error.log ]]
 			then
-				head error.log
+				echo "      error.log has the details (head follows)"
+				head error.log | sed -e 's/^/      /'
 			fi
 		else
 			((nParRun++))
 			rm -f error.log
+			if [[ ! $NOVIZ ]]
+			then
+				# Show the result
+				for f in *.dat
+				do
+					mmsp2png --zoom $f >>test.log
+				done
+			fi
+			exfin=$(date +%s)
+			exlapse=$(echo "$exfin-$exstart" | bc -l)
+			printf "${GRN}%3d seconds${WHT}\n" $exlapse
 		fi
-		if [[ ! $NOVIZ ]]
-		then
-			# Show the result
-			for f in *.dat
-			do
-				mmsp2png --zoom $f >>test.log
-			done
-		fi
+	else
+		exfin=$(date +%s)
+		exlapse=$(echo "$exfin-$exstart" | bc -l)
+		printf "${GRN}%3d seconds${WHT}\n" $exlapse
 	fi
 	# Clean up binaries and images
 	if [[ $CLEAN ]]
@@ -199,33 +208,39 @@ do
 		rm -f test.*.dat
 		rm -f test.log
 		rm -f error.log
-		if [[ $PURGE ]]
-		then
-			rm -f test.*.png
-		fi
+		rm -f test.*.png
 	fi
-
-	exfin=$(date +%s)
-	exlapse=$(echo "$exfin-$exstart" | bc -l)
-	printf "%3d seconds\n" $exlapse
 done
 
 cd ${examples}
 
 tfinish=$(date +%s)
 elapsed=$(echo "$tfinish-$tstart" | bc -l)
-
+echo "---------------------------------------------------------------------------"
 printf "Elapsed time: %53d seconds\n" $elapsed
 echo
-printf "%2d serial   examples compiled successfully, %2d failed.\n" $nSerBld $nSerErr
-printf "%2d parallel examples compiled successfully, %2d failed.\n" $nParBld $nParErr
-printf "%2d parallel examples executed successfully, %2d failed.\n" $nParRun $nRunErr
+printf "%2d serial   examples compiled successfully" $nSerBld
+if [[ $nSerErr > 0 ]]
+then
+	printf ", %2d failed" $nSerErr
+fi
+printf "\n%2d parallel examples compiled successfully" $nParBld
+if [[ $nParErr > 0 ]]
+then
+	printf ", %2d failed" $nParErr
+fi
+printf "\n%2d parallel examples executed successfully" $nParRun
+if [[ $nRunErr > 0 ]]
+then
+	printf ", %2d failed" $nRunErr
+fi
+echo
 cd ../test/
 
 AllERR=$(echo "$nSerErr+$nParErr+$nRunErr" | bc -l)
 if [[ $AllERR > 0 ]]
 then
-	echo "${AllERR} tests failed."
 	echo
+	echo "Build error(s) detected: ${AllERR} tests failed."
 	exit 1
 fi
