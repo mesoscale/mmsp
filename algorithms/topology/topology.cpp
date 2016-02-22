@@ -25,7 +25,7 @@ void Grain::estimateCentroid() {
 	// The grain has no concept of the domain size. Sweep through once to bound the domain.
 	for (map<set<id_type>, vector<Point<int> > >::iterator itr = edges.begin(); itr != edges.end(); ++itr) {
 		count += itr->second.size();
-		for (int i = 0; i < itr->second.size(); ++i) {
+		for (unsigned int i = 0; i < itr->second.size(); ++i) {
 			Point<int> x = itr->second[i];
 			for (int d=0; d<dim; ++d) {
 				if (x[d]<min[d]) min[d]=x[d];
@@ -38,7 +38,7 @@ void Grain::estimateCentroid() {
 	volume = 0.0f;
 	centroid = Point<float>(0., 0., 0.);
 	for (map<set<id_type>, vector<Point<int> > >::iterator itr = edges.begin(); itr != edges.end(); ++itr) {
-		for (int i = 0; i < itr->second.size(); ++i) {
+		for (unsigned int i = 0; i < itr->second.size(); ++i) {
 			Point<int> x = itr->second[i];
 			for (int d=0; d<dim; ++d)
 				if (max[d] - x[d] < x[d] - min[d]) x[d] = x[d] - max[d]; //point is closer to upper than lower boundary
@@ -172,7 +172,7 @@ int Grain::makePvector(vector<int>& pvec) {
 	if (!vert_check) this->inferVertices<3>();
 	if (this->numEdges() == 0) return 0;
 	for (set<id_type>::iterator fitr = faces.begin(); fitr != faces.end(); ++fitr) {
-		int p = 0;
+		unsigned int p = 0;
 		for (map<set<id_type>, vector<Point<int> > >::iterator eitr = edges.begin(); eitr != edges.end(); ++eitr) {
 			for (set<id_type>::iterator set_itr = eitr->first.begin(); set_itr != eitr->first.end(); ++set_itr) {
 				if (*set_itr == *fitr) ++p;
@@ -195,7 +195,7 @@ float Grain::getPbar() {
 	if (!face_check || !vert_check)	this->checkFaces<3>();
 	if (pvector.size() == 0) this->makePvector<3>(pvector);
 	int answer = 0, count = 0;
-	for (int i = 0; i < pvector.size(); ++i) {
+	for (unsigned int i = 0; i < pvector.size(); ++i) {
 		count += pvector[i]; // number of faces
 		answer += pvector[i] * i; // number of edges
 	}
@@ -225,8 +225,8 @@ void printCSV(std::ofstream& o, const Grain& g, const int& p, const int& N) {
 			o << ",0," << g.getVolume() << ',' << g.numVerts() << ',' << g.numFaces() << ',' << g.numEdges() << ',' << g.getEuler();
 			const vector<int>& pvec = g.getPvector<2>();
 			assert(pvec.size() > 1);
-			for (int i = 2; i < pvec.size(); ++i) o << ',' << pvec[i];
-			for (int i = pvec.size(); i < p; ++i) o << ",0";
+			for (unsigned int i = 2; i < pvec.size(); ++i) o << ',' << pvec[i];
+			for (int i = int(pvec.size()); i < p; ++i) o << ",0";
 			const map<set<id_type>, vector<Point<int> > >& edges = g.getEdges();
 			for (map<set<id_type>, vector<Point<int> > >::const_iterator itr = edges.begin(); itr != edges.end(); ++itr) o << ',' << *(itr->first.begin());
 			for (int i = edges.size(); i < N; ++i) o << ',';
@@ -253,8 +253,8 @@ void printCSV(std::ofstream& o, const Grain& g, const int& p, const int& N) {
 			o << ',' << g.getVolume() << ',' << g.numVerts() << ',' << g.numFaces() << ',' << g.numEdges() << ',' << g.getEuler();
 			const vector<int>& pvec = g.getPvector<3>();
 			assert(pvec.size() > 1);
-			for (int i = 2; i < pvec.size(); ++i) o << ',' << pvec[i];
-			for (int i = pvec.size(); i < p; ++i) o << ",0";
+			for (unsigned int i = 2; i < pvec.size(); ++i) o << ',' << pvec[i];
+			for (int i = int(pvec.size()); i < p; ++i) o << ",0";
 			const set<id_type>& faces = g.getFaces();
 			for (set<id_type>::iterator itr = faces.begin(); itr != faces.end(); ++itr) o << ',' << *itr;
 			for (int i = faces.size(); i < N; ++i) o << ',';

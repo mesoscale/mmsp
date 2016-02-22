@@ -4,15 +4,7 @@
 
 # compilers/flags
 compiler = g++
-flags = -O2 -I ../include/
-
-# dependencies
-core = ../include/MMSP.hpp \
-       ../include/MMSP.utility.hpp \
-       ../include/MMSP.grid.hpp \
-       ../include/MMSP.scalar.hpp \
-       ../include/MMSP.vector.hpp \
-       ../include/MMSP.sparse.hpp 
+flags = -O2 -Wall -I ../include/
 
 topo = ../algorithms/topology
 
@@ -29,15 +21,15 @@ utility : mmsp2vti mmsp2pvd mmsp2png \
 #
 
 # convert MMSP grid file to PNG image file type
-mmsp2png : mmsp2png.cpp $(core)
+mmsp2png : mmsp2png.cpp
 	$(compiler) $(flags) $< -o $@ -lz -lpng
 
 # convert MMSP grid file to ParaView Data file type
-mmsp2pvd : mmsp2pvd.cpp $(core)
+mmsp2pvd : mmsp2pvd.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 # convert MMSP grid file to VTK Image file type
-mmsp2vti : mmsp2vti.cpp $(core)
+mmsp2vti : mmsp2vti.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 #
@@ -45,35 +37,35 @@ mmsp2vti : mmsp2vti.cpp $(core)
 #
 
 # convert MCgrid file PFgrid file type
-MC2PF : MC2PF.cpp $(core)
+MC2PF : MC2PF.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 # convert MCgrid file to sPFgrid file type
-MC2sPF : MC2sPF.cpp $(core)
+MC2sPF : MC2sPF.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 # convert PFgrid file MCgrid file type
-PF2MC : PF2MC.cpp $(core)
+PF2MC : PF2MC.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 # convert PFgrid file sPFgrid file type
-PF2sPF : PF2sPF.cpp $(core)
+PF2sPF : PF2sPF.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 # convert sPFgrid file MCgrid file type
-sPF2MC : sPF2MC.cpp $(core)
+sPF2MC : sPF2MC.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 # convert sPFgrid file PFgrid file type
-sPF2PF : sPF2PF.cpp $(core)
+sPF2PF : sPF2PF.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 # convert MBuilder data to MCgrid file type
-vox2MC : vox2MC.cpp $(core)
+vox2MC : vox2MC.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 # convert MCgrid file to MBuilder type
-MC2vox : MC2vox.cpp $(core)
+MC2vox : MC2vox.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 #
@@ -81,11 +73,11 @@ MC2vox : MC2vox.cpp $(core)
 #
 
 # extract grain boundary topology from MMSP grid file
-mmsp2topo : mmsp2topo.cpp $(core)
+mmsp2topo : mmsp2topo.cpp
 	$(compiler) $(flags) -I $(topo) $< -o $@ -lz
 
 # convert legacy MMSP grid file to compressed MMSP grid file type
-mmsp2z : mmsp2z.cpp $(core)
+mmsp2z : mmsp2z.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 # convert MMSP grid file with Little Endian data to Big Endian grid data, and vice versa
