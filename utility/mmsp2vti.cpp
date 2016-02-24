@@ -12,27 +12,36 @@
 template<int dim, typename T> void print_scalars(std::ofstream& fstr, const MMSP::grid<dim,T>& GRID, const int& mode)
 {
 	if (dim==1) {
-		for (int n=0; n<MMSP::nodes(GRID); n++) {
+		MMSP::vector<int> x(1,0);
+		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 			if (mode==1) { // --mag
-				fstr << std::sqrt(GRID(n)*GRID(n)) << " ";
+				fstr << std::sqrt(GRID(x)*GRID(x)) << " ";
 			} else {
-				fstr << GRID(n) << " ";
+				fstr << GRID(x) << " ";
 			}
 		}
 	} else if (dim==2) {
-		for (int n=0; n<MMSP::nodes(GRID); n++) {
-			if (mode==1) { // --mag
-				fstr << std::sqrt(GRID(n)*GRID(n)) << " ";
-			} else {
-				fstr << GRID(n) << " ";
+		MMSP::vector<int> x(2,0);
+		for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
+			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
+				if (mode==1) { // --mag
+					fstr << std::sqrt(GRID(x)*GRID(x)) << " ";
+				} else {
+					fstr << GRID(x) << " ";
+				}
 			}
 		}
 	} else if (dim==3) {
-		for (int n=0; n<MMSP::nodes(GRID); n++) {
-			if (mode==1) { // --mag
-				fstr << std::sqrt(GRID(n)*GRID(n)) << " ";
-			} else {
-				fstr << GRID(n) << " ";
+		MMSP::vector<int> x(3,0);
+		for (x[2]=MMSP::z0(GRID); x[2]<MMSP::z1(GRID); x[2]++) {
+			for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
+				for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
+					if (mode==1) { // --mag
+						fstr << std::sqrt(GRID(x)*GRID(x)) << " ";
+					} else {
+						fstr << GRID(x) << " ";
+					}
+				}
 			}
 		}
 	}
@@ -42,8 +51,9 @@ template<int dim, typename T> void print_vectors(std::ofstream& fstr, const MMSP
                                                 const int& mode, const int& field)
 {
 	if (dim==1) {
-		for (int n=0; n<MMSP::nodes(GRID); n++) {
-			const MMSP::vector<T>& v = GRID(n);
+		MMSP::vector<int> x(1,0);
+		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
+			const MMSP::vector<T>& v = GRID(x);
 			if (mode==1) { // --mag
 				double sum = 0.0;
 				for (int h = 0; h < v.length(); h++)
@@ -63,45 +73,53 @@ template<int dim, typename T> void print_vectors(std::ofstream& fstr, const MMSP
 			}
 		}
 	} else if (dim==2) {
-		for (int n=0; n<MMSP::nodes(GRID); n++) {
-			const MMSP::vector<T>& v = GRID(n);
-			if (mode==1) { // --mag
-				double sum = 0.0;
-				for (int h = 0; h < v.length(); h++)
-					sum += v[h]*v[h];
-				fstr << std::sqrt(sum) << " ";
-			} else if (mode==2) { // --max
-				int max = 0;
-				for (int h = 1; h < v.length(); h++)
-					if (v[h] > v[max])
-						max = h;
-				fstr << max << " ";
-			} else if (mode==3) { // --field
-				fstr << v[field] << " ";
-			} else {
-				for (int h = 0; h < v.length(); h++)
-					fstr << v[h] << " ";
+		MMSP::vector<int> x(2,0);
+		for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
+			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
+				const MMSP::vector<T>& v = GRID(x);
+				if (mode==1) { // --mag
+					double sum = 0.0;
+					for (int h = 0; h < v.length(); h++)
+						sum += v[h]*v[h];
+					fstr << std::sqrt(sum) << " ";
+				} else if (mode==2) { // --max
+					int max = 0;
+					for (int h = 1; h < v.length(); h++)
+						if (v[h] > v[max])
+							max = h;
+					fstr << max << " ";
+				} else if (mode==3) { // --field
+					fstr << v[field] << " ";
+				} else {
+					for (int h = 0; h < v.length(); h++)
+						fstr << v[h] << " ";
+				}
 			}
 		}
 	} else if (dim==3) {
-		for (int n=0; n<MMSP::nodes(GRID); n++) {
-			const MMSP::vector<T>& v = GRID(n);
-			if (mode==1) { // --mag
-				double sum = 0.0;
-				for (int h = 0; h < v.length(); h++)
-					sum += v[h]*v[h];
-				fstr << std::sqrt(sum) << " ";
-			} else if (mode==2) { // --max
-				int max = 0;
-				for (int h = 1; h < v.length(); h++)
-					if (v[h] > v[max])
-						max = h;
-				fstr << max << " ";
-			} else if (mode==3) { // --field
-				fstr << v[field] << " ";
-			} else {
-				for (int h = 0; h < v.length(); h++)
-					fstr << v[h] << " ";
+		MMSP::vector<int> x(3,0);
+		for (x[2]=MMSP::z0(GRID); x[2]<MMSP::z1(GRID); x[2]++) {
+			for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
+				for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
+					const MMSP::vector<T>& v = GRID(x);
+					if (mode==1) { // --mag
+						double sum = 0.0;
+						for (int h = 0; h < v.length(); h++)
+							sum += v[h]*v[h];
+						fstr << std::sqrt(sum) << " ";
+					} else if (mode==2) { // --max
+						int max = 0;
+						for (int h = 1; h < v.length(); h++)
+							if (v[h] > v[max])
+								max = h;
+						fstr << max << " ";
+					} else if (mode==3) { // --field
+						fstr << v[field] << " ";
+					} else {
+						for (int h = 0; h < v.length(); h++)
+							fstr << v[h] << " ";
+					}
+				}
 			}
 		}
 	}
@@ -111,8 +129,9 @@ template<int dim, typename T> void print_sparses(std::ofstream& fstr, const MMSP
                                                 const int& mode, const int& field)
 {
 	if (dim==1) {
-		for (int n=0; n<MMSP::nodes(GRID); n++) {
-			const MMSP::sparse<T>& s = GRID(n);
+		MMSP::vector<int> x(1,0);
+		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
+			const MMSP::sparse<T>& s = GRID(x);
 			if (mode==2) { // --max
 				int max = 0;
 				for (int h = 1; h < s.length(); h++)
@@ -129,39 +148,47 @@ template<int dim, typename T> void print_sparses(std::ofstream& fstr, const MMSP
 			}
 		}
 	} else if (dim==2) {
-		for (int n=0; n<MMSP::nodes(GRID); n++) {
-			const MMSP::sparse<T>& s = GRID(n);
-			if (mode==2) { // --max
-				int max = 0;
-				for (int h = 1; h < s.length(); h++)
-					if (s.value(h) > s.value(max))
-				max = h;
-				fstr << max << " ";
-			} else if (mode==3) { // --field
-				fstr << s[field] << " ";
-			} else { // --mag is redundant for sparse
-				double sum = 0.0;
-				for (int h = 0; h < s.length(); h++)
-					sum += s.value(h)*s.value(h);
-				fstr << std::sqrt(sum) << " ";
+		MMSP::vector<int> x(2,0);
+		for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
+			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
+				const MMSP::sparse<T>& s = GRID(x);
+				if (mode==2) { // --max
+					int max = 0;
+					for (int h = 1; h < s.length(); h++)
+						if (s.value(h) > s.value(max))
+							max = h;
+					fstr << max << " ";
+				} else if (mode==3) { // --field
+					fstr << s[field] << " ";
+				} else { // --mag is redundant for sparse
+					double sum = 0.0;
+					for (int h = 0; h < s.length(); h++)
+						sum += s.value(h)*s.value(h);
+					fstr << std::sqrt(sum) << " ";
+				}
 			}
 		}
 	} else if (dim==3) {
-		for (int n=0; n<MMSP::nodes(GRID); n++) {
-			const MMSP::sparse<T>& s = GRID(n);
-			if (mode==2) { // --max
-				int max = 0;
-				for (int h = 1; h < s.length(); h++)
-					if (s.value(h) > s.value(max))
-						max = h;
-				fstr << max << " ";
-			} else if (mode==3) { // --field
-				fstr << s[field] << " ";
-			} else { // --mag is redundant for sparse
-				double sum = 0.0;
-				for (int h = 0; h < s.length(); h++)
-					sum += s.value(h)*s.value(h);
-				fstr << std::sqrt(sum) << " ";
+		MMSP::vector<int> x(3,0);
+		for (x[2]=MMSP::z0(GRID); x[2]<MMSP::z1(GRID); x[2]++) {
+			for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
+				for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
+					const MMSP::sparse<T>& s = GRID(x);
+					if (mode==2) { // --max
+						int max = 0;
+						for (int h = 1; h < s.length(); h++)
+							if (s.value(h) > s.value(max))
+								max = h;
+						fstr << max << " ";
+					} else if (mode==3) { // --field
+						fstr << s[field] << " ";
+					} else { // --mag is redundant for sparse
+						double sum = 0.0;
+						for (int h = 0; h < s.length(); h++)
+							sum += s.value(h)*s.value(h);
+						fstr << std::sqrt(sum) << " ";
+					}
+				}
 			}
 		}
 	}
@@ -298,15 +325,15 @@ int main(int argc, char* argv[])
 		output << "  <ImageData WholeExtent=\"" << x0[0] << " " << x1[0] << " 0 0 0 0\"";
 		output << "   Origin=\"0 0 0\" Spacing=\"" << dx[0] << " 1 1\">\n";
 	} else if (dim == 2) {
-		output << "  <ImageData WholeExtent=\"" << x0[1] << " " << x1[1] << " "
-		       << x0[0] << " " << x1[0]
-		       << " 0 0\"";
-		output << "   Origin=\"0 0 0\" Spacing=\"" << dx[1] << " " << dx[0] << " 1\">\n";
+		output << "  <ImageData WholeExtent=\"" << x0[0] << " " << x1[0] << " "
+		                                        << x0[1] << " " << x1[1]
+		                                        << " 0 0\"";
+		output << "   Origin=\"0 0 0\" Spacing=\"" << dx[0] << " " << dx[1] << " 1\">\n";
 	} else if (dim == 3) {
-		output << "  <ImageData WholeExtent=\"" << x0[2] << " " << x1[2] << " "
-		       << x0[1] << " " << x1[1] << " "
-		       << x0[0] << " " << x1[0] << "\"";
-		output << "   Origin=\"0 0 0\" Spacing=\"" << dx[2] << " " << dx[1] << " " << dx[0] << "\">\n";
+		output << "  <ImageData WholeExtent=\"" << x0[0] << " " << x1[0] << " "
+		                                        << x0[1] << " " << x1[1] << " "
+		                                        << x0[2] << " " << x1[2] << "\"";
+		output << "   Origin=\"0 0 0\" Spacing=\"" << dx[0] << " " << dx[1] << " " << dx[2] << "\">\n";
 	} else {
 		std::cerr<<"Error: "<<dim<<"-dimensional data not supported."<<std::endl;
 		std::exit(-1);
@@ -336,12 +363,12 @@ int main(int argc, char* argv[])
 		if (dim == 1)
 			output << "    <Piece Extent=\"" << lmin[0] << " " << lmax[0] << " 0 0 0 0\">\n";
 		if (dim == 2)
-			output << "    <Piece Extent=\"" << lmin[1] << " " << lmax[1] << " "
-			       << lmin[0] << " " << lmax[0] << " 0 0\">\n";
+			output << "    <Piece Extent=\"" << lmin[0] << " " << lmax[0] << " "
+			                                 << lmin[1] << " " << lmax[1] << " 0 0\">\n";
 		if (dim == 3)
-			output << "    <Piece Extent=\"" << lmin[2] << " " << lmax[2] << " "
-			       << lmin[1] << " " << lmax[1] << " "
-			       << lmin[0] << " " << lmax[0] << "\">\n";
+			output << "    <Piece Extent=\"" << lmin[0] << " " << lmax[0] << " "
+			                                 << lmin[1] << " " << lmax[1] << " "
+			                                 << lmin[2] << " " << lmax[2] << "\">\n";
 
 		// write cell data markup
 		if (scalar_type || flatten>0) {
