@@ -15,7 +15,6 @@
 #include <cassert>
 #include <cmath>
 #include <ctime>
-#include <zlib.h>
 
 #include "point.hpp"
 #include "topology.cpp"
