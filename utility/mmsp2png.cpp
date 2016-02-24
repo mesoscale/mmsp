@@ -280,27 +280,34 @@ int main(int argc, char* argv[])
 		exit(-1);
 	}
 
-// read grid dimension
+	// read grid dimension
 	int dim;
 	input >> dim;
 
-// read number of fields
+	// read number of fields
 	int fields;
 	input >> fields;
 
-// read grid sizes
+	// read grid sizes
 	int x0[3] = {0, 0, 0};
 	int x1[3] = {0, 0, 0};
 	for (int d=0; d<dim; d++)
 		input >> x0[d] >> x1[d];
 
-// read cell spacing
+	// read cell spacing
 	float dx[3] = {1.0, 1.0, 1.0};
 	for (int d=0; d<dim; d++)
 		input >> dx[d];
 
-// ignore trailing endlines
+	// ignore trailing endlines
 	input.ignore(10, '\n');
+
+	// if slice was not specified, handle it
+	if (dim==3 && sliceaxis<0) {
+		sliceaxis=2;
+		if (slicelevel<x0[sliceaxis])
+			slicelevel = (x1[sliceaxis] - x0[sliceaxis])/2;
+	}
 
 	int image_size[2] = {1,1};
 	int i=0;
@@ -310,8 +317,8 @@ int main(int argc, char* argv[])
 		image_size[i] = x1[d]-x0[d];
 		i++;
 	}
-  unsigned int theSize=image_size[0] * image_size[1];
-  unsigned char* buffer = new unsigned char[theSize];
+	unsigned int theSize=image_size[0] * image_size[1];
+	unsigned char* buffer = new unsigned char[theSize];
 
 		// write grid data
 		if (scalar_type or (not vector_type and not sparse_type)) { // must be scalar or built-in
@@ -892,10 +899,6 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 				n++;
 			}
 	} else if (dim==3) {
-		if (sliceaxis<0)
-			sliceaxis=0;
-		if (slicelevel<MMSP::g0(GRID,sliceaxis))
-			slicelevel = (MMSP::g1(GRID,sliceaxis) - MMSP::g0(GRID,sliceaxis))/2;
 		unsigned int n=0;
 		MMSP::vector<int> x(3,0);
 		for (x[2] = MMSP::g0(GRID,2); x[2] < MMSP::g1(GRID,2); x[2]++)
@@ -1051,10 +1054,6 @@ template <int dim, typename T> void convert_vectors(const MMSP::grid<dim,MMSP::v
 				n++;
 			}
 	} else if (dim==3) {
-		if (sliceaxis<0)
-			sliceaxis=0;
-		if (slicelevel<MMSP::g0(GRID,sliceaxis))
-			slicelevel = (MMSP::g1(GRID,sliceaxis) - MMSP::g0(GRID,sliceaxis))/2;
 		unsigned int n=0;
 		MMSP::vector<int> x(3,0);
 		for (x[2] = MMSP::g0(GRID,2); x[2] < MMSP::g1(GRID,2); x[2]++)
@@ -1210,10 +1209,6 @@ template <int dim, typename T> void convert_sparses(const MMSP::grid<dim,MMSP::s
 				n++;
 			}
 	} else if (dim==3) {
-		if (sliceaxis<0)
-			sliceaxis=0;
-		if (slicelevel<MMSP::g0(GRID,sliceaxis))
-			slicelevel = (MMSP::g1(GRID,sliceaxis) - MMSP::g0(GRID,sliceaxis))/2;
 		unsigned int n=0;
 		MMSP::vector<int> x(3,0);
 		for (x[2] = MMSP::g0(GRID,2); x[2] < MMSP::g1(GRID,2); x[2]++)
