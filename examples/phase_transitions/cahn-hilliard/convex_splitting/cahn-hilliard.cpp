@@ -192,7 +192,7 @@ void generate(int dim, const char* filename)
 	#endif
 
 	if (dim==2) {
-		grid<2,vector<double> > initGrid(2,0,edge,0,edge); // field 0 is c, field 1 is mu
+		grid<2,vector<double> > initGrid(2,0,2*edge,0,edge); // field 0 is c, field 1 is mu
 		for (int d=0; d<dim; d++)
 			dx(initGrid,d) = deltaX;
 

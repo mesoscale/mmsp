@@ -26,7 +26,8 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		GRID2D initGrid(2,0,256,0,256);
+		int L=256;
+		GRID2D initGrid(2,0,2*L,0,L);
 
 		for (int n=0; n<nodes(initGrid); n++) {
 				double r = double(rand())/double(RAND_MAX);
@@ -38,7 +39,8 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		GRID3D initGrid(2,0,64,0,64,0,64);
+		int L=64;
+		GRID3D initGrid(2,0,2*L,0,L,0,L/2);
 
 		for (int n=0; n<nodes(initGrid); n++) {
 				double r = double(rand())/double(RAND_MAX);

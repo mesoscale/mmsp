@@ -17,17 +17,22 @@
 # Valid flags are:
 # --noexec  build in serial and parallel, but do not execute
 # --noviz   do not convert data for visualization
+# --pvd     convert to PVD and VTI instead of PNG
 # --force   pass -B flag to make
 # --np X    pass mpirun X ranks (e.g., --np 3 yields mpirun -np 3)
+# --1D      initialize and run examples in 1D
+# --2D      initialize and run examples in 2D
+# --3D      initialize and run examples in 3D
 # --short   execute tests .1x default
 # --long    execute tests  5x longer  than default
 # --extra   execute tests 25x longer  than default
 # --clean   delete generated files (binaries, data, imges) after test completes
 
 # Set output colors
-RED='\033[0;31m'
-GRN='\033[0;32m'
-WHT='\033[0m' # No Color
+RED='\033[0;31m' # red
+GRN='\033[0;32m' # green
+YLW='\033[1;33m' # bold yellow
+WHT='\033[0m' # normal
 
 # Initialize timer and completion counters
 tstart=$(date +%s)
@@ -40,6 +45,7 @@ nParRun=0
 MFLAG="-s"
 
 # Set execution parameters
+DIM=2
 ITERS=1000
 INTER=500
 CORES=4
@@ -64,13 +70,26 @@ do
 			echo -n ", forcing build"
 			MFLAG="-Bs"
 		;;
-			--clean)
+		--clean)
 			echo -n ", cleaning up after"
 		CLEAN=true
 		;;
 		--noexec)
 			echo -n ", not executing"
 			NEXEC=true
+		;;
+		--1D)
+			DIM=1
+		;;
+		--2D)
+			DIM=2
+		;;
+		--3D)
+			DIM=3
+		;;
+		--np)
+			shift
+			CORES=$1
 		;;
 		--short)
 			ITERS=$(($ITERS/10))
@@ -88,13 +107,11 @@ do
 			echo -n ", no PNG output"
 			NOVIZ=true
 		;;
-		--np)
-			shift
-			CORES=$1
+		--pvd)
+			PVD=true
 		;;
 		*)
-			echo "WARNING: Unknown option ${key}."
-			echo
+			echo -ne ", ${YLW}ignoring unknown option ${key}${WHT}"
     ;;
 	esac
 	shift # pop first entry from command-line argument list, reduce $# by 1
@@ -102,21 +119,30 @@ done
 
 if [[ ! $NEXEC ]]
 then
-		echo ", taking $ITERS steps, using $CORES/$COREMAX MPI ranks"
+	echo ", ${DIM}D, taking $ITERS steps, using $CORES/$COREMAX MPI ranks"
+	if [[ $DIM -eq 3 ]] && [[ $INTER -gt 100 ]]
+	then
+		echo -e "${YLW}WARNING: 3D tests will take a long time! Consider --short.${WHT}"
+	fi
 else
 	echo
 fi
 
 if [[ ! $NOVIZ ]]
 then
-	# Remove existing images first. If the test fails,
-	# no images in the directory is an obvious red flag.
-	rm -f test.*.png
-	if [[ $(which mmsp2png) == "" ]]
+	if [[ ! $PVD ]] && [[ $(which mmsp2png) == "" ]]
 	then
 		# Consult doc/MMSP.manual.pdf if this fails.
-		echo "mmsp2png utility not found. Please check your installation,"
-		echo " or pass --noviz flag to suppress PNG output."
+		echo -e "${YLW}mmsp2png utility not found. Please check your installation, or pass --noviz.${WHT}"
+	fi
+	if [[ $PVD ]] && [[ $(which mmsp2pvd) == "" ]]
+	then
+		# Consult doc/MMSP.manual.pdf if this fails.
+		echo -e "${YLW}mmsp2pvd utility not found. Please check your installation, or pass --noviz.${WHT}"
+	fi
+	if [[ $DIM -eq 3 ]] && [[ ! $PVD ]]
+	then
+		echo -e "${YLW}Pass --pvd for ParaView Data output, recommended over PNG for 3D data.${WHT}"
 	fi
 fi
 
@@ -169,7 +195,7 @@ do
 	if [[ -f parallel ]] && [[ ! $NEXEC ]]
 	then
 		# Run the example in parallel, for speed.
-		mpirun -np $CORES ./parallel --example 2 test.0000.dat 1>test.log 2>error.log \
+		mpirun -np $CORES ./parallel --example $DIM test.0000.dat 1>test.log 2>error.log \
 		&& mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER 1>>test.log 2>>error.log
 		# Return codes are not reliable. Save errors to disk for postmortem.
 		if [[ -f error.log ]] && [[ $(wc -w error.log) > 1 ]]
@@ -186,11 +212,16 @@ do
 			rm -f error.log
 			if [[ ! $NOVIZ ]]
 			then
-				# Show the result
-				for f in *.dat
-				do
-					mmsp2png --zoom $f >>test.log
-				done
+				if [[ ! $PVD ]]
+				then
+					# Show the result
+					for f in *.dat
+					do
+						mmsp2png --zoom $f >>test.log
+					done
+				else
+					mmsp2pvd --output=test.pvd test.*.dat >>test.log
+				fi
 			fi
 			exfin=$(date +%s)
 			exlapse=$(echo "$exfin-$exstart" | bc -l)
@@ -206,9 +237,8 @@ do
 	then
 		make -s clean
 		rm -f test.*.dat
-		rm -f test.log
-		rm -f error.log
-		rm -f test.*.png
+		rm -f test.log error.log
+		rm -f test.*.png test.pvd test.*.vti
 	fi
 done
 

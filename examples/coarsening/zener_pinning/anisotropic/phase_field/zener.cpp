@@ -41,7 +41,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		int L=256;
+		int L=128;
 		GRID2D initGrid(3,0,L,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
@@ -69,7 +69,8 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		GRID3D initGrid(3,0,64,0,64,0,64);
+		int L=64;
+		GRID3D initGrid(3,0,L,0,L,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);

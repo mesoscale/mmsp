@@ -58,7 +58,8 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		GRID3D initGrid(4,0,128,0,128);
+		int L=64;
+		GRID3D initGrid(4,0,L,0,L,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			for (int h=0; h<fields(initGrid); h++)
