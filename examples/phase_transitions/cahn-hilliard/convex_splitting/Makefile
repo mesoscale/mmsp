@@ -10,7 +10,6 @@ incdir = ../../../../include
 compiler = g++
 pcompiler = mpic++
 flags = -O3 -DVANILLA -I $(incdir)
-gflags = -pg -O2 -DVANILLA -Wall -I $(incdir)
 pflags = $(flags) -include mpi.h
 
 # the program
@@ -20,9 +19,5 @@ cahn-hilliard: cahn-hilliard.cpp
 parallel: cahn-hilliard.cpp
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
-# for profiling
-debug: cahn-hilliard.cpp
-	$(compiler) $(gflags) $< -o $@ -lz
-
 clean:
-	rm -f cahn-hilliard parallel debug
+	rm -f cahn-hilliard parallel

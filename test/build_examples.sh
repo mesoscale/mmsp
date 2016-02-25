@@ -30,11 +30,13 @@
 # --clean   delete generated files (binaries, data, imges) after test completes
 
 # Set output colors
-RED='\033[0;31m' # red
-GRN='\033[0;32m' # green
-YLW='\033[0;33m' # yellow
+RED='\033[0;31m'  # red
+BRED='\033[1;31m'  # bold red
+GRN='\033[0;32m'  # green
+BGRN='\033[1;32m'  # bold green
+YLW='\033[0;33m'  # yellow
 BYLW='\033[1;33m' # bold yellow
-WHT='\033[0m' # normal
+WHT='\033[0m'     # normal
 
 # Initialize timer and completion counters
 tstart=$(date +%s)
@@ -46,14 +48,17 @@ nParBld=0
 nParRun=0
 MFLAG="-s"
 
-# Set execution parameters
-DIM=2
-ITERS=1000
-INTER=500
-CORES=4
-COREMAX=$(nproc)
+# Default execution parameters
+DIM=2            # grid dimensions
+ITERS=1000       # number of steps
+INTER=500        # steps between checkpoint
+ZED="0000"       # checkpoint filename format
+CORES=4          # MPI ranks to use
+COREMAX=$(nproc) # MPI ranks available
 if [[ $CORES -gt $COREMAX ]]
 then
+	# A lot of machines, Travis-CI build bots included,
+	# have only 2 cores available. Let's be polite.
 	CORES=$COREMAX
 fi
 
@@ -62,7 +67,6 @@ cd ../examples
 examples=$(pwd)
 
 echo -n "Building examples in serial and parallel"
-
 
 while [[ $# -gt 0 ]]
 do
@@ -96,6 +100,7 @@ do
 		--short)
 			ITERS=$(($ITERS/10))
 			INTER=100
+			ZED="000"
 		;;
 		--long)
 			ITERS=$((5*$ITERS))
@@ -104,6 +109,7 @@ do
 		--extra)
 			ITERS=$((25*$ITERS))
 			INTER=5000
+			ZED="00000"
 		;;
 		--noviz)
 			echo -n ", no PNG output"
@@ -190,7 +196,7 @@ do
 	else
 		((nSerErr++))
 	fi
-	if [[ $i > 0 ]]
+	if [[ ${exdirs[$i]} != *"beginners"* ]]
 	then
 		if make $MFLAG parallel
 		then
@@ -201,14 +207,15 @@ do
 	fi
 	if [[ -f parallel ]] && [[ ! $NEXEC ]]
 	then
+		rm -f test.*.dat test.*.png test.*.vti test.pvd
 		RUNCMD="mpirun -np $CORES ./parallel"
 		if [[ ${exdirs[$i]} == *"Poisson"* ]]
 		then
 			RUNCMD="./poisson"
 		fi
 		# Run the example in parallel, for speed.
-		$RUNCMD --example $DIM test.0000.dat 1>test.log 2>error.log \
-		&& $RUNCMD test.0000.dat $ITERS $INTER 1>>test.log 2>>error.log
+		$RUNCMD --example $DIM test.$ZED.dat 1>test.log 2>error.log \
+		&& $RUNCMD test.$ZED.dat $ITERS $INTER 1>>test.log 2>>error.log
 		# Return codes are not reliable. Save errors to disk for postmortem.
 		if [[ -f error.log ]] && [[ $(wc -w error.log) > 1 ]]
 		then
@@ -224,14 +231,13 @@ do
 			rm -f error.log
 			if [[ ! $NOVIZ ]]
 			then
-				if [[ ! $PVD ]]
+				# Show the result
+				for f in *.dat
+				do
+					mmsp2png --zoom $f >>test.log
+				done
+				if [[ $PVD ]]
 				then
-					# Show the result
-					for f in *.dat
-					do
-						mmsp2png --zoom $f >>test.log
-					done
-				else
 					mmsp2pvd --output=test.pvd test.*.dat >>test.log
 				fi
 			fi
@@ -293,6 +299,9 @@ AllERR=$(echo "$nSerErr+$nParErr+$nRunErr" | bc -l)
 if [[ $AllERR > 0 ]]
 then
 	echo
-	echo "Build error(s) detected: ${AllERR} tests failed."
+	echo -e "${BRED}Build error(s) detected: ${AllERR} tests failed.${WHT}"
 	exit 1
 fi
+
+echo
+echo -e "${BGRN}Build tests successfully completed.${WHT}"
