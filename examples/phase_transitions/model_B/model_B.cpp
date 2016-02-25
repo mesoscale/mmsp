@@ -41,7 +41,8 @@ double gaussian(double ave, double std)
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		GRID1D initGrid(0,0,128);
+		int L=1024;
+		GRID1D initGrid(0,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++)
 			initGrid(i) = 0.0;
