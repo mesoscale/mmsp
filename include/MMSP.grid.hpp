@@ -509,24 +509,30 @@ public:
 	{
 		for (int i=0; i<cells; i++)
 			data[i] = static_cast<T>(value);
+		return *this;
 	}
 
 	template <typename U> grid& operator=(const grid<dim, U>& GRID)
 	{
+		if (this == &GRID)
+			return *this;
 		for (int i=0; i<cells; i++)
 			data[i] = static_cast<T>(GRID.data[i]);
+		return *this;
 	}
 
 	template <typename U> grid& operator+=(const grid<dim, U>& GRID)
 	{
 		for (int i=0; i<cells; i++)
 			data[i] += static_cast<T>(GRID.data[i]);
+		return *this;
 	}
 
 	template <typename U> grid& operator-=(const grid<dim, U>& GRID)
 	{
 		for (int i=0; i<cells; i++)
 			data[i] -= static_cast<T>(GRID.data[i]);
+		return *this;
 	}
 
 
