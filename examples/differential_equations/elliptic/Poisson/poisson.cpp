@@ -14,9 +14,9 @@ template <typename T>
 void smooth(grid<1,T>& u, const grid<1,T>& f, int stride, int iterations=1)
 {
 	// red-black Gauss-Seidel iteration
-	int s = stride;
+	int s  = stride;
+	int x1 = MMSP::x1(u);
 	double dx = s*MMSP::dx(u);
-	double x1 = MMSP::x1(u);
 	double dx2 = dx*dx;
 	double w   = 1.0/(2.0/dx2);
 	double wx  = w/dx2;
@@ -36,11 +36,11 @@ template <typename T>
 void smooth(grid<2,T>& u, const grid<2,T>& f, int stride, int iterations=1)
 {
 	// red-black Gauss-Seidel iteration
-	int s = stride;
+	int s  = stride;
+	int x1 = MMSP::x1(u);
+	int y1 = MMSP::y1(u);
 	double dx = s*MMSP::dx(u);
 	double dy = s*MMSP::dy(u);
-	double x1 = MMSP::x1(u);
-	double y1 = MMSP::y1(u);
 	double dx2 = dx*dx;
 	double dy2 = dy*dy;
 	double w   = 1.0/(2.0/dx2+2.0/dy2);
@@ -65,13 +65,13 @@ template <typename T>
 void smooth(grid<3,T>& u, const grid<3,T>& f, int stride, int iterations=1)
 {
 	// red-black Gauss-Seidel iteration
-	int s = stride;
+	int s  = stride;
+	int x1 = MMSP::x1(u);
+	int y1 = MMSP::y1(u);
+	int z1 = MMSP::z1(u);
 	double dx = s*MMSP::dx(u);
 	double dy = s*MMSP::dy(u);
 	double dz = s*MMSP::dz(u);
-	double x1 = MMSP::x1(u);
-	double y1 = MMSP::y1(u);
-	double z1 = MMSP::z1(u);
 	double dx2 = dx*dx;
 	double dy2 = dy*dy;
 	double dz2 = dz*dz;
@@ -102,9 +102,9 @@ template <typename T>
 void defect(const grid<1,T>& u, const grid<1,T>& f, grid<1,T>& d, int stride)
 {
 	// compute defect for Poisson equation lap(u) = f
-	int s = stride;
+	int s  = stride;
+	int x1 = MMSP::x1(u);
 	double dx = s*MMSP::dx(u);
-	double x1 = MMSP::x1(u);
 	double dx2 = dx*dx;
 	double wx  = 1.0/dx2;
 
@@ -121,11 +121,11 @@ template <typename T>
 void defect(const grid<2,T>& u, const grid<2,T>& f, grid<2,T>& d, int stride)
 {
 	// compute defect for Poisson equation lap(u) = f
-	int s = stride;
+	int s  = stride;
+	int x1 = MMSP::x1(u);
+	int y1 = MMSP::y1(u);
 	double dx = s*MMSP::dx(u);
 	double dy = s*MMSP::dy(u);
-	double x1 = MMSP::x1(u);
-	double y1 = MMSP::y1(u);
 	double dx2 = dx*dx;
 	double dy2 = dy*dy;
 	double wx  = 1.0/dx2;
@@ -150,13 +150,13 @@ template <typename T>
 void defect(const grid<3,T>& u, const grid<3,T>& f, grid<3,T>& d, int stride)
 {
 	// compute defect for Poisson equation lap(u) = f
-	int s = stride;
+	int s  = stride;
+	int x1 = MMSP::x1(u);
+	int y1 = MMSP::y1(u);
+	int z1 = MMSP::z1(u);
 	double dx = s*MMSP::dx(u);
 	double dy = s*MMSP::dy(u);
 	double dz = s*MMSP::dz(u);
-	double x1 = MMSP::x1(u);
-	double y1 = MMSP::y1(u);
-	double z1 = MMSP::z1(u);
 	double dx2 = dx*dx;
 	double dy2 = dy*dy;
 	double dz2 = dz*dz;
