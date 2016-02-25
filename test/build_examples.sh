@@ -11,8 +11,9 @@
 # Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
 # * Canonical examples exclude the following directories:
-# differential_equations/elliptic/Poisson  --  failing due to memory errors
 # beginners_diffusion  --  does not match execution pattern
+# differential_equations/elliptic/Poisson  --  serial execution only
+# These will be compiled, but not executed.
 
 # Valid flags are:
 # --noexec  build in serial and parallel, but do not execute
@@ -31,7 +32,8 @@
 # Set output colors
 RED='\033[0;31m' # red
 GRN='\033[0;32m' # green
-YLW='\033[1;33m' # bold yellow
+YLW='\033[0;33m' # yellow
+BYLW='\033[1;33m' # bold yellow
 WHT='\033[0m' # normal
 
 # Initialize timer and completion counters
@@ -111,7 +113,7 @@ do
 			PVD=true
 		;;
 		*)
-			echo -ne ", ${YLW}ignoring unknown option ${key}${WHT}"
+			echo -ne ", ${BYLW}ignoring unknown option ${key}${WHT}"
     ;;
 	esac
 	shift # pop first entry from command-line argument list, reduce $# by 1
@@ -122,7 +124,7 @@ then
 	echo ", ${DIM}D, taking $ITERS steps, using $CORES/$COREMAX MPI ranks"
 	if [[ $DIM -eq 3 ]] && [[ $INTER -gt 100 ]]
 	then
-		echo -e "${YLW}WARNING: 3D tests will take a long time! Consider --short.${WHT}"
+		echo -e "${BYLW}WARNING: 3D tests will take a long time! Consider --short.${WHT}"
 	fi
 else
 	echo
@@ -133,22 +135,23 @@ then
 	if [[ ! $PVD ]] && [[ $(which mmsp2png) == "" ]]
 	then
 		# Consult doc/MMSP.manual.pdf if this fails.
-		echo -e "${YLW}mmsp2png utility not found. Please check your installation, or pass --noviz.${WHT}"
+		echo -e "${BYLW}mmsp2png utility not found. Please check your installation, or pass --noviz.${WHT}"
 	fi
 	if [[ $PVD ]] && [[ $(which mmsp2pvd) == "" ]]
 	then
 		# Consult doc/MMSP.manual.pdf if this fails.
-		echo -e "${YLW}mmsp2pvd utility not found. Please check your installation, or pass --noviz.${WHT}"
+		echo -e "${BYLW}mmsp2pvd utility not found. Please check your installation, or pass --noviz.${WHT}"
 	fi
 	if [[ $DIM -eq 3 ]] && [[ ! $PVD ]]
 	then
-		echo -e "${YLW}Pass --pvd for ParaView Data output, recommended over PNG for 3D data.${WHT}"
+		echo -e "${BYLW}Pass --pvd for ParaView Data output, recommended over PNG for 3D data.${WHT}"
 	fi
 fi
 
 echo "---------------------------------------------------------------------------"
 
-exdirs=("coarsening/grain_growth/anisotropic/Monte_Carlo/" \
+exdirs=("beginners_diffusion/" \
+"coarsening/grain_growth/anisotropic/Monte_Carlo/" \
 "coarsening/grain_growth/anisotropic/phase_field/" \
 "coarsening/grain_growth/anisotropic/sparsePF/" \
 "coarsening/grain_growth/isotropic/Monte_Carlo/" \
@@ -161,6 +164,7 @@ exdirs=("coarsening/grain_growth/anisotropic/Monte_Carlo/" \
 "coarsening/zener_pinning/isotropic/Monte_Carlo/" \
 "coarsening/zener_pinning/isotropic/phase_field/" \
 "coarsening/zener_pinning/isotropic/sparsePF/" \
+"differential_equations/elliptic/Poisson/" \
 "phase_transitions/allen-cahn/" \
 "phase_transitions/cahn-hilliard/convex_splitting/" \
 "phase_transitions/cahn-hilliard/explicit/" \
@@ -186,17 +190,25 @@ do
 	else
 		((nSerErr++))
 	fi
-	if make $MFLAG parallel
+	if [[ $i > 0 ]]
 	then
-		((nParBld++))
-	else
-		((nParErr++))
+		if make $MFLAG parallel
+		then
+			((nParBld++))
+		else
+			((nParErr++))
+		fi
 	fi
 	if [[ -f parallel ]] && [[ ! $NEXEC ]]
 	then
+		RUNCMD="mpirun -np $CORES ./parallel"
+		if [[ ${exdirs[$i]} == *"Poisson"* ]]
+		then
+			RUNCMD="./poisson"
+		fi
 		# Run the example in parallel, for speed.
-		mpirun -np $CORES ./parallel --example $DIM test.0000.dat 1>test.log 2>error.log \
-		&& mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER 1>>test.log 2>>error.log
+		$RUNCMD --example $DIM test.0000.dat 1>test.log 2>error.log \
+		&& $RUNCMD test.0000.dat $ITERS $INTER 1>>test.log 2>>error.log
 		# Return codes are not reliable. Save errors to disk for postmortem.
 		if [[ -f error.log ]] && [[ $(wc -w error.log) > 1 ]]
 		then
@@ -227,6 +239,16 @@ do
 			exlapse=$(echo "$exfin-$exstart" | bc -l)
 			printf "${GRN}%3d seconds${WHT}\n" $exlapse
 		fi
+	elif [[ ${exdirs[$i]} == *"beginners"* ]]
+	then
+		exfin=$(date +%s)
+		exlapse=$(echo "$exfin-$exstart" | bc -l)
+		if [[ ! $NEXEC ]]
+		then
+			printf "${YLW}%3d seconds\n      example does not match generic pattern for execution${WHT}\n" $exlapse
+		else
+			printf "${GRN}%3d seconds${WHT}\n" $exlapse
+		fi
 	else
 		exfin=$(date +%s)
 		exlapse=$(echo "$exfin-$exstart" | bc -l)
@@ -249,17 +271,17 @@ elapsed=$(echo "$tfinish-$tstart" | bc -l)
 echo "---------------------------------------------------------------------------"
 printf "Elapsed time: %53d seconds\n" $elapsed
 echo
-printf "%2d serial   examples compiled successfully" $nSerBld
+printf "%2d examples compiled successfully in serial    " $nSerBld
 if [[ $nSerErr > 0 ]]
 then
 	printf ", %2d failed" $nSerErr
 fi
-printf "\n%2d parallel examples compiled successfully" $nParBld
+printf "\n%2d examples compiled successfully in parallel" $nParBld
 if [[ $nParErr > 0 ]]
 then
 	printf ", %2d failed" $nParErr
 fi
-printf "\n%2d parallel examples executed successfully" $nParRun
+printf "\n%2d examples executed successfully            " $nParRun
 if [[ $nRunErr > 0 ]]
 then
 	printf ", %2d failed" $nRunErr

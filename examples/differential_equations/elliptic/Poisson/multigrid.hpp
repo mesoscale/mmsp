@@ -194,7 +194,7 @@ void MG(grid<dim,T>& u, const grid<dim,T>& f, int stride, int gamma=1, int nu1=2
 	smooth(u,f,s,nu2);
 }
 
-template <int dim, typename T> 
+template <int dim, typename T>
 void FMG(grid<dim,T>& u, const grid<dim,T>& f, int gamma=1, int nu1=2, int nu2=2)
 {
 	// solve at coarsest level

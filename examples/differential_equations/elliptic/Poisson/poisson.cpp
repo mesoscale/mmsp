@@ -191,7 +191,7 @@ void defect(const grid<3,T>& u, const grid<3,T>& f, grid<3,T>& d, int stride)
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		grid<1,double> initGrid(1,0,128);
+		grid<1,double> initGrid(1,0,257);
 
 		for (int n=0; n<nodes(initGrid); n++) {
 			vector<int> x = position(initGrid, n);
@@ -203,7 +203,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		int L=256;
+		int L=129;
 		grid<2,double> initGrid(1,0,L,0,L);
 
 		for (int n=0; n<nodes(initGrid); n++) {
@@ -217,7 +217,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		int L=64;
+		int L=65;
 		grid<3,double> initGrid(1,0,L,0,L,0,L);
 
 		for (int n=0; n<nodes(initGrid); n++) {
