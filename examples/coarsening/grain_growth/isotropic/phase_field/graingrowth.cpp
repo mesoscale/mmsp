@@ -18,8 +18,8 @@ void generate(int dim, const char* filename)
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
-			double d = L/2-x[0];
-			if (d<L/4.0) {
+			double d = 32-x[0]%64;
+			if (d<16.0) {
 				initGrid(i)[0] = 0.0;
 				initGrid(i)[1] = 1.0;
 			} else {
@@ -37,8 +37,8 @@ void generate(int dim, const char* filename)
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
-			double d = sqrt(pow(L/2-x[0],2)+pow(L/2-x[1],2));
-			if (d<L/4.0) {
+			double d = sqrt(pow(32-x[0]%64,2)+pow(32-x[1]%64,2));
+			if (d<16.0) {
 				initGrid(i)[0] = 0.0;
 				initGrid(i)[1] = 1.0;
 			} else {
@@ -56,8 +56,8 @@ void generate(int dim, const char* filename)
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
-			double d = sqrt(pow(L/2-x[0],2)+pow(L/2-x[1],2)+pow(L/2-x[2],2));
-			if (d<L/4.0) {
+			double d = sqrt(pow(32-x[0]%64,2)+pow(32-x[1]%64,2)+pow(32-x[2]%64,2));
+			if (d<16.0) {
 				initGrid(i)[0] = 0.0;
 				initGrid(i)[1] = 1.0;
 			} else {

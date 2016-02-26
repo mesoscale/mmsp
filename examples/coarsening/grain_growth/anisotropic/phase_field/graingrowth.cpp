@@ -23,35 +23,40 @@ void generate(int dim, const char* filename)
 
 			vector<int> x = position(initGrid,i);
 
-			if (x[0]<L/4)        initGrid(i)[3] = 1.0;
-			else if (x[0]>3*L/4) initGrid(i)[3] = 1.0;
-			else                 initGrid(i)[0] = 1.0;
+			if (x[0]%128 < 32)
+				initGrid(i)[3] = 1.0;
+			else if (x[0]%128 < 64)
+				initGrid(i)[2] = 1.0;
+			else if (x[0]%128 < 96)
+				initGrid(i)[1] = 1.0;
+			else
+				initGrid(i)[0] = 1.0;
 		}
 
 		output(initGrid,filename);
 	}
 
 	if (dim==2) {
-		int L=128;
+		int L=256;
 		GRID2D initGrid(4,0,L,0,L);
 
+		// Divide domain into "unit cells", 128 points on an edge
 		for (int i=0; i<nodes(initGrid); i++) {
 			for (int h=0; h<fields(initGrid); h++)
 				initGrid(i)[h] = 0.0;
 
 			vector<int> x = position(initGrid,i);
 
-			if (x[0]<L/4) {
-				if (x[1]<L/2) initGrid(i)[2] = 1.0;
-				else initGrid(i)[3] = 1.0;
-			}
-			else if (x[0]>3*L/4) {
-				if (x[1]<L/2) initGrid(i)[2] = 1.0;
-				else initGrid(i)[3] = 1.0;
-			}
-			else {
-				if (x[1]<L/4 or x[1]>3*L/4) initGrid(i)[1] = 1.0;
-				else initGrid(i)[0] = 1.0;
+			if (x[0]%128 < 32 || x[0]%128 > 96) { // less than 1/4, more than 3/4
+				if ((x[1]%128) < 64) // less than 1/2
+					initGrid(i)[2] = 1.0;
+				else
+					initGrid(i)[3] = 1.0;
+			} else {
+				if (x[1]%128 < 32 || x[1]%128 > 96) // less than 1/4, more than 3/4
+					initGrid(i)[1] = 1.0;
+				else
+					initGrid(i)[0] = 1.0;
 			}
 		}
 
@@ -62,23 +67,23 @@ void generate(int dim, const char* filename)
 		int L=32;
 		GRID3D initGrid(4,0,L,0,L,0,L);
 
+		// Divide domain into "unit cells", 128 points on an edge
 		for (int i=0; i<nodes(initGrid); i++) {
 			for (int h=0; h<fields(initGrid); h++)
 				initGrid(i)[h] = 0.0;
 
 			vector<int> x = position(initGrid,i);
 
-			if (x[0]<L/4) {
-				if (x[1]<L/2) initGrid(i)[2] = 1.0;
-				else initGrid(i)[3] = 1.0;
-			}
-			else if (x[0]>3*L/4) {
-				if (x[1]<L/2) initGrid(i)[2] = 1.0;
-				else initGrid(i)[3] = 1.0;
-			}
-			else {
-				if (x[1]<L/4 or x[1]>3*L/4) initGrid(i)[1] = 1.0;
-				else initGrid(i)[0] = 1.0;
+			if (x[0]%128 < 32 || x[0]%128 > 96) { // less than 1/4, more than 3/4
+				if ((x[1]%128) < 64) // less than 1/2
+					initGrid(i)[2] = 1.0;
+				else
+					initGrid(i)[3] = 1.0;
+			} else {
+				if (x[1]%128 < 32 || x[1]%128 > 96) // less than 1/4, more than 3/4
+					initGrid(i)[1] = 1.0;
+				else
+					initGrid(i)[0] = 1.0;
 			}
 		}
 
