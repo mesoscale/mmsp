@@ -108,7 +108,7 @@ do
 		;;
 		--extra)
 			ITERS=$((25*$ITERS))
-			INTER=5000
+			INTER=1000
 			ZED="00000"
 		;;
 		--noviz)
@@ -128,11 +128,16 @@ done
 if [[ ! $NEXEC ]]
 then
 	echo ", ${DIM}-dimensional, taking $ITERS steps, using $CORES/$COREMAX MPI ranks"
-	if [[ $DIM -eq 3 ]] && [[ $INTER -gt 100 ]]
+	if [[ $DIM -eq 3 ]] && [[ $ITERS -gt 100 ]]
 	then
-		DENOM=$((72*$CORES))
-		RTIM=$((10*$ITERS/$DENOM))
-		echo -e "${BYLW}Specified 3D test suite may take $RTIM minutes or more to complete. Consider --short.${WHT}"
+		DENOM=$((6*$CORES))
+		if [[ $ITERS -gt 10000 ]]
+		then
+			# Not as much work at long times
+			DENOM=$((9*$CORES))
+		fi
+		RTIM=$(($ITERS/$DENOM))
+		echo -e "${BYLW}      Expected runtime is $RTIM minutes. Consider --short.${WHT}"
 	fi
 else
 	echo
