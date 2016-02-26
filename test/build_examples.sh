@@ -127,10 +127,12 @@ done
 
 if [[ ! $NEXEC ]]
 then
-	echo ", ${DIM}D, taking $ITERS steps, using $CORES/$COREMAX MPI ranks"
+	echo ", ${DIM}-dimensional, taking $ITERS steps, using $CORES/$COREMAX MPI ranks"
 	if [[ $DIM -eq 3 ]] && [[ $INTER -gt 100 ]]
 	then
-		echo -e "${BYLW}WARNING: 3D tests will take a long time! Consider --short.${WHT}"
+		DENOM=$((72*$CORES))
+		RTIM=$((10*$ITERS/$DENOM))
+		echo -e "${BYLW}Specified 3D test suite may take $RTIM minutes or more to complete. Consider --short.${WHT}"
 	fi
 else
 	echo

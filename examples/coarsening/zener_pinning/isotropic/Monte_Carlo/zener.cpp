@@ -14,83 +14,87 @@ void generate(int dim, const char* filename)
 {
 	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 	if (dim==1) {
-		GRID1D grid(0,0,128);
+		int L=1024;
+		GRID1D initGrid(0,0,L);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
-			double d = 64.0-x[0];
-			if (d<32.0) grid(i) = 2;
-			else grid(i) = 1;
+		for (int i=0; i<nodes(initGrid); i++) {
+			vector<int> x = position(initGrid,i);
+			double d = L/2-x[0];
+			if (d<L/4.0) initGrid(i) = 2;
+			else initGrid(i) = 1;
 		}
 
-		for (int j=0; j<50; j++) {
-			int i = rand()%nodes(grid);
-			vector<int> x = position(grid,i);
-			grid(x) = 0;
+		int nParticles=std::max(50,(50*8192)/nodes(initGrid));
+		for (int j=0; j<nParticles; j++) {
+			int i = rand()%nodes(initGrid);
+			vector<int> x = position(initGrid,i);
+			initGrid(x) = 0;
 			for (int d=0; d<dim; d++) {
 				x[d]--;
-				grid(x) = 0;
+				initGrid(x) = 0;
 				x[d]+=2;
-				grid(x) = 0;
+				initGrid(x) = 0;
 				x[d]--;
 			}
 		}
 
-		output(grid,filename);
+		output(initGrid,filename);
 	}
 
 	if (dim==2) {
 		int L=128;
-		GRID2D grid(0,0,L,0,L);
+		GRID2D initGrid(0,0,L,0,L);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
+		for (int i=0; i<nodes(initGrid); i++) {
+			vector<int> x = position(initGrid,i);
 			double d = sqrt(pow(L/2-x[0],2)+pow(L/2-x[1],2));
-			if (d<L/4.0) grid(i) = 2;
-			else grid(i) = 1;
+			if (d<L/4.0) initGrid(i) = 2;
+			else initGrid(i) = 1;
 		}
 
-		for (int j=0; j<50; j++) {
-			int i = rand()%nodes(grid);
-			vector<int> x = position(grid,i);
-			grid(x) = 0;
+		int nParticles=std::max(50,(50*8192)/nodes(initGrid));
+		for (int j=0; j<nParticles; j++) {
+			int i = rand()%nodes(initGrid);
+			vector<int> x = position(initGrid,i);
+			initGrid(x) = 0;
 			for (int d=0; d<dim; d++) {
 				x[d]--;
-				grid(x) = 0;
+				initGrid(x) = 0;
 				x[d]+=2;
-				grid(x) = 0;
+				initGrid(x) = 0;
 				x[d]--;
 			}
 		}
 
-		output(grid,filename);
+		output(initGrid,filename);
 	}
 
 	if (dim==3) {
 		int L=64;
-		GRID3D grid(0,0,L,0,L,0,L);
+		GRID3D initGrid(0,0,L,0,L,0,L);
 
-		for (int i=0; i<nodes(grid); i++) {
-			vector<int> x = position(grid,i);
-			double d = sqrt(pow(32.0-x[0],2)+pow(32.0-x[1],2)+pow(32.0-x[2],2));
-			if (d<16.0) grid(i) = 2;
-			else grid(i) = 1;
+		for (int i=0; i<nodes(initGrid); i++) {
+			vector<int> x = position(initGrid,i);
+			double d = sqrt(pow(L/2-x[0],2)+pow(L/2-x[1],2)+pow(L/2-x[2],2));
+			if (d<L/4.0) initGrid(i) = 2;
+			else initGrid(i) = 1;
 		}
 
-		for (int j=0; j<50; j++) {
-			int i = rand()%nodes(grid);
-			vector<int> x = position(grid,i);
-			grid(x) = 0;
+		int nParticles=std::max(50,(50*8192)/nodes(initGrid));
+		for (int j=0; j<nParticles; j++) {
+			int i = rand()%nodes(initGrid);
+			vector<int> x = position(initGrid,i);
+			initGrid(x) = 0;
 			for (int d=0; d<dim; d++) {
 				x[d]--;
-				grid(x) = 0;
+				initGrid(x) = 0;
 				x[d]+=2;
-				grid(x) = 0;
+				initGrid(x) = 0;
 				x[d]--;
 			}
 		}
 
-		output(grid,filename);
+		output(initGrid,filename);
 	}
 }
 

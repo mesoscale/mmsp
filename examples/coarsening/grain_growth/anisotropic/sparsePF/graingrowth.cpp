@@ -14,14 +14,15 @@ namespace MMSP{
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		GRID1D initGrid(0,0,128);
+		int L=1024;
+		GRID1D initGrid(0,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
 
-			if (x[0]<32)      set(initGrid(i),3) = 1.0;
-			else if (x[0]>96) set(initGrid(i),3) = 1.0;
-			else              set(initGrid(i),0) = 1.0;
+			if (x[0]<L/4)        set(initGrid(i),3) = 1.0;
+			else if (x[0]>3*L/4) set(initGrid(i),3) = 1.0;
+			else                 set(initGrid(i),0) = 1.0;
 		}
 
 		output(initGrid,filename);
@@ -52,21 +53,22 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		GRID3D initGrid(0,0,64,0,64,0,64);
+		int L=32;
+		GRID3D initGrid(0,0,L,0,L,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
 
-			if (x[0]<16) {
-				if (x[1]<32) set(initGrid(i),2) = 1.0;
+			if (x[0]<L/4) {
+				if (x[1]<L/2) set(initGrid(i),2) = 1.0;
 				else set(initGrid(i),3) = 1.0;
 			}
-			else if (x[0]>48) {
-				if (x[1]<32) set(initGrid(i),2) = 1.0;
+			else if (x[0]>3*L/4) {
+				if (x[1]<L/2) set(initGrid(i),2) = 1.0;
 				else set(initGrid(i),3) = 1.0;
 			}
 			else {
-				if (x[1]<16 or x[1]>48) set(initGrid(i),1) = 1.0;
+				if (x[1]<L/4 or x[1]>3*L/4) set(initGrid(i),1) = 1.0;
 				else set(initGrid(i),0) = 1.0;
 			}
 		}

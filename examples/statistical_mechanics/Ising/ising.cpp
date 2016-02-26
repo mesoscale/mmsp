@@ -14,7 +14,8 @@ void generate(int dim, const char* filename)
 {
 	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 	if (dim==1) {
-		GRID1D initGrid(0,0,128);
+		int L=1024;
+		GRID1D initGrid(0,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++)
 			initGrid(i) = 2*(rand()%2)-1;
@@ -33,7 +34,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		int L=64;
+		int L=32;
 		GRID3D initGrid(0,0,2*L,0,L,0,L/2);
 
 		for (int i=0; i<nodes(initGrid); i++)

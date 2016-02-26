@@ -13,12 +13,13 @@ namespace MMSP{
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		GRID1D initGrid(0,0,128);
+		int L=1024;
+		GRID1D initGrid(0,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
-			double d = 64.0-x[0];
-			if (d<32.0) set(initGrid(i),1)= 1.0;
+			double d = L/2-x[0];
+			if (d<L/4.0) set(initGrid(i),1)= 1.0;
 			else set(initGrid(i),0) = 1.0;
 		}
 
@@ -40,12 +41,13 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		GRID3D initGrid(0,0,64,0,64,0,64);
+		int L=64;
+		GRID3D initGrid(0,0,L,0,L,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
-			double d = sqrt(pow(32.0-x[0],2)+pow(32.0-x[1],2)+pow(32.0-x[2],2));
-			if (d<16.0) set(initGrid(i),1)= 1.0;
+			double d = sqrt(pow(L/2-x[0],2)+pow(L/2-x[1],2)+pow(L/2-x[2],2));
+			if (d<L/4.0) set(initGrid(i),1)= 1.0;
 			else set(initGrid(i),0) = 1.0;
 		}
 
