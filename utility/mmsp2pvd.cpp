@@ -57,6 +57,7 @@ template<int dim, typename T> void print_vectors(std::ofstream& fstr, const MMSP
 					sum += v[h]*v[h];
 				fstr << std::sqrt(sum) << " ";
 			} else if (mode==2) { // --max
+				// Export index of field with greatest magnitude
 				int max = 0;
 				for (int h = 1; h < v.length(); h++)
 					if (v[h] > v[max])
@@ -80,6 +81,7 @@ template<int dim, typename T> void print_vectors(std::ofstream& fstr, const MMSP
 						sum += v[h]*v[h];
 					fstr << std::sqrt(sum) << " ";
 				} else if (mode==2) { // --max
+					// Export index of field with greatest magnitude
 					int max = 0;
 					for (int h = 1; h < v.length(); h++)
 						if (v[h] > v[max])
@@ -105,6 +107,7 @@ template<int dim, typename T> void print_vectors(std::ofstream& fstr, const MMSP
 							sum += v[h]*v[h];
 						fstr << std::sqrt(sum) << " ";
 					} else if (mode==2) { // --max
+						// Export index of field with greatest magnitude
 						int max = 0;
 						for (int h = 1; h < v.length(); h++)
 							if (v[h] > v[max])
@@ -130,11 +133,12 @@ template<int dim, typename T> void print_sparses(std::ofstream& fstr, const MMSP
 		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 			const MMSP::sparse<T>& s = GRID(x);
 			if (mode==2) { // --max
+				// Export index of field with greatest magnitude
 				int max = 0;
 				for (int h = 1; h < s.length(); h++)
 					if (s.value(h) > s.value(max))
 						max = h;
-				fstr << max << " ";
+				fstr << s.index(max) << " ";
 			} else if (mode==3) { // --field
 				fstr << s[field] << " ";
 			} else { // --mag is redundant for sparse
@@ -150,11 +154,12 @@ template<int dim, typename T> void print_sparses(std::ofstream& fstr, const MMSP
 			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 				const MMSP::sparse<T>& s = GRID(x);
 				if (mode==2) { // --max
+					// Export index of field with greatest magnitude
 					int max = 0;
 					for (int h = 1; h < s.length(); h++)
 						if (s.value(h) > s.value(max))
 							max = h;
-					fstr << max << " ";
+					fstr << s.index(max) << " ";
 				} else if (mode==3) { // --field
 					fstr << s[field] << " ";
 				} else { // --mag is redundant for sparse
@@ -172,11 +177,12 @@ template<int dim, typename T> void print_sparses(std::ofstream& fstr, const MMSP
 				for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 					const MMSP::sparse<T>& s = GRID(x);
 					if (mode==2) { // --max
+						// Export index of field with greatest magnitude
 						int max = 0;
 						for (int h = 1; h < s.length(); h++)
 							if (s.value(h) > s.value(max))
 								max = h;
-						fstr << max << " ";
+						fstr << s.index(max) << " ";
 					} else if (mode==3) { // --field
 						fstr << s[field] << " ";
 					} else { // --mag is redundant for sparse
@@ -396,7 +402,7 @@ int main(int argc, char* argv[]) {
         input.read(reinterpret_cast<char*>(&blocks), sizeof(blocks));
 
         for (int i = 0; i < blocks; i++) {
-			// read block limits
+			// read local block limits
 			int lmin[3] = {0, 0, 0};
 			int lmax[3] = {0, 0, 0};
 			for (int j = 0; j < dim; j++) {

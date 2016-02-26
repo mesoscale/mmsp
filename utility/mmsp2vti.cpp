@@ -60,6 +60,7 @@ template<int dim, typename T> void print_vectors(std::ofstream& fstr, const MMSP
 					sum += v[h]*v[h];
 				fstr << std::sqrt(sum) << " ";
 			} else if (mode==2) { // --max
+				// Export index of field with greatest magnitude
 				int max = 0;
 				for (int h = 1; h < v.length(); h++)
 					if (v[h] > v[max])
@@ -83,6 +84,7 @@ template<int dim, typename T> void print_vectors(std::ofstream& fstr, const MMSP
 						sum += v[h]*v[h];
 					fstr << std::sqrt(sum) << " ";
 				} else if (mode==2) { // --max
+					// Export index of field with greatest magnitude
 					int max = 0;
 					for (int h = 1; h < v.length(); h++)
 						if (v[h] > v[max])
@@ -108,6 +110,7 @@ template<int dim, typename T> void print_vectors(std::ofstream& fstr, const MMSP
 							sum += v[h]*v[h];
 						fstr << std::sqrt(sum) << " ";
 					} else if (mode==2) { // --max
+						// Export index of field with greatest magnitude
 						int max = 0;
 						for (int h = 1; h < v.length(); h++)
 							if (v[h] > v[max])
@@ -133,11 +136,12 @@ template<int dim, typename T> void print_sparses(std::ofstream& fstr, const MMSP
 		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 			const MMSP::sparse<T>& s = GRID(x);
 			if (mode==2) { // --max
+				// Export index of field with greatest magnitude
 				int max = 0;
 				for (int h = 1; h < s.length(); h++)
 					if (s.value(h) > s.value(max))
 						max = h;
-				fstr << max << " ";
+				fstr << s.index(max) << " ";
 			} else if (mode==3) { // --field
 				fstr << s[field] << " ";
 			} else { // --mag is redundant for sparse
@@ -153,11 +157,12 @@ template<int dim, typename T> void print_sparses(std::ofstream& fstr, const MMSP
 			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 				const MMSP::sparse<T>& s = GRID(x);
 				if (mode==2) { // --max
+					// Export index of field with greatest magnitude
 					int max = 0;
 					for (int h = 1; h < s.length(); h++)
 						if (s.value(h) > s.value(max))
 							max = h;
-					fstr << max << " ";
+					fstr << s.index(max) << " ";
 				} else if (mode==3) { // --field
 					fstr << s[field] << " ";
 				} else { // --mag is redundant for sparse
@@ -175,11 +180,12 @@ template<int dim, typename T> void print_sparses(std::ofstream& fstr, const MMSP
 				for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 					const MMSP::sparse<T>& s = GRID(x);
 					if (mode==2) { // --max
+						// Export index of field with greatest magnitude
 						int max = 0;
 						for (int h = 1; h < s.length(); h++)
 							if (s.value(h) > s.value(max))
 								max = h;
-						fstr << max << " ";
+						fstr << s.index(max) << " ";
 					} else if (mode==3) { // --field
 						fstr << s[field] << " ";
 					} else { // --mag is redundant for sparse
@@ -228,21 +234,21 @@ int main(int argc, char* argv[])
 		field = atoi(str.substr(8,12).c_str());
 	}
 
-// file open error check
+	// file open error check
 	std::ifstream input(argv[fileindex]);
 	if (!input) {
 		std::cerr << "File input error: could not open " << argv[fileindex] << ".\n";
 		exit(-1);
 	}
 
-// generate output file name
+	// generate output file name
 	std::stringstream filename;
 	if (argc < 3 || (flatten>0 && argc<4))
 		filename << std::string(argv[fileindex]).substr(0, std::string(argv[fileindex]).find_last_of(".")) << ".vti";
 	else
 		filename << argv[fileindex+1];
 
-// file open error check
+	// file open error check
 	std::ofstream output(filename.str().c_str());
 	if (!output) {
 		std::cerr << "File output error: could not open ";
@@ -250,17 +256,17 @@ int main(int argc, char* argv[])
 		exit(-1);
 	}
 
-// read data type
+	// read data type
 	std::string type;
 	getline(input, type, '\n');
 
-// grid type error check
+	// grid type error check
 	if (type.substr(0, 4) != "grid") {
 		std::cerr << "File input error: file does not contain grid data." << std::endl;
 		exit(-1);
 	}
 
-// parse data type
+	// parse data type
 	bool bool_type = (type.find("bool") != std::string::npos);
 	bool char_type = (type.find("char") != std::string::npos);
 	bool unsigned_char_type = (type.find("unsigned char") != std::string::npos);
@@ -289,35 +295,35 @@ int main(int argc, char* argv[])
 		exit(-1);
 	}
 
-// read grid dimension
+	// read grid dimension
 	int dim;
 	input >> dim;
 
-// read number of fields
+	// read number of fields
 	int fields;
 	input >> fields;
 
-// read grid sizes
+	// read grid sizes
 	int x0[3] = {0, 0, 0};
 	int x1[3] = {0, 0, 0};
 	for (int i = 0; i < dim; i++)
 		input >> x0[i] >> x1[i];
 
-// read cell spacing
+	// read cell spacing
 	float dx[3] = {1.0, 1.0, 1.0};
 	for (int i = 0; i < dim; i++)
 		input >> dx[i];
 
-// ignore trailing endlines
+	// ignore trailing endlines
 	input.ignore(10, '\n');
 
 
-// determine byte order: 01 AND 01 = 01; 01 AND 10 = 00.
+	// determine byte order: 01 AND 01 = 01; 01 AND 10 = 00.
 	std::string byte_order;
 	if (0x01 & static_cast<int>(1)) byte_order = "LittleEndian";
 	else byte_order = "BigEndian";
 
-// output header markup
+	// output header markup
 	output << "<?xml version=\"1.0\"?>\n";
 	output << "<VTKFile type=\"ImageData\" version=\"0.1\" byte_order=\"" << byte_order << "\">\n";
 
@@ -339,7 +345,7 @@ int main(int argc, char* argv[])
 		std::exit(-1);
 	}
 
-// read number of blocks
+	// read number of blocks
 	int blocks;
 	input.read(reinterpret_cast<char*>(&blocks), sizeof(blocks));
 
