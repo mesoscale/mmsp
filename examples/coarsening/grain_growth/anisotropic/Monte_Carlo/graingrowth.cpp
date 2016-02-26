@@ -370,7 +370,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 			#ifdef MPI_VERSION
 			MPI::COMM_WORLD.Barrier();
 			#endif
-			//ghostswap(mcGrid, sublattice); // once looped over a "color", ghostswap.
+			ghostswap(mcGrid, sublattice); // once looped over a "color", ghostswap.
 		}//loop over sublattice
 	}//loop over step
 }//update
