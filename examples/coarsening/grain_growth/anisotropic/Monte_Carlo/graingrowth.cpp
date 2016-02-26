@@ -38,7 +38,7 @@ void generate(int dim, const char* filename)
 
 		output(initGrid, filename);
 	} else if (dim == 3) {
-		int L=32;
+		int L=64;
 		GRID3D initGrid(0, 0, 2*L, 0, L, 0, L/2);
 
 		for (int i = 0; i < nodes(initGrid); i++)
@@ -74,7 +74,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 	vector<int> lattice_cells_each_dimension(dim,0);
 	for (int i = 0; i < dim; i++) {
 		dimension_length = x1(mcGrid, i) - x0(mcGrid, i);
-		if (x0(mcGrid, 0) % 2 == 0) // in serial, this is always true
+		if (x0(mcGrid, 0) % 2 == 0)
 			lattice_cells_each_dimension[i] = dimension_length / 2 + 1;
 		else
 			lattice_cells_each_dimension[i] = 1 + (dimension_length % 2 == 0 ? dimension_length / 2 : dimension_length / 2 + 1);

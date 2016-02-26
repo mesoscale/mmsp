@@ -37,7 +37,7 @@ void generate(int dim, const char* filename)
 
 		output(initGrid, filename);
 	} else if (dim == 3) {
-		int L=32;
+		int L=64;
 		GRID3D initGrid(0, 0, 2*L, 0, L, 0, L/2);
 
 		for (int i = 0; i < nodes(initGrid); i++)
@@ -62,11 +62,8 @@ template <int dim> bool isOutsideDomain(const grid<dim,int>& mcGrid, const vecto
 template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 {
 	int rank = 0;
-	unsigned int np = 0;
 	#ifdef MPI_VERSION
 	rank = MPI::COMM_WORLD.Get_rank();
-	np = MPI::COMM_WORLD.Get_size();
-	MPI::COMM_WORLD.Barrier();
 	#endif
 
 	ghostswap(mcGrid);
@@ -83,16 +80,17 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 		num_lattice_cells *= lattice_cells_each_dimension[i];
 	}
 
-	vector<int> x (dim, 0);
-	vector<int> x_prim (dim, 0);
+	vector<int> x(dim, 0);
+	vector<int> x_prim(dim, 0);
 	vector<int> initial_coordinates(dim,0);
 
 	vector<int> num_grids_to_flip(int(pow(2, dim)),0);
 	vector<int> first_cell_start_coordinates(dim,0);
-	for (int kk = 0; kk < dim; kk++) first_cell_start_coordinates[kk] = x0(mcGrid, kk);
-	for (int i = 0; i < dim; i++) {
-		if (x0(mcGrid, i) % 2 != 0) first_cell_start_coordinates[i]--;
-	}
+	for (int kk = 0; kk < dim; kk++)
+		first_cell_start_coordinates[kk] = x0(mcGrid, kk);
+	for (int i = 0; i < dim; i++)
+		if (x0(mcGrid, i) % 2 != 0)
+			first_cell_start_coordinates[i]--;
 
 
 	for (int j = 0; j < num_lattice_cells; j++) {
@@ -105,9 +103,8 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 			cell_coords_selected[1] = (j / lattice_cells_each_dimension[dim - 1]) % lattice_cells_each_dimension[1];
 			cell_coords_selected[0] = ( j / lattice_cells_each_dimension[dim - 1] ) / lattice_cells_each_dimension[1];
 		}
-		for (int i = 0; i < dim; i++) {
+		for (int i = 0; i < dim; i++)
 			x[i] = first_cell_start_coordinates[i] + 2 * cell_coords_selected[i];
-		}
 
 		if (dim == 2) {
 			x_prim = x;
@@ -167,10 +164,9 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 
 	for (int k = 0; k < dim; k++)
 		initial_coordinates[k] = x0(mcGrid, k);
-	for (int i = 0; i < dim; i++) {
+	for (int i = 0; i < dim; i++)
 		if (x0(mcGrid, i) % 2 != 0)
 			initial_coordinates[i]--;
-	}
 
 	for (int step = 0; step < steps; step++) {
 		if (rank == 0)
@@ -180,7 +176,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 		else if (dim == 3) num_sublattices = 8;
 		for (int sublattice = 0; sublattice < num_sublattices; sublattice++) {
 
-			vector<int> x (dim, 0);
+			vector<int> x(dim, 0);
 			// This particular algorithm requires that srand() be called here.
 			unsigned long seed=time(NULL);
 			#ifdef MPI_VERSION
