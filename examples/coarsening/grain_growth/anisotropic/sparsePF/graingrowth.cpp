@@ -34,7 +34,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		int L=128;
+		int L=256;
 		GRID2D initGrid(0,0,L,0,L);
 
 		// Divide domain into "unit cells", 128 points on an edge

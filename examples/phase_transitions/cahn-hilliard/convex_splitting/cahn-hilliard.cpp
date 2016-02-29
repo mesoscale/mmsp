@@ -31,7 +31,7 @@
  **/
 
 #ifdef VANILLA
-int edge = 64;
+int edge = 32;
 double deltaX = 1.0;
 double C0 = 0.0; // system composition
 double D  = 1.0; // diffusivity
@@ -257,7 +257,6 @@ void generate(int dim, const char* filename)
 		output(initGrid,filename);
 		//reportEnergy(initGrid);
 	} else if (dim==3) {
-		edge=32;
 		GRID3D initGrid(2,0,2*edge,0,edge,0,edge/2); // field 0 is c, field 1 is mu
 		for (int n=0; n<nodes(initGrid); n++)
 			initGrid(n)[0] = C0 + 0.25*(double(rand())/RAND_MAX) - 0.125; // produces noise with amplitude 0.125 about C=C0

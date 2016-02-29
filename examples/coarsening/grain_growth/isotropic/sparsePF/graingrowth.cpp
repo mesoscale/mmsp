@@ -27,7 +27,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		int L=128;
+		int L=256;
 		GRID2D initGrid(0,0,L,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
