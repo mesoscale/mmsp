@@ -89,24 +89,24 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 			print_progress(step, steps);
 		#endif
 		for (int i=0; i<nodes(oldGrid); i++) {
+			const vector<T>& phi = oldGrid(i);
+
 			// compute laplacian
 			vector<T> lap = laplacian(oldGrid,i);
 
 			// compute sum of squares
-			double sum = 0.0;
+			T sum = 0.0;
 			for (int j=0; j<fields(oldGrid); j++) {
-				double phi = oldGrid(i)[j];
-				sum += phi*phi;
+				sum += phi[j]*phi[j];
 			}
 
 			// compute update values
 			for (int j=0; j<fields(oldGrid); j++) {
-				T phi = oldGrid(i)[j];
-				newGrid(i)[j] = phi-dt*(-phi-pow(phi,3)+2.0*(phi*sum-lap[j]));
+				newGrid(i)[j] = phi[j] - dt*(-phi[j]-pow(phi[j],3)+2.0*(phi[j]*sum-lap[j]));
 			}
 		}
-		ghostswap(oldGrid);
 		swap(oldGrid,newGrid);
+		ghostswap(oldGrid);
 	}
 }
 
