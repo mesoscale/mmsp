@@ -19,8 +19,8 @@ void generate(int dim, const char* filename)
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
-			double d = 32-x[0]%64;
-			if (d<16.0) initGrid(i) = 2;
+			double r = 32-x[0]%64;
+			if (r<16.0) initGrid(i) = 2;
 			else initGrid(i) = 1;
 		}
 
@@ -47,8 +47,8 @@ void generate(int dim, const char* filename)
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
-			double d = sqrt(pow(32-x[0]%64,2)+pow(32-x[1]%64,2));
-			if (d<16.0) initGrid(i) = 2;
+			double r = sqrt(pow(32-x[0]%64,2)+pow(32-x[1]%64,2));
+			if (r<16.0) initGrid(i) = 2;
 			else initGrid(i) = 1;
 		}
 
@@ -71,12 +71,12 @@ void generate(int dim, const char* filename)
 
 	if (dim==3) {
 		int L=64;
-		GRID3D initGrid(0,0,L,0,L,0,L);
+		GRID3D initGrid(0,0,2*L,0,L,0,L/4);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
-			double d = sqrt(pow(32-x[0]%64,2)+pow(32-x[1]%64,2)+pow(32-x[2]%64,2));
-			if (d<16.0) initGrid(i) = 2;
+			double r = sqrt(pow(32-x[0]%64,2)+pow(32-x[1]%64,2));
+			if (r<16.0) initGrid(i) = 2;
 			else initGrid(i) = 1;
 		}
 

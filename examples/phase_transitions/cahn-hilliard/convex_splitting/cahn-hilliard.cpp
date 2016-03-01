@@ -257,7 +257,7 @@ void generate(int dim, const char* filename)
 		output(initGrid,filename);
 		//reportEnergy(initGrid);
 	} else if (dim==3) {
-		GRID3D initGrid(2,0,2*edge,0,edge,0,edge/2); // field 0 is c, field 1 is mu
+		GRID3D initGrid(2,0,2*edge,0,edge,0,edge/4); // field 0 is c, field 1 is mu
 		for (int n=0; n<nodes(initGrid); n++)
 			initGrid(n)[0] = C0 + 0.25*(double(rand())/RAND_MAX) - 0.125; // produces noise with amplitude 0.125 about C=C0
 

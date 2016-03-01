@@ -217,7 +217,7 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		int L=127;
+		int L=65;
 		grid<3,double> initGrid(1,0,L,0,L,0,L);
 
 		for (int n=0; n<nodes(initGrid); n++) {

@@ -72,13 +72,13 @@ void generate(int dim, const char* filename)
 
 	if (dim==3) {
 		int L=64;
-		GRID3D initGrid(3,0,L,0,L,0,L);
+		GRID3D initGrid(3,0,2*L,0,L,0,L/4);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
 			initGrid(i)[0] = 0.0;
 			initGrid(i)[1] = 0.0;
-			double d = sqrt(pow(32-x[0]%64,2)+pow(32-x[1]%64,2)+pow(32-x[2]%64,2));
+			double d = sqrt(pow(32-x[0]%64,2)+pow(32-x[1]%64,2));
 			if (d<16.0) initGrid(i)[2] = 1.0;
 			else initGrid(i)[1] = 1.0;
 		}

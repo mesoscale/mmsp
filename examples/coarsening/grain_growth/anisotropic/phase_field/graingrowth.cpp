@@ -65,7 +65,7 @@ void generate(int dim, const char* filename)
 
 	if (dim==3) {
 		int L=64;
-		GRID3D initGrid(4,0,L,0,L,0,L);
+		GRID3D initGrid(4,0,2*L,0,L,0,L/4);
 
 		// Divide domain into "unit cells", 64 points on an edge
 		for (int i=0; i<nodes(initGrid); i++) {

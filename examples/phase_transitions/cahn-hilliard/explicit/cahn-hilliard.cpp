@@ -35,7 +35,7 @@ void generate(int dim, const char* filename)
 
 	if (dim==3) {
 		int L=64;
-		GRID3D initGrid(0,0,2*L,0,L,0,L/2);
+		GRID3D initGrid(0,0,2*L,0,L,0,L/4);
 
 		for (int i=0; i<nodes(initGrid); i++)
 			initGrid(i) = 1.0-2.0*double(rand())/double(RAND_MAX);
