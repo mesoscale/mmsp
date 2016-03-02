@@ -9,7 +9,7 @@ flags = -O2 -Wall -I ../include/
 topo = ../algorithms/topology
 
 # conversion programs
-utility : mmsp2vti mmsp2pvd mmsp2png \
+utility : mmsp2vti mmsp2pvd mmsp2png mmsp2xyz \
           MC2PF MC2sPF \
           PF2MC PF2sPF \
           sPF2MC sPF2PF \
@@ -30,6 +30,10 @@ mmsp2pvd : mmsp2pvd.cpp
 
 # convert MMSP grid file to VTK Image file type
 mmsp2vti : mmsp2vti.cpp
+	$(compiler) $(flags) $< -o $@ -lz
+
+# convert MMSP grid file to XYZ vpoint cloud file type
+mmsp2xyz : mmsp2xyz.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 #
