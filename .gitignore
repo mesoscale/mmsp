@@ -11,18 +11,19 @@
 doc/MMSP.manual.pdf
 
 # MMSP utility binaries
+utility/mmsp2png
+utility/mmsp2pvd
+utility/mmsp2vti
 utility/MC2PF
 utility/MC2sPF
 utility/MC2vox
-utility/mmsp2pvd
-utility/mmsp2vti
-utility/mmsp2xyz
 utility/PF2MC
 utility/PF2sPF
 utility/sPF2MC
 utility/sPF2PF
-utility/TKmmsp2vti
 utility/vox2MC
+utility/mmsp2topo
+utility/mmsp2z
 utility/wrongendian
 
 # Compiled Object files
