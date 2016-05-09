@@ -15,14 +15,12 @@
 #include <cassert>
 #include <cmath>
 #include <ctime>
-#include <zlib.h>
 
 #include "point.hpp"
 #include "topology.cpp"
 #include "MMSP.hpp"
 
 using namespace std;
-typedef unsigned short id_type;
 
 template <int dim, class T>
 Point<T> getPoint(const MMSP::vector<T>& v) {
@@ -62,7 +60,6 @@ int check_neighbors(id_type me, const MMSP::vector<int>& v, const MMSP::grid<dim
 }
 
 int main(int argc, char* argv[]) {
-	const float epsilon(1e-8);
 	std::time_t rawtime;
 	time_t starttime = std::time( &rawtime );
 	time_t timeinfo;
@@ -157,13 +154,13 @@ int main(int argc, char* argv[]) {
 				tmp->second.addMass(phi, Point<float>(x[0], x[1]));
 			}
 			set<id_type> neighbors;
-			int count = check_neighbors<2,float>(major_phase, x, grid, neighbors);
+			check_neighbors<2,float>(major_phase, x, grid, neighbors);
 			++topologies[neighbors.size()];
-			if (neighbors.size() == dim-1) {
+			if (int(neighbors.size()) == dim-1) {
 				// voxel sits on a grain boundary
 				itr = grains.find(major_phase);
 				itr->second.updateEdges(neighbors, Point<int>(x[0], x[1]));
-			}	else if (neighbors.size() == dim) {
+			}	else if (int(neighbors.size()) == dim) {
 				// voxel sits on a grain boundary vertex
 				for (set<id_type>::const_iterator j=neighbors.begin(); j!=neighbors.end(); ++j) {
 					itr = grains.find(*j);
@@ -210,9 +207,9 @@ int main(int argc, char* argv[]) {
 				tmp->second.addMass(phi, Point<float>(x[0], x[1], x[2]));
 			}
 			set<id_type> neighbors;
-			int count = check_neighbors<3,float>(major_phase, x, grid, neighbors);
+			check_neighbors<3,float>(major_phase, x, grid, neighbors);
 			++topologies[neighbors.size()];
-			if (neighbors.size() == dim-1) {
+			if (int(neighbors.size()) == dim-1) {
 				// voxel sits on a triple-line between grains
 				itr = grains.find(major_phase);
 				itr->second.updateEdges(neighbors, Point<int>(x[0], x[1], x[2]));
@@ -289,7 +286,7 @@ int main(int argc, char* argv[]) {
 
 	//  +=========================== Process the data matrix, mapping each Edge voxel to a grain =============================+
 
-	unsigned int maxp = 0, maxN = 0;
+	int maxp = 0, maxN = 0;
 
 	#ifdef DEBUG
 	cout << "\nAnalyzing grains.\n";
@@ -297,9 +294,9 @@ int main(int argc, char* argv[]) {
 
 	for(map<id_type, Grain>::iterator gitr = grains.begin(); gitr != grains.end(); ++gitr) {
 		// Sanitize topologies
-#ifdef DEBUG
+		#ifdef DEBUG
 		cout << '\n' << setw(5) << right << gitr->first << ": " << "a" << flush;
-#endif
+		#endif
 
 		// Infer vertices from edges
 		std::vector<int> stats;
@@ -311,19 +308,19 @@ int main(int argc, char* argv[]) {
 				++exclusions[244];
 				gitr->second.setExclusion();
 			}
-#ifdef DEBUG
+			#ifdef DEBUG
 			cout << " No faces: excluding. " << flush;
-#endif
+			#endif
 		} else if (stats[0] != 0) {
-#ifdef DEBUG
+			#ifdef DEBUG
 			cout << ' ' << stats[0] << " improper faces were erased, " << gitr->second.numFaces() << " remain." << flush;
-#endif
+			#endif
 		}
 		if (stats[2] > maxp) maxp = stats[2]; // pvector.size() == maxp
 		if (stats[3] > maxN) maxN = stats[3]; // neighbors.size() == maxN
-#ifdef DEBUG
+		#ifdef DEBUG
 		cout << "b" << flush;
-#endif
+		#endif
 		if (gitr->second.numEdges() == 0) {
 			if (!(gitr->second.isExcluded())) {
 				++exclusions[262];
