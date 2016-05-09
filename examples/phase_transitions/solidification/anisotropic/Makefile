@@ -15,7 +15,7 @@ pflags = $(flags) -include mpi.h
 solidification.out: solidification.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: solidififation.cpp
+parallel: solidification.cpp
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
