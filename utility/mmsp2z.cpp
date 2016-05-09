@@ -2,9 +2,9 @@
 // Compress MMSP grid data using zlib
 // Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
-#include"MMSP.hpp"
-#include<zlib.h>
 #include<sstream>
+#include<zlib.h>
+#include"MMSP.hpp"
 
 bool fexists(const char *filename) {
 	std::ifstream ifile(filename);
