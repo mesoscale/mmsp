@@ -885,7 +885,7 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 	} else if (dim==2) {
 		unsigned int n=0;
 		MMSP::vector<int> x(2,0);
-		for (x[1] = MMSP::g0(GRID,1); x[1] < MMSP::g1(GRID,1); x[1]++)
+		for (x[1] = MMSP::g1(GRID,1)-1; x[1] >= MMSP::g0(GRID,1); x[1]--)
 			for (x[0] = MMSP::g0(GRID,0); x[0] < MMSP::g1(GRID,0); x[0]++) {
 				T val = GRID(x);
 				if (mode==1) //mag
@@ -902,7 +902,7 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 		unsigned int n=0;
 		MMSP::vector<int> x(3,0);
 		for (x[2] = MMSP::g0(GRID,2); x[2] < MMSP::g1(GRID,2); x[2]++)
-			for (x[1] = MMSP::g0(GRID,1); x[1] < MMSP::g1(GRID,1); x[1]++)
+			for (x[1] = MMSP::g1(GRID,1)-1; x[1] >= MMSP::g0(GRID,1); x[1]--)
 				for (x[0] = MMSP::g0(GRID,0); x[0] < MMSP::g1(GRID,0); x[0]++) {
 					if (x[sliceaxis]!=slicelevel) // clumsy, but effective
 						continue;
@@ -1012,7 +1012,7 @@ template <int dim, typename T> void convert_vectors(const MMSP::grid<dim,MMSP::v
 	} else if (dim==2) {
 		unsigned int n=0;
 		MMSP::vector<int> x(2,0);
-		for (x[1] = MMSP::g0(GRID,1); x[1] < MMSP::g1(GRID,1); x[1]++)
+		for (x[1] = MMSP::g1(GRID,1)-1; x[1] >= MMSP::g0(GRID,1); x[1]--)
 			for (x[0] = MMSP::g0(GRID,0); x[0] < MMSP::g1(GRID,0); x[0]++) {
 				double sum=0.0;
 				if (mode==0) { //         default selection
@@ -1057,7 +1057,7 @@ template <int dim, typename T> void convert_vectors(const MMSP::grid<dim,MMSP::v
 		unsigned int n=0;
 		MMSP::vector<int> x(3,0);
 		for (x[2] = MMSP::g0(GRID,2); x[2] < MMSP::g1(GRID,2); x[2]++)
-			for (x[1] = MMSP::g0(GRID,1); x[1] < MMSP::g1(GRID,1); x[1]++)
+			for (x[1] = MMSP::g1(GRID,1)-1; x[1] >= MMSP::g0(GRID,1); x[1]--)
 				for (x[0] = MMSP::g0(GRID,0); x[0] < MMSP::g1(GRID,0); x[0]++) {
 					if (x[sliceaxis]!=slicelevel) // clumsy, but effective
 						continue;
@@ -1177,7 +1177,7 @@ template <int dim, typename T> void convert_sparses(const MMSP::grid<dim,MMSP::s
 	} else if (dim==2) {
 		unsigned int n=0;
 		MMSP::vector<int> x(2,0);
-		for (x[1] = MMSP::g0(GRID,1); x[1] < MMSP::g1(GRID,1); x[1]++)
+		for (x[1] = MMSP::g1(GRID,1)-1; x[1] >= MMSP::g0(GRID,1); x[1]--)
 			for (x[0] = MMSP::g0(GRID,0); x[0] < MMSP::g1(GRID,0); x[0]++) {
 				double sum=0.0;
 				if (mode<2) { //          --mag
@@ -1212,7 +1212,7 @@ template <int dim, typename T> void convert_sparses(const MMSP::grid<dim,MMSP::s
 		unsigned int n=0;
 		MMSP::vector<int> x(3,0);
 		for (x[2] = MMSP::g0(GRID,2); x[2] < MMSP::g1(GRID,2); x[2]++)
-			for (x[1] = MMSP::g0(GRID,1); x[1] < MMSP::g1(GRID,1); x[1]++)
+			for (x[1] = MMSP::g1(GRID,1)-1; x[1] >= MMSP::g0(GRID,1); x[1]--)
 				for (x[0] = MMSP::g0(GRID,0); x[0] < MMSP::g1(GRID,0); x[0]++) {
 					if (x[sliceaxis]!=slicelevel) // clumsy, but effective
 						continue;
