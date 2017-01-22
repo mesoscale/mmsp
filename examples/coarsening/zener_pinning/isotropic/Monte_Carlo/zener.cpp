@@ -1,11 +1,11 @@
-// graingrowth.cpp
+// zener.cpp
 // Algorithms for 2D and 3D Monte Carlo grain growth with Zener pinning
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#ifndef MCGRID_UPDATE
-#define MCGRID_UPDATE
-#include"MMSP.hpp"
+#ifndef ZENER_UPDATE
+#define ZENER_UPDATE
 #include<cmath>
+#include"MMSP.hpp"
 #include"zener.hpp"
 
 namespace MMSP{
@@ -28,14 +28,9 @@ void generate(int dim, const char* filename)
 		for (int j=0; j<nParticles; j++) {
 			int i = rand()%nodes(initGrid);
 			vector<int> x = position(initGrid,i);
-			initGrid(x) = 0;
-			for (int d=0; d<dim; d++) {
-				x[d]--;
-				initGrid(x) = 0;
-				x[d]+=2;
-				initGrid(x) = 0;
-				x[d]--;
-			}
+			vector<int> p(x);
+			for (p[0]=x[0]-1; p[0]<=x[0]+1; p[0]++)
+				initGrid(p) = 0;
 		}
 
 		output(initGrid,filename);
@@ -56,14 +51,10 @@ void generate(int dim, const char* filename)
 		for (int j=0; j<nParticles; j++) {
 			int i = rand()%nodes(initGrid);
 			vector<int> x = position(initGrid,i);
-			initGrid(x) = 0;
-			for (int d=0; d<dim; d++) {
-				x[d]--;
-				initGrid(x) = 0;
-				x[d]+=2;
-				initGrid(x) = 0;
-				x[d]--;
-			}
+			vector<int> p(x);
+			for (p[0]=x[0]-1; p[0]<=x[0]+1; p[0]++)
+				for (p[1]=x[1]-1; p[1]<=x[1]+1; p[1]++)
+					initGrid(p) = 0;
 		}
 
 		output(initGrid,filename);
@@ -71,7 +62,7 @@ void generate(int dim, const char* filename)
 
 	if (dim==3) {
 		int L=64;
-		GRID3D initGrid(0,0,2*L,0,L,0,L/4);
+		GRID3D initGrid(0,0,2*L,0,L,0,L/2);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
@@ -84,53 +75,76 @@ void generate(int dim, const char* filename)
 		for (int j=0; j<nParticles; j++) {
 			int i = rand()%nodes(initGrid);
 			vector<int> x = position(initGrid,i);
-			initGrid(x) = 0;
-			for (int d=0; d<dim; d++) {
-				x[d]--;
-				initGrid(x) = 0;
-				x[d]+=2;
-				initGrid(x) = 0;
-				x[d]--;
-			}
+			vector<int> p(x);
+			for (p[0]=x[0]-1; p[0]<=x[0]+1; p[0]++)
+				for (p[1]=x[1]-1; p[1]<=x[1]+1; p[1]++)
+					for (p[2]=x[2]-1; p[2]<=x[2]+1; p[2]++)
+						initGrid(p) = 0;
 		}
 
 		output(initGrid,filename);
 	}
 }
 
-template <int dim, typename T> void update(grid<dim,T>& spinGrid, int steps)
+template <int dim> void update(grid<dim,int>& mcGrid, int steps)
 {
 	int rank=0;
     #ifdef MPI_VERSION
     rank = MPI::COMM_WORLD.Get_rank();
     #endif
 
-	ghostswap(spinGrid);
+	ghostswap(mcGrid);
 
 	const double kT = (dim==3)?0.75:0.50;
-	int gss = int(sqrt(nodes(spinGrid)));
+	int gss = int(nodes(mcGrid));
 	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 
 	for (int step=0; step<steps; step++) {
 		if (rank==0)
 			print_progress(step, steps);
 
-		for (int h=0; h<nodes(spinGrid); h++) {
+		for (int h=0; h<nodes(mcGrid); h++) {
 			// choose a random node
-			int p = rand()%nodes(spinGrid);
-			int spin1 = spinGrid(p);
+			int p = rand()%nodes(mcGrid);
+			vector<int> x = position(mcGrid,p);
+			int spin1 = mcGrid(p);
 
 			if (spin1!=0) {
-				vector<int> x = position(spinGrid,p);
 				// determine neighboring spins
 				sparse<bool> neighbors;
-				set(neighbors,spinGrid(x)) = true;
-				for (int d=0; d<1; d++) {
-					x[d]--;
-					set(neighbors,spinGrid(x)) = true;
-					x[d]+=2;
-					set(neighbors,spinGrid(x)) = true;
-					x[d]--;
+				if (dim==1) {
+					for (int i=-1; i<2; i++) {
+						x[0] += i;
+						int spin = mcGrid(x);
+						set(neighbors,spin) = true;
+						x[0] -= i;
+					}
+				} else if (dim==2) {
+					for (int i=-1; i<2; i++) {
+						x[0] += i;
+						for (int j=-1; j<2; j++) {
+							x[1] += j;
+							int spin = mcGrid(x);
+							set(neighbors,spin) = true;
+							x[1] -= j;
+						}
+						x[0] -= i;
+					}
+				} else if (dim==3) {
+					for (int i=-1; i<2; i++) {
+						x[0] += i;
+						for (int j=-1; j<2; j++) {
+							x[1] += j;
+							for (int k=-1; k<2; k++) {
+								x[2] += k;
+								int spin = mcGrid(x);
+								set(neighbors,spin) = true;
+								x[2] -= k;
+							}
+							x[1] -= j;
+						}
+						x[0] -= i;
+					}
 				}
 
 				// choose a random neighbor spin
@@ -140,31 +154,31 @@ template <int dim, typename T> void update(grid<dim,T>& spinGrid, int steps)
 					// compute energy change
 					double dE = -1.0;
 					if (dim==1) {
-						for (int i=-1; i<=1; i++) {
+						for (int i=-1; i<2; i++) {
 							x[0] += i;
-							int spin = spinGrid(x);
+							int spin = mcGrid(x);
 							dE += (spin!=spin2)-(spin!=spin1);
 							x[0] -= i;
 						}
 					} else if (dim==2) {
-						for (int i=-1; i<=1; i++) {
+						for (int i=-1; i<2; i++) {
 							x[0] += i;
-							for (int j=-1; j<=1; j++) {
+							for (int j=-1; j<2; j++){
 								x[1] += j;
-								int spin = spinGrid(x);
+								int spin = mcGrid(x);
 								dE += (spin!=spin2)-(spin!=spin1);
 								x[1] -= j;
 							}
 							x[0] -= i;
 						}
 					} else if (dim==3) {
-						for (int i=-1; i<=1; i++) {
+						for (int i=-1; i<2; i++) {
 							x[0] += i;
-							for (int j=-1; j<=1; j++) {
+							for (int j=-1; j<2; j++) {
 								x[1] += j;
-								for (int k=-1; k<=1; k++) {
+								for (int k=-1; k<2; k++) {
 									x[2] += k;
-									int spin = spinGrid(x);
+									int spin = mcGrid(x);
 									dE += (spin!=spin2)-(spin!=spin1);
 									x[2] -= k;
 								}
@@ -177,13 +191,13 @@ template <int dim, typename T> void update(grid<dim,T>& spinGrid, int steps)
 					// attempt a spin flip
 					double r = double(rand())/double(RAND_MAX);
 					if (dE<=0.0)
-						spinGrid(p) = spin2;
+						mcGrid(p) = spin2;
 					else if (r<exp(-dE/kT))
-						spinGrid(p) = spin2;
+						mcGrid(p) = spin2;
 				}
 			}
 			if (h%gss==0)
-				ghostswap(spinGrid);
+				ghostswap(mcGrid);
 		}
 	}
 }
@@ -193,4 +207,3 @@ template <int dim, typename T> void update(grid<dim,T>& spinGrid, int steps)
 #endif
 
 #include"MMSP.main.hpp"
-

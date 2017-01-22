@@ -1,9 +1,9 @@
-// spinenberg.cpp
-// 2D and 3D spinenberg model
+// heisenberg.cpp
+// 2D and 3D heisenberg model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#ifndef spinENBERG_UPDATE
-#define spinENBERG_UPDATE
+#ifndef HEISENBERG_UPDATE
+#define HEISENBERG_UPDATE
 #include"MMSP.hpp"
 #include<cmath>
 #include"heisenberg.hpp"

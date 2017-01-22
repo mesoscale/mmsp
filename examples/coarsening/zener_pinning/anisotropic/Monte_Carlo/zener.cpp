@@ -1,13 +1,13 @@
 // zener.cpp
-// Anisotropic coarsening algorithms for 2D and 3D Monte Carlo methods
+// Algorithms for anisotropic 2D and 3D Monte Carlo grain growth with Zener pinning
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef ZENER_UPDATE
 #define ZENER_UPDATE
-#include"MMSP.hpp"
-#include"anisotropy.hpp"
-#include"zener.hpp"
 #include<cmath>
+#include"MMSP.hpp"
+#include"zener.hpp"
+#include"anisotropy.hpp"
 
 namespace MMSP{
 
@@ -98,8 +98,8 @@ template <int dim> void update(grid<dim,int>& mcGrid, int steps)
 
 	const double kT = (dim==3)?0.75:0.50;
 	int gss = int(nodes(mcGrid));
-
 	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
+
 	for (int step=0; step<steps; step++) {
 		if (rank==0)
 			print_progress(step, steps);
@@ -207,7 +207,7 @@ template <int dim> void update(grid<dim,int>& mcGrid, int steps)
 	}
 }
 
-} // namespace MC
+} // namespace MMSP
 
 #endif
 
