@@ -15,11 +15,8 @@ pflags = $(flags) -include mpi.h
 solidification.out: solidification.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
-mmsp2png: mmsp2png.cpp $(core) /usr/include/IL/devil_cpp_wrapper.hpp
-	$(compiler) $(flags) -I /usr/include/IL -include il.h $< -o $@ -lz -lIL -lILU -lILUT
-
 parallel: solidification.cpp
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
-	rm -rf solidification.out parallel mmsp2png
+	rm -rf solidification.out parallel

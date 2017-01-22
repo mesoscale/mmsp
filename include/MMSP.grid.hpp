@@ -1546,9 +1546,9 @@ public:
 
 		// get grid data to write
 		char* buffer;
-		unsigned long size=this->write_buffer(buffer);
+		unsigned long size_of_buffer = this->write_buffer(buffer);
 		// output grid data
-		output.write(buffer, size);
+		output.write(buffer, size_of_buffer);
 		delete [] buffer;
 		buffer=NULL;
 
@@ -1566,6 +1566,7 @@ public:
 		unsigned int np = MPI::COMM_WORLD.Get_size();
 		MPI_Request request;
 		MPI_Status status;
+		int mpi_err = 0;
 
 		// Read filesystem block size (using statvfs). Default to 4096 B.
 		struct statvfs buf;
@@ -1580,8 +1581,10 @@ public:
 			if (rank==0)
 				MPI_File_delete(fname,MPI_INFO_NULL);
 			MPI::COMM_WORLD.Barrier();
-			int mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
+			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
+				if (rank==0)
+					MPI_File_delete(fname,MPI_INFO_NULL);
 				char error_string[256];
 				int length_of_error_string=256;
 				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
@@ -1626,13 +1629,13 @@ public:
 
 			// get grid data to write
 			char* buffer=NULL;
-			unsigned long size=this->write_buffer(buffer);
+			unsigned long size_of_buffer = this->write_buffer(buffer);
 			assert(buffer!=NULL);
 
 			// Compute file offsets based on buffer sizes
 			unsigned long* datasizes = new unsigned long[np];
 			MPI::COMM_WORLD.Barrier();
-			MPI::COMM_WORLD.Allgather(&size, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
+			MPI::COMM_WORLD.Allgather(&size_of_buffer, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
 
 			// Pre-allocate disk space
 			unsigned long filesize=0;
@@ -1647,7 +1650,7 @@ public:
 				offsets[n]=offsets[n-1]+datasizes[n-1];
 			}
 			#ifdef GRIDDEBUG
-			assert(datasizes[rank]==size);
+			assert(datasizes[rank]==size_of_buffer);
 			if (rank==0) std::cout<<"  Synchronized data offsets on "<<np<<" ranks. Total size: "<<offsets[np-1]+datasizes[np-1]<<" B."<<std::endl;
 			#endif
 
@@ -1702,9 +1705,10 @@ public:
 			unsigned int* writeranks=NULL;
 			MPI_Request* recvrequests = NULL;
 			MPI_Status* recvstatuses = NULL;
+			int mpi_err = 0;
 
 			// get grid data to write
-			const unsigned long size=write_buffer(databuffer);
+			const unsigned long size_of_buffer = write_buffer(databuffer);
 			assert(databuffer!=NULL);
 			// Generate MMSP header from rank 0
 			unsigned long header_offset=0;
@@ -1735,7 +1739,7 @@ public:
 
 			// Compute file offsets based on buffer sizes
 			datasizes = new unsigned long[np];
-			MPI::COMM_WORLD.Allgather(&size, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
+			MPI::COMM_WORLD.Allgather(&size_of_buffer, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
 			#ifdef GRIDDEBUG
 			if (rank==0) std::cout<<"Synchronized data sizes."<<std::endl;
 			#endif
@@ -1753,7 +1757,7 @@ public:
 			}
 			offsets[0]=0;
 			#ifdef GRIDDEBUG
-			assert(datasizes[rank]==size);
+			assert(datasizes[rank]==size_of_buffer);
 			if (rank==0) std::cout<<"  Synchronized data offsets on "<<np<<" ranks. Total size: "<<offsets[np-1]+datasizes[np-1]<<" B."<<std::endl;
 			#endif
 
@@ -1899,7 +1903,13 @@ public:
 			if (rank==0)
 				MPI_File_delete(fname,MPI_INFO_NULL);
 			MPI::COMM_WORLD.Barrier();
-			int mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
+			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
+			if (mpi_err != MPI_SUCCESS) {
+				if (rank==0)
+					MPI_File_delete(fname,MPI_INFO_NULL);
+				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+				assert(mpi_err==MPI_SUCCESS);
+			}
 			if (mpi_err != MPI_SUCCESS) {
 				char error_string[256];
 				int length_of_error_string=256;
@@ -1973,9 +1983,9 @@ public:
 			header_size += static_cast<unsigned long>(sizeof(b1[j]));
 		}
 		// Make a buffer to hold all the data
-		unsigned long size = header_size + static_cast<unsigned long>(sizeof(size_in_mem))
+		const unsigned long size_of_buffer = header_size + static_cast<unsigned long>(sizeof(size_in_mem))
 		                     + size_on_disk + static_cast<unsigned long>(sizeof(size_on_disk));
-		buf = new char[size];
+		buf = new char[size_of_buffer];
 		char* dst = buf;
 		unsigned long increment=0; // number of bytes to copy
 
@@ -2034,7 +2044,7 @@ public:
 			MMSP::Abort(1);
 			break;
 		}
-		assert(size_on_disk<=size_in_mem); // otherwise, what's the point?
+		assert(size_on_disk<=size_of_buffer); // Abort if data was lost in compression process. Duplicate of Z_BUF_ERROR check.
 		dst=NULL;
 		delete [] raw;
 		raw=NULL;
@@ -2355,8 +2365,8 @@ public:
 
 		// copy grid data
 		for (int i=0; i<cells; i++) {
-			unsigned long size = MMSP::buffer_size(data[i]);
-			char* buffer = new char[size];
+			unsigned long size_of_buffer = MMSP::buffer_size(data[i]);
+			char* buffer = new char[size_of_buffer];
 			MMSP::to_buffer(GRID.data[i], buffer);
 			MMSP::from_buffer(data[i], buffer);
 			delete [] buffer;

@@ -2,8 +2,8 @@
 // Convert MMSP grid data to MBuilder voxel data
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#include"MMSP.hpp"
 #include<set>
+#include"MMSP.hpp"
 
 int main(int argc, char* argv[]) {
 	// command line error check
@@ -58,7 +58,6 @@ int main(int argc, char* argv[]) {
 	bool double_type = (type.find("double") != std::string::npos);
 	bool long_double_type = (type.find("long double") != std::string::npos);
 
-	bool scalar_type = (type.find("scalar") != std::string::npos);
 	bool vector_type = (type.find("vector") != std::string::npos);
 	bool sparse_type = (type.find("sparse") != std::string::npos);
 
