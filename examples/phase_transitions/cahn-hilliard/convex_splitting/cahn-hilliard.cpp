@@ -1,4 +1,4 @@
-/** cahn-hilliard.hpp
+/** cahn-hilliard.cpp
  ** Algorithms for 2D Cahn-Hilliard model with convex splitting.
  **
  ** This is an advanced example, with precompiler directives switching between
@@ -15,8 +15,6 @@
 #include"MMSP.hpp"
 #include<cmath>
 #include<cfloat>
-#include<fstream>
-#include<random>
 #include"cahn-hilliard.hpp"
 
 /** This code sets parameters for the evolution of two different energy configurations.
@@ -32,15 +30,15 @@
  ** 	flags = -O3 -Wall ...
  **/
 
-// Spatial constants
-int edge = 200;
-double deltaX = 1.0;
-
 #ifdef VANILLA
+int edge = 32;
+double deltaX = 1.0;
 double C0 = 0.0; // system composition
 double D  = 1.0; // diffusivity
 double K  = 1.0; // gradient energy coefficient
 #else
+int edge = 200;
+double deltaX = 1.0;
 double C0 = 0.45; // mean composition
 double Ca = 0.05; // alpha-phase solvus composition
 double Cb = 0.95; // beta-phase solvus composition
@@ -66,28 +64,28 @@ double omega = 1.0;				// relaxation parameter for SOR. omega=1 is stock Gauss-S
 // Vanilla energetics
 #include<time.h>
 template<typename T> inline
-T energy_density(const T& C)
+double energy_density(const T& C)
 {
 	// Minima at C = +/- 1, local maximum at C=0
 	return 0.25*pow(C,4.0) - 0.5*pow(C,2.0);
 }
 template<typename T> inline
-T full_dfdc(const T& C)
+double full_dfdc(const T& C)
 {
 	return pow(C,3.0) - C;
 }
 template<typename T> inline
-T contractive_dfdc(const T& C)
+double contractive_dfdc(const T& C)
 {
 	return pow(C,3.0);
 }
 template<typename T> inline
-T nonlinear_coeff(const T& C)
+double nonlinear_coeff(const T& C)
 {
 	return pow(C,2.0);
 }
 template<typename T> inline
-T expansive_dfdc(const T& C)
+double expansive_dfdc(const T& C)
 {
 	return -C;
 }
@@ -105,28 +103,28 @@ double QC = 3.0*(B*C0*C0 + pow(Ca,3.0) + pow(Cb,3.0));
 double QD = B*pow(C0,3.0) + pow(Ca,4.0) + pow(Cb,4.0);
 
 template<typename T> inline
-T energy_density(const T& C)
+double energy_density(const T& C)
 {
 	// Minima at C = 0 and 1
 	return -0.5*A*pow(C-C0,2.0) + 0.25*B*pow(C-C0,4.0) + 0.25*Ca*pow(C-Ca,4.0) + 0.25*Cb*pow(C-Cb,4.0);
 }
 template<typename T> inline
-T full_dfdc(const T& C)
+double full_dfdc(const T& C)
 {
 	return -A*(C-C0) + B*pow(C-C0,3.0) + Ca*pow(C-Ca,3.0) + Cb*pow(C-Cb,3.0);
 }
 template<typename T> inline
-T contractive_dfdc(const T& C)
+double contractive_dfdc(const T& C)
 {
 	return QA*pow(C,3.0) + QC*C;
 }
 template<typename T> inline
-T nonlinear_coeff(const T& C)
+double nonlinear_coeff(const T& C)
 {
 	return QA*pow(C,2.0) + QC;
 }
 template<typename T> inline
-T expansive_dfdc(const T& C)
+double expansive_dfdc(const T& C)
 {
 	return -A*(C-C0) - QB*pow(C,2.0) - QD;
 }
@@ -178,93 +176,105 @@ double fringe_laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, 
 	return laplacian;
 }
 
-void generate(int dim, const char* filename)
+template<int dim, typename T> void reportEnergy(const MMSP::grid<dim,vector<T> >& GRID)
 {
-	// Initial conditions after CHiMaD Phase Field Workshop benchmark problem (October 2015)
-
-	if (dim!=2) {
-		std::cerr<<"ERROR: Convex splitting discretization is only 2-D, for now."<<std::endl;
-		std::exit(-1);
-	}
-
 	int rank=0;
 	#ifdef MPI_VERSION
 	rank = MPI::COMM_WORLD.Get_rank();
 	#endif
 
-	#ifdef VANILLA
-	// Call the Mersenne Twister. ***NOTE: Requires C++11 (or a compatible MT19937_64 include)***
-	std::mt19937_64 mt_rand(time(NULL)+rank);
-	std::uniform_real_distribution<double> real_gen(0,1);
-	#endif
+	double dV = 1.0;
+	for (int d=0; d<dim; d++)
+		dV *= dx(GRID,d);
 
-	if (dim==2) {
-		MMSP::grid<2,vector<double> > grid(2,0,edge,0,edge); // field 0 is c, field 1 is mu
+	if (rank==0)
+		std::cout<<"Timestep is "<<dt<<" (explicit Co="<<CFL<<")."<<std::endl;
+
+	double energy = 0.0;
+	double mass = 0.0;
+	for (int n=0; n<nodes(GRID); n++) {
+		vector<int> x = position(GRID,n);
+		vector<vector<T> > gradC = grad(GRID, x);
+		double magSqGradC = 0.0;
 		for (int d=0; d<dim; d++)
-			dx(grid,d) = deltaX;
+			magSqGradC += pow(gradC[d][0],2.0);
+		double C = GRID(n)[0];
+		energy += (energy_density(C) + 0.5*K*magSqGradC);
+		mass += C;
+	}
+	#ifdef MPI_VERSION
+	double localEnergy = energy;
+	double localMass = mass;
+	MPI::COMM_WORLD.Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0);
+	MPI::COMM_WORLD.Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0);
+	#endif
+	//if (rank==0)
+	//	std::cout<<'0'<<'\t'<<dV*energy<<'\t'<<dV*mass<<std::endl;
+}
+
+void generate(int dim, const char* filename)
+{
+	if (dim==1) {
+		edge=1024;
+		GRID1D initGrid(2,0,edge); // field 0 is c, field 1 is mu
+		for (int n=0; n<nodes(initGrid); n++)
+			initGrid(n)[0] = C0 + 0.25*(double(rand())/RAND_MAX) - 0.125; // produces noise with amplitude 0.125 about C=C0
+
+		ghostswap(initGrid); // otherwise, parallel jobs have a "window frame" artifact
+
+		for (int n=0; n<nodes(initGrid); n++) {
+			vector<int> x = position(initGrid,n);
+			initGrid(n)[1] = full_dfdc(initGrid(n)[0]) - K*field_laplacian(initGrid, x, 0);
+		}
+
+		output(initGrid,filename);
+		//reportEnergy(initGrid);
+	} else if (dim==2) {
+		GRID2D initGrid(2,0,2*edge,0,edge); // field 0 is c, field 1 is mu
+		for (int d=0; d<dim; d++)
+			dx(initGrid,d) = deltaX;
 
 		#ifdef VANILLA
-		for (int n=0; n<nodes(grid); n++)
-			grid(n)[0] = C0 + 0.25*real_gen(mt_rand) - 0.125; // produces noise with amplitude 0.125 about C=C0
+		for (int n=0; n<nodes(initGrid); n++)
+			initGrid(n)[0] = C0 + 0.25*(double(rand())/RAND_MAX) - 0.125; // produces noise with amplitude 0.125 about C=C0
 		#else
-		double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)}; // produces stripes oriented 45 degrees to horizontal
-		for (int n=0; n<nodes(grid); n++) {
-			MMSP::vector<int> x = position(grid,n);
-			double wave = x[0]*dx(grid,0)*q[0] + x[1]*dx(grid,1)*q[1];
-			grid(n)[0] = C0*(1.0 + 0.1 * std::cos(wave));
+		// Initial conditions after CHiMaD Phase Field Workshop benchmark problem (October 2015)
+		double q[2] = {0.1*sqrt(2.0), 0.1*sqrt(3.0)}; // {0.1*sqrt(2.0), 0.1*sqrt(3.0)} produces stripes oriented 45 degrees to horizontal
+		for (int n=0; n<nodes(initGrid); n++) {
+			vector<int> x = position(initGrid,n);
+			double wave = x[0]*dx(initGrid,0)*q[0] + x[1]*dx(initGrid,1)*q[1];
+			initGrid(n)[0] = C0*(1.0 + 0.1 * std::cos(wave));
 		}
 		#endif
 
-		ghostswap(grid); // otherwise, parallel jobs have a "window frame" artifact
+		ghostswap(initGrid); // otherwise, parallel jobs have a "window frame" artifact
 
-		for (int n=0; n<nodes(grid); n++) {
-			MMSP::vector<int> x = position(grid,n);
-			grid(n)[1] = full_dfdc(grid(n)[0]) - K*field_laplacian(grid, x, 0);
+		for (int n=0; n<nodes(initGrid); n++) {
+			vector<int> x = position(initGrid,n);
+			initGrid(n)[1] = full_dfdc(initGrid(n)[0]) - K*field_laplacian(initGrid, x, 0);
 		}
 
-		double dV = 1.0;
-		for (int d=0; d<dim; d++)
-			dV *= dx(grid,d);
+		output(initGrid,filename);
+		//reportEnergy(initGrid);
+	} else if (dim==3) {
+		GRID3D initGrid(2,0,2*edge,0,edge,0,edge/4); // field 0 is c, field 1 is mu
+		for (int n=0; n<nodes(initGrid); n++)
+			initGrid(n)[0] = C0 + 0.25*(double(rand())/RAND_MAX) - 0.125; // produces noise with amplitude 0.125 about C=C0
 
-		output(grid,filename);
-		if (rank==0)
-			std::cout<<"Timestep is "<<dt<<" (explicit Co="<<CFL<<")."<<std::endl;
+		ghostswap(initGrid); // otherwise, parallel jobs have a "window frame" artifact
 
-		double energy = 0.0;
-		double mass = 0.0;
-		for (int n=0; n<nodes(grid); n++) {
-			MMSP::vector<int> x = position(grid,n);
-			MMSP::vector<MMSP::vector<double> > gradC = grad(grid, x);
-			double magSqGradC = 0.0;
-			for (int d=0; d<dim; d++)
-				magSqGradC += pow(gradC[d][0],2.0);
-			double C = grid(n)[0];
-			energy += (energy_density(C) + 0.5*K*magSqGradC);
-			mass += C;
+		for (int n=0; n<nodes(initGrid); n++) {
+			vector<int> x = position(initGrid,n);
+			initGrid(n)[1] = full_dfdc(initGrid(n)[0]) - K*field_laplacian(initGrid, x, 0);
 		}
-		#ifdef MPI_VERSION
-		double localEnergy = energy;
-		double localMass = mass;
-		MPI::COMM_WORLD.Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0);
-		MPI::COMM_WORLD.Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0);
-		#endif
-		std::cout<<std::setprecision(12);
-		if (rank==0)
-			std::cout<<'0'<<'\t'<<dV*energy<<'\t'<<dV*mass<<std::endl;
 
-		#ifdef DEBUG
-		std::ofstream ferr;
-		if (rank==0) {
-			ferr.open("error.log");
-			ferr<<"step\titer\tnormBminusAX\tnormB\tresidual\n";
-			ferr.close();
-		}
-		#endif
+		output(initGrid,filename);
+		//reportEnergy(initGrid);
 	}
 }
 
 template<int dim, typename T>
-void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
+void update(grid<dim,vector<T> >& oldGrid, int steps)
 {
 	int rank=0;
 	#ifdef MPI_VERSION
@@ -273,7 +283,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 
 	ghostswap(oldGrid);
 
-	MMSP::grid<dim,vector<T> > newGrid(oldGrid);   // new values at each point and initial guess for iteration
+	grid<dim,vector<T> > newGrid(oldGrid);   // new values at each point and initial guess for iteration
 
 	newGrid.copy(oldGrid); // deep copy: includes data and ghost cells. Expensive.
 
@@ -296,13 +306,10 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		dV *= dx(oldGrid,d);
 	}
 
-	#ifdef DEBUG
-	std::ofstream ferr;
-	if (rank==0)
-		ferr.open("error.log", std::ofstream::app);
-	#endif
-
 	for (int step=0; step<steps; step++) {
+		if (rank==0)
+			print_progress(step, steps);
+
 		double residual=1.0;
 		unsigned int iter=0;
 
@@ -325,7 +332,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 				#pragma omp parallel for schedule(dynamic)
 				#endif
 				for (int n=0; n<nodes(oldGrid); n++) {
-					MMSP::vector<int> x = position(oldGrid,n);
+					vector<int> x = position(oldGrid,n);
 					int x_sum=0;
 					for (int d=0; d<dim; d++)
 						x_sum += x[d];
@@ -377,7 +384,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 				#pragma omp parallel for schedule(dynamic)
 				#endif
 				for (int n=0; n<nodes(oldGrid); n++) {
-					MMSP::vector<int> x = position(oldGrid,n);
+					vector<int> x = position(oldGrid,n);
 					T lapC = field_laplacian(newGrid, x, 0);
 					T lapU = field_laplacian(newGrid, x, 1);
 
@@ -414,18 +421,7 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 				MPI::COMM_WORLD.Allreduce(&localNormB, &normB, 1, MPI_DOUBLE, MPI_SUM);
 				#endif
 
-				#ifdef DEBUG
-				if (rank==0)
-					ferr<<step<<'\t'<<iter<<'\t'<<residual<<'\t'<<normB<<'\t';
-				#endif
-
 				residual = sqrt(residual/normB)/(2.0*gridSize);
-
-				#ifdef DEBUG
-				if (rank==0)
-					ferr<<residual<<std::endl;
-				#endif
-
 			}
 
 		}
@@ -433,14 +429,15 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		if (iter==max_iter) {
 			if (rank==0)
 				std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" iterations with residual="<<residual<<std::endl;
-			std::exit(-1);
+				MMSP::Abort(-1);
 		}
 
+		/*
 		double energy = 0.0;
 		double mass = 0.0;
 		for (int n=0; n<nodes(newGrid); n++) {
-			MMSP::vector<int> x = position(newGrid,n);
-			MMSP::vector<MMSP::vector<T> > gradC = grad(newGrid, x);
+			vector<int> x = position(newGrid,n);
+			vector<vector<T> > gradC = grad(newGrid, x);
 			double gradCsq = 0.0;
 			for (int d=0; d<dim; d++)
 				gradCsq += pow(gradC[d][0],2.0);
@@ -454,15 +451,12 @@ void update(MMSP::grid<dim,vector<T> >& oldGrid, int steps)
 		MPI::COMM_WORLD.Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0);
 		MPI::COMM_WORLD.Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0);
 		#endif
-		std::cout<<std::setprecision(12);
 		if (rank==0)
 			std::cout<<iter<<'\t'<<dV*energy<<'\t'<<dV*mass<<std::endl;
+		*/
 
 		swap(oldGrid,newGrid);
 	}
-	#ifdef DEBUG
-	ferr.close();
-	#endif
 	if (rank==0)
 		std::cout<<std::flush;
 }

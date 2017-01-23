@@ -1,4 +1,4 @@
-// zener.cpp
+// zener.hpp
 // Anisotropic phase field Zener pinning example code
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

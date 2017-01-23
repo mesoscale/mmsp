@@ -1,4 +1,4 @@
-// model_A.cpp
+// model_A.hpp
 // Example program for "model A" using MMSP
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

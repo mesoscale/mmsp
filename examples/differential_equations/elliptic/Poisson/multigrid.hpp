@@ -9,7 +9,12 @@
 
 namespace MMSP {
 
-template <typename T> void coarsen(MMSP::grid<2,T>& u, int stride, std::string method="full-weighting")
+template <typename T> void coarsen(grid<1,T>& u, int stride, std::string method="full-weighting")
+{
+	return;
+}
+
+template <typename T> void coarsen(grid<2,T>& u, int stride, std::string method="full-weighting")
 {
 	// coarsen from stride s to stride 2s
 	int s = stride;
@@ -26,7 +31,7 @@ template <typename T> void coarsen(MMSP::grid<2,T>& u, int stride, std::string m
 				         +0.0625*(u[x+s][y+s]+u[x-s][y+s]+u[x+s][y-s]+u[x-s][y-s]);
 }
 
-template <typename T> void coarsen(MMSP::grid<3,T>& u, int stride, std::string method="full-weighting")
+template <typename T> void coarsen(grid<3,T>& u, int stride, std::string method="full-weighting")
 {
 	// coarsen from stride s to stride 2s
 	int s = stride;
@@ -48,7 +53,12 @@ template <typename T> void coarsen(MMSP::grid<3,T>& u, int stride, std::string m
 					            +0.015625*(u[x+s][y-s][z-s]+u[x-s][y+s][z-s]+u[x-s][y-s][z+s]+u[x-s][y-s][z-s]);
 }
 
-template <typename T> void refine(MMSP::grid<2,T>& u, int stride, std::string method="linear")
+template <typename T> void refine(grid<1,T>& u, int stride, std::string method="linear")
+{
+	return;
+}
+
+template <typename T> void refine(grid<2,T>& u, int stride, std::string method="linear")
 {
 	// refine from stride 2s to stride s
 	int s = stride;
@@ -85,7 +95,7 @@ template <typename T> void refine(MMSP::grid<2,T>& u, int stride, std::string me
 			}
 	}
 }
-template <typename T> void refine(MMSP::grid<3,T>& u, int stride, std::string method="linear")
+template <typename T> void refine(grid<3,T>& u, int stride, std::string method="linear")
 {
 	// refine from stride 2s to stride s
 	int s = stride;
@@ -142,13 +152,13 @@ template <typename T> void refine(MMSP::grid<3,T>& u, int stride, std::string me
 	}
 }
 
-template <int dim, typename T> 
-void MG(MMSP::grid<dim,T>& u, const MMSP::grid<dim,T>& f, int stride, int gamma=1, int nu1=2, int nu2=2)
+template <int dim, typename T>
+void MG(grid<dim,T>& u, const grid<dim,T>& f, int stride, int gamma=1, int nu1=2, int nu2=2)
 {
-	// standard multigrid cycle 
+	// standard multigrid cycle
 	int s = stride;
 
-	// solve if at coarsest level
+	// solve at coarsest level
 	bool solve = false;
 	for (int i=0; i<dim; i++)
 		if (2*s+1==x1(u,i))
@@ -160,14 +170,14 @@ void MG(MMSP::grid<dim,T>& u, const MMSP::grid<dim,T>& f, int stride, int gamma=
 	smooth(u,f,s,nu1);
 
 	// compute defect
-	MMSP::grid<dim,T> d(u);
+	grid<dim,T> d(u);
 	defect(u,f,d,s);
 
 	// restrict defect
 	coarsen(d,s);
 
 	// solve for correction
-	MMSP::grid<dim,T> v(u);
+	grid<dim,T> v(u);
 	v = static_cast<T>(0.0);
 
 	// multigrid iteration
@@ -184,8 +194,8 @@ void MG(MMSP::grid<dim,T>& u, const MMSP::grid<dim,T>& f, int stride, int gamma=
 	smooth(u,f,s,nu2);
 }
 
-template <int dim, typename T> 
-void FMG(MMSP::grid<dim,T>& u, const MMSP::grid<dim,T>& f, int gamma=1, int nu1=2, int nu2=2)
+template <int dim, typename T>
+void FMG(grid<dim,T>& u, const grid<dim,T>& f, int gamma=1, int nu1=2, int nu2=2)
 {
 	// solve at coarsest level
 	int s = (x1(u,0)-1)/4;

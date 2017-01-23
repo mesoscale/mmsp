@@ -1,4 +1,4 @@
-// graingrowth.cpp
+// graingrowth.hpp
 // Isotropic sparse phase field (sparsePF) grain growth example code
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

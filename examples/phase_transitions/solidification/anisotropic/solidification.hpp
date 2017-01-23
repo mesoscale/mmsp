@@ -1,8 +1,8 @@
-// dendritic.cpp
+// solidification.hpp
 // Anisotropic dendritic solidification code
 // Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
-std::string PROGRAM = "dendritic";
+std::string PROGRAM = "solidification";
 std::string MESSAGE = "Anisotropic dendritic solidification code";
 
 typedef MMSP::grid<1,MMSP::vector<double> > GRID1D;

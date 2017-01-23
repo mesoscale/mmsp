@@ -36,6 +36,4 @@ void seeds_from_file(const int x0[dim], const int x1[dim], const int g0[dim], co
 template<int dim>
 void honeycomb_seeds(const int x0[dim], const int x1[dim], const int g0[dim], const int g1[dim], const int a, std::vector<std::vector<MMSP::vector<int> > >& seeds);
 
-void print_progress(const int i, const int N);
-
 #endif // _GENERATORS_H_

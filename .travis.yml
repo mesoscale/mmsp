@@ -1,0 +1,27 @@
+# Mesoscale Microstructure Simulation Project
+# Travis Continuous Integration build script
+# Questions/comments to trevor.keller@gmail.com (Trevor Keller)
+
+language: cpp
+dist: trusty
+sudo: required
+
+compiler:
+  - gcc
+
+env:
+  - MPI=mpich2
+  - MPI=openmpi
+
+notifications:
+  email: false
+
+install:
+  - sudo apt-get update -qq -y
+  - sh test/travis-mpi.sh $MPI
+
+before_script:
+  - cd test
+
+script:
+  ./build_examples.sh --np 2 --noviz --clean

@@ -1,13 +1,14 @@
 #include"MMSP.hpp"
 using namespace MMSP;
 
-// Add in Laplacian funciton that is built in to MMSP
+// Add in Laplacian function that is built in to MMSP
 // Try using a grid of vectors >> one iterated with this code, one with laplacian
 
 
 //we start the program off the same way as before, but this time we do not need the offset length variable
-int main()
+int main(int argc, char* argv[])
 {
+	Init(argc, argv);
 	int length;
 	int iterate;
 
@@ -19,8 +20,8 @@ int main()
 	std::cin>>iterate;
 	std::cout<<""<<std::endl;
 
-	grid<1,scalar<float> > GRID(1,0,length);
-	grid<1,scalar<float> > update(1,0,length);
+	grid<1,scalar<double> > GRID(1,0,length);
+	grid<1,scalar<double> > update(1,0,length);
 
 	for (int x=x0(GRID); x<x1(GRID); x++)
 		if (x<length/2) {
@@ -38,6 +39,8 @@ int main()
 	b0(update,0) = Dirichlet;
 	b1(update,0) = Dirichlet;
 
+	ghostswap(GRID);
+
 	for (int k=0; k<iterate; k++) {
 		for (int i=0; i<nodes(GRID); i++) {
 			//we can use MMSP's definition for laplacian instead of hard coding it.
@@ -52,5 +55,6 @@ int main()
 		std::cout<<GRID[x]<<std::endl;
 
 	Finalize();
+	return 0;
 }
 

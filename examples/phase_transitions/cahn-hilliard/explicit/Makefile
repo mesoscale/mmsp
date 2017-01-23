@@ -3,24 +3,19 @@
 # Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 # includes
-incdir = ../../../include
+incdir = ../../../../include
 
 # compilers/flags
 compiler = g++
-flags = -O3 -I $(incdir)
 pcompiler = mpic++
-pflags = -O3 -I $(incdir) -include mpi.h
-
-# dependencies
-core = $(incdir)/MMSP.main.hpp \
-       $(incdir)/MMSP.utility.hpp \
-       $(incdir)/MMSP.grid.hpp
+flags = -O3 -I $(incdir)
+pflags = $(flags) -include mpi.h
 
 # the program
-cahn-hilliard: cahn-hilliard.cpp $(core)
+cahn-hilliard: cahn-hilliard.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: cahn-hilliard.cpp $(core)
+parallel: cahn-hilliard.cpp
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:

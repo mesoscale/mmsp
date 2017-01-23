@@ -7,7 +7,9 @@
 *.dvi
 *.log
 *.out
+*.png
 *.toc
+*.directory
 doc/MMSP.manual.pdf
 
 # MMSP utility binaries
@@ -25,6 +27,9 @@ utility/vox2MC
 utility/mmsp2topo
 utility/mmsp2z
 utility/wrongendian
+
+# unit testing
+test/unitTestSuite
 
 # Compiled Object files
 *.slo

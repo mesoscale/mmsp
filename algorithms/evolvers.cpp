@@ -14,30 +14,6 @@
 
 #include "evolvers.h"
 
-void print_progress(const int step, const int steps, const int iterations)
-{
-	 char* timestring;
-	static unsigned long tstart;
-	struct tm* timeinfo;
-
-	if (step==0) {
-		tstart = time(NULL);
-		std::time_t rawtime;
-		std::time( &rawtime );
-		timeinfo = std::localtime( &rawtime );
-		timestring = std::asctime(timeinfo);
-		timestring[std::strlen(timestring)-1] = '\0';
-		std::cout<<"Pass "<<std::setw(3)<<std::right<<iterations<<": "<<timestring<<" ["<<std::flush;
-	} else if (step==steps) {
-		unsigned long deltat = time(NULL)-tstart;
-		std::cout << "•] "
-							<<std::setw(2)<<std::right<<deltat/3600<<"h:"
-							<<std::setw(2)<<std::right<<(deltat%3600)/60<<"m:"
-							<<std::setw(2)<<std::right<<deltat%60<<"s"
-							<<" (File "<<std::setw(5)<<std::right<<iterations*steps<<")."<<std::endl;
-	} else if ((20 * step) % steps == 0) std::cout<<"• "<<std::flush;
-}
-
 template<int dim, typename T>
 void interface_field_evolves(const T& dt, const T& width, const T& gamma, const T& epsilon, const T& w, const T& mu,
 														 const MMSP::grid<dim,MMSP::sparse<T> >& former, MMSP::grid<dim,MMSP::sparse<T> >& latter, const int node)

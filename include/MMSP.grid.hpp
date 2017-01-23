@@ -9,7 +9,6 @@
 #include<cstdarg>
 #include<sstream>
 #include<cmath>
-#include<iomanip>
 #include<limits>
 #include<cassert>
 #include <sys/statvfs.h>
@@ -510,24 +509,30 @@ public:
 	{
 		for (int i=0; i<cells; i++)
 			data[i] = static_cast<T>(value);
+		return *this;
 	}
 
 	template <typename U> grid& operator=(const grid<dim, U>& GRID)
 	{
+		if (this == &GRID)
+			return *this;
 		for (int i=0; i<cells; i++)
 			data[i] = static_cast<T>(GRID.data[i]);
+		return *this;
 	}
 
 	template <typename U> grid& operator+=(const grid<dim, U>& GRID)
 	{
 		for (int i=0; i<cells; i++)
 			data[i] += static_cast<T>(GRID.data[i]);
+		return *this;
 	}
 
 	template <typename U> grid& operator-=(const grid<dim, U>& GRID)
 	{
 		for (int i=0; i<cells; i++)
 			data[i] -= static_cast<T>(GRID.data[i]);
+		return *this;
 	}
 
 
@@ -1340,7 +1345,7 @@ public:
 		if (!input) {
 			std::cerr << "File input error: could not open ";
 			std::cerr << filename << "." << std::endl;
-			exit(-1);
+			MMSP::Abort(-1);
 		}
 
 		// grid data type error check
@@ -1348,7 +1353,7 @@ public:
 		getline(input, type, '\n');
 		if (type != name(*this)) {
 			std::cerr << "File read error: wrong data type (" << type << ")." << std::endl;
-			exit(-2);
+			MMSP::Abort(-2);
 		}
 
 		// dimension error check
@@ -1356,7 +1361,7 @@ public:
 		input >> dimen;
 		if (dimen != dim) {
 			std::cerr << "File read error: wrong dimension (" << dimen << ")." << std::endl;
-			exit(-3);
+			MMSP::Abort(-3);
 		}
 
 		// read number of fields
@@ -1455,7 +1460,7 @@ public:
 				if (size_in_mem!=size_on_disk) {
 					#ifdef RAW
 					std::cerr<<"Unable to uncompress data: compiled without zlib."<<std::endl;
-					exit(1);
+					MMSP::Abort(1);
 					#else
 					// Uncompress data
 					char* raw = new char[size_in_mem];
@@ -1465,11 +1470,11 @@ public:
 						break;
 					case Z_MEM_ERROR:
 						std::cerr << "Uncompress: out of memory." << std::endl;
-						exit(1);    // quit.
+						MMSP::Abort(1);    // quit.
 						break;
 					case Z_BUF_ERROR:
 						std::cerr << "Uncompress: output buffer wasn't large enough." << std::endl;
-						exit(1);    // quit.
+						MMSP::Abort(1);    // quit.
 						break;
 					}
 					GRID.from_buffer(raw);
@@ -1513,7 +1518,7 @@ public:
 		if (!output) {
 			std::cerr << "File output error: could not open ";
 			std::cerr << filename << "." << std::endl;
-			exit(-1);
+			MMSP::Abort(-1);
 		}
 
 		std::stringstream outstr;
@@ -1570,19 +1575,21 @@ public:
 		if (blocksize<1048576) {
 			// Standard MPI-IO: every rank writes to disk
 			#ifdef BGQ
-			if (rank==0) std::cout<<"Bug: using stock MPI-IO, instead of BGQ IO!"<<std::endl;
+			if (rank==0) std::cout<<"Bug: using normal IO, instead of BGQ IO!"<<std::endl;
 			#endif
 			MPI_File output;
-			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+			if (rank==0)
+				MPI_File_delete(fname,MPI_INFO_NULL);
+			MPI::COMM_WORLD.Barrier();
+			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
 				if (rank==0)
 					MPI_File_delete(fname,MPI_INFO_NULL);
-				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
-				assert(mpi_err==MPI_SUCCESS);
-			}
-			if (!output) {
-				std::cerr << "File output error: could not open " << fname << "." << std::endl;
-				exit(-1);
+				char error_string[256];
+				int length_of_error_string=256;
+				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
+				fprintf(stderr, "Error opening output file %s on rank %3d: %s\n", fname, rank, error_string);
+				MMSP::Abort(-1);
 			}
 
 			// Generate MMSP header from rank 0
@@ -1655,11 +1662,11 @@ public:
 			#ifdef GRIDDEBUG
 			int error, write_errors=0;
 			MPI_Get_count(&status, MPI_INT, &error);
-			if (error!=0)
-				std::cerr<<"  Error on Rank "<<rank<<": "<<MPI::Get_error_class(error)<<std::endl;
+			error++;
+			if (error!=1) std::cerr<<"  Error on Rank "<<rank<<": "<<MPI::Get_error_class(error-1)<<std::endl;
 			MPI::COMM_WORLD.Allreduce(&error, &write_errors, 1, MPI_INT, MPI_SUM);
-			if (rank==0) std::cout<<"  Write finished on "<<np-write_errors<<'/'<<np<<" ranks."<<std::endl;
-			assert(write_errors==0);
+			if (rank==0) std::cout<<"  Write finished on "<<write_errors<<'/'<<np<<" ranks."<<std::endl;
+			assert(write_errors==np);
 			#endif
 			delete [] buffer;
 			buffer=NULL;
@@ -1893,23 +1900,22 @@ public:
 			if (rank==0) std::cout<<"  Opening "<<std::string(fname)<<" for output."<<std::endl;
 			#endif
 			MPI_File output;
-			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+			if (rank==0)
+				MPI_File_delete(fname,MPI_INFO_NULL);
+			MPI::COMM_WORLD.Barrier();
+			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
 				if (rank==0)
 					MPI_File_delete(fname,MPI_INFO_NULL);
 				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
 				assert(mpi_err==MPI_SUCCESS);
 			}
-			if (!output) {
-				if (rank==0) std::cerr << "File output error: could not open " << fname << "." << std::endl;
-				if (rank==0) std::cerr << "                   If it already exists, delete it and try again." << std::endl;
-				exit(-1);
-			}
 			if (mpi_err != MPI_SUCCESS) {
 				char error_string[256];
 				int length_of_error_string=256;
 				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
-				fprintf(stderr, "%3d: %s\n", rank, error_string);
+				fprintf(stderr, "Error opening output file %s on rank %3d: %s\n", fname, rank, error_string);
+				MMSP::Abort(-1);
 			}
 
 			// Write to disk
@@ -2031,11 +2037,11 @@ public:
 			break;
 		case Z_MEM_ERROR:
 			std::cerr << "Compress: out of memory." << std::endl;
-			exit(1);
+			MMSP::Abort(1);
 			break;
 		case Z_BUF_ERROR:
 			std::cerr << "Compress: output buffer wasn't large enough." << std::endl;
-			exit(1);
+			MMSP::Abort(1);
 			break;
 		}
 		assert(size_on_disk<=size_of_buffer); // Abort if data was lost in compression process. Duplicate of Z_BUF_ERROR check.

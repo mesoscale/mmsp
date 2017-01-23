@@ -1,4 +1,4 @@
-// cahn-hilliard.hpp
+// cahn-hilliard.cpp
 // Algorithms for 2D and 3D Cahn-Hilliard model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
@@ -12,38 +12,49 @@ namespace MMSP{
 
 void generate(int dim, const char* filename)
 {
+	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 	if (dim==1) {
-		MMSP::grid<1,double> grid(1,0,128);
+		int L=1024;
+		GRID1D initGrid(0,0,L);
 
-		for (int i=0; i<nodes(grid); i++)
-			grid(i) = 1.0-2.0*double(rand())/double(RAND_MAX);
+		for (int i=0; i<nodes(initGrid); i++)
+			initGrid(i) = 1.0-2.0*double(rand())/double(RAND_MAX);
 
-		output(grid,filename);
+		output(initGrid,filename);
 	}
 
 	if (dim==2) {
-		MMSP::grid<2,double> grid(1,0,128,0,128);
+		int L=256;
+		GRID2D initGrid(0,0,2*L,0,L);
 
-		for (int i=0; i<nodes(grid); i++)
-			grid(i) = 1.0-2.0*double(rand())/double(RAND_MAX);
+		for (int i=0; i<nodes(initGrid); i++)
+			initGrid(i) = 1.0-2.0*double(rand())/double(RAND_MAX);
 
-		output(grid,filename);
+		output(initGrid,filename);
 	}
 
 	if (dim==3) {
-		MMSP::grid<3,double> grid(1,0,64,0,64,0,64);
+		int L=64;
+		GRID3D initGrid(0,0,2*L,0,L,0,L/4);
 
-		for (int i=0; i<nodes(grid); i++)
-			grid(i) = 1.0-2.0*double(rand())/double(RAND_MAX);
+		for (int i=0; i<nodes(initGrid); i++)
+			initGrid(i) = 1.0-2.0*double(rand())/double(RAND_MAX);
 
-		MMSP::output(grid,filename);
+		output(initGrid,filename);
 	}
 }
 
-template <int dim, typename T> void update(MMSP::grid<dim,T>& grid, int steps)
+template <int dim, typename T> void update(grid<dim,T>& oldGrid, int steps)
 {
-	MMSP::grid<dim,T> update(grid);
-	MMSP::grid<dim,T> temp(grid);
+	int rank=0;
+    #ifdef MPI_VERSION
+    rank = MPI::COMM_WORLD.Get_rank();
+    #endif
+
+	ghostswap(oldGrid);
+
+	grid<dim,T> newGrid(oldGrid);
+	grid<dim,T> temp(oldGrid);
 
 	double r = 1.0;
 	double u = 1.0;
@@ -52,17 +63,20 @@ template <int dim, typename T> void update(MMSP::grid<dim,T>& grid, int steps)
 	double dt = 0.01;
 
 	for (int step=0; step<steps; step++) {
-		for (int i=0; i<nodes(grid); i++) {
-			double phi = grid(i);
-			temp(i) = -r*phi+u*pow(phi,3)-K*laplacian(grid,i);
+		if (rank==0)
+			print_progress(step, steps);
+
+		for (int i=0; i<nodes(oldGrid); i++) {
+			T phi = oldGrid(i);
+			temp(i) = -r*phi+u*pow(phi,3)-K*laplacian(oldGrid,i);
 		}
 		ghostswap(temp);
 
-		for (int i=0; i<nodes(grid); i++)
-			update(i) = grid(i)+dt*M*laplacian(temp,i);
+		for (int i=0; i<nodes(oldGrid); i++)
+			newGrid(i) = oldGrid(i)+dt*M*laplacian(temp,i);
 
-		swap(grid,update);
-		ghostswap(grid);
+		swap(oldGrid,newGrid);
+		ghostswap(oldGrid);
 	}
 }
 

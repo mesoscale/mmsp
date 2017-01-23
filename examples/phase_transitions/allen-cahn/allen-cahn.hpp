@@ -1,4 +1,4 @@
-// allen-cahn.cpp
+// allen-cahn.hpp
 // Example program for the Allen-Cahn model using MMSP
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 

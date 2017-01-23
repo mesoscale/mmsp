@@ -8,22 +8,15 @@ incdir = ../../../../include
 # compilers/flags
 compiler = g++ -O3
 pcompiler = mpic++ -O3
-
 flags = -I $(incdir)
 pflags = $(flags) -include mpi.h
 
-# dependencies
-core = $(incdir)/MMSP.main.hpp \
-       $(incdir)/MMSP.utility.hpp \
-       $(incdir)/MMSP.grid.hpp \
-       $(incdir)/MMSP.sparse.hpp
-
 # the program
-dendritic.out: dendritic.cpp $(core)
+solidification.out: solidification.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
-parallel: dendritic.cpp $(core)
-	$(pcompiler) $(pflags) $< -o $@_dendritic.out -lz
+parallel: solidification.cpp
+	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
-	rm -rf dendritic.out parallel_dendritic.out
+	rm -rf solidification.out parallel
