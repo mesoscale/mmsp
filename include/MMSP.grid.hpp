@@ -1575,16 +1575,17 @@ public:
 		if (blocksize<1048576) {
 			// Standard MPI-IO: every rank writes to disk
 			#ifdef BGQ
-			if (rank==0) std::cout<<"Bug: using normal IO, instead of BGQ IO!"<<std::endl;
+			if (rank==0) std::cout<<"Bug: using MPI-IO, instead of BGQ IO!"<<std::endl;
 			#endif
 			MPI_File output;
-			if (rank==0)
-				MPI_File_delete(fname,MPI_INFO_NULL);
-			MPI::COMM_WORLD.Barrier();
 			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
 				if (rank==0)
 					MPI_File_delete(fname,MPI_INFO_NULL);
+				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+				assert(mpi_err==MPI_SUCCESS);
+			}
+			if (mpi_err != MPI_SUCCESS) {
 				char error_string[256];
 				int length_of_error_string=256;
 				MPI_Error_string(mpi_err, error_string, &length_of_error_string);
@@ -1900,8 +1901,6 @@ public:
 			if (rank==0) std::cout<<"  Opening "<<std::string(fname)<<" for output."<<std::endl;
 			#endif
 			MPI_File output;
-			if (rank==0)
-				MPI_File_delete(fname,MPI_INFO_NULL);
 			MPI::COMM_WORLD.Barrier();
 			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
 			if (mpi_err != MPI_SUCCESS) {
@@ -2535,6 +2534,29 @@ template <int dim, typename T> vector<T> gradient(const grid<dim, T>& GRID, cons
 template <int dim, typename T> vector<T> grad(const grid<dim, T>& GRID, const vector<int>& x)
 {
 	return gradient(GRID, x);
+}
+
+template <int dim, typename T> vector<T> gradient(const grid<dim, vector<T> >& GRID, const vector<int>& x, const int f)
+{
+	vector<T> gradient(dim);
+	vector<int> s = x;
+
+	for (int i=0; i<dim; i++) {
+		s[i] += 1;
+		const T& yh = GRID(s)[f];
+		s[i] -= 2;
+		const T& yl = GRID(s)[f];
+		s[i] += 1;
+
+		double weight = 1.0 / (2.0 * dx(GRID, i));
+		gradient[i] = weight * (yh - yl);
+	}
+	return gradient;
+}
+
+template <int dim, typename T> vector<T> grad(const grid<dim, T>& GRID, const vector<int>& x, const int f)
+{
+	return gradient(GRID, x, f);
 }
 
 template <int dim, typename T> T divergence(const grid<dim, T>& GRID, const vector<int>& x)

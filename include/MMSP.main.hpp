@@ -232,6 +232,8 @@ int main(int argc, char* argv[]) {
 		int dim;
 		input >> dim;
 
+		input.close();
+
 		// set output file basename
 		int iterations_start(0);
 		if (outfile.find_first_of(".") != outfile.find_last_of(".")) {

@@ -27,8 +27,17 @@ utility/vox2MC
 utility/mmsp2topo
 utility/mmsp2z
 utility/wrongendian
+utility/mmsp2tsv
+utility/mmsp2xyz
 
-# unit testing
+# testing output
+*.dat
+*.png
+*.vti
+ostwald
+parallel
+graingrowth
+zener
 test/unitTestSuite
 
 # Compiled Object files
