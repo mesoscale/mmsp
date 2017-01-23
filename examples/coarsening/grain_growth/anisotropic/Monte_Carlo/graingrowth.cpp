@@ -20,7 +20,8 @@ void generate(int dim, const char* filename)
 {
 	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 	if (dim == 1) {
-		GRID1D initGrid(0, 0, 128);
+		int L=1024;
+		GRID1D initGrid(0, 0, L);
 
 		for (int i = 0; i < nodes(initGrid); i++)
 			initGrid(i) = rand() % 100;
@@ -29,15 +30,16 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim == 2) {
-		int L=64;
-		GRID2D initGrid(0, 0, L, 0, L);
+		int L=256;
+		GRID2D initGrid(0, 0, 2*L, 0, L);
 
 		for (int i = 0; i < nodes(initGrid); i++)
 			initGrid(i) = rand() % 20;
 
 		output(initGrid, filename);
 	} else if (dim == 3) {
-		GRID3D initGrid(0, 0, 32, 0, 32, 0, 32);
+		int L=64;
+		GRID3D initGrid(0, 0, 2*L, 0, L, 0, L/4);
 
 		for (int i = 0; i < nodes(initGrid); i++)
 			initGrid(i) = rand() % 20;
@@ -72,7 +74,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 	vector<int> lattice_cells_each_dimension(dim,0);
 	for (int i = 0; i < dim; i++) {
 		dimension_length = x1(mcGrid, i) - x0(mcGrid, i);
-		if (x0(mcGrid, 0) % 2 == 0) // in serial, this is always true
+		if (x0(mcGrid, 0) % 2 == 0)
 			lattice_cells_each_dimension[i] = dimension_length / 2 + 1;
 		else
 			lattice_cells_each_dimension[i] = 1 + (dimension_length % 2 == 0 ? dimension_length / 2 : dimension_length / 2 + 1);
@@ -368,7 +370,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 			#ifdef MPI_VERSION
 			MPI::COMM_WORLD.Barrier();
 			#endif
-			//ghostswap(mcGrid, sublattice); // once looped over a "color", ghostswap.
+			ghostswap(mcGrid, sublattice); // once looped over a "color", ghostswap.
 		}//loop over sublattice
 	}//loop over step
 }//update

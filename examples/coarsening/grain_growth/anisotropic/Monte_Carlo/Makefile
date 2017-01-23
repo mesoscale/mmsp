@@ -9,18 +9,14 @@ incdir = ../../../../../include
 compiler = g++
 pcompiler = mpic++
 flags = -O3 -I $(incdir)
-gflags = -g -I $(incdir)
 pflags = $(flags) -include mpi.h 
 
 # the program
 graingrowth: graingrowth.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
-debug: graingrowth.cpp
-	$(compiler) $(gflags) $< -o $@ -lz
-
 parallel: graingrowth.cpp
 	$(pcompiler) $(pflags) $< -o $@ -lz
 
 clean:
-	rm -f graingrowth debug parallel
+	rm -f graingrowth parallel

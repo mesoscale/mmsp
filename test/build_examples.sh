@@ -11,23 +11,32 @@
 # Questions/comments to trevor.keller@gmail.com (Trevor Keller)
 
 # * Canonical examples exclude the following directories:
-# differential_equations/elliptic/Poisson  --  failing due to memory errors
 # beginners_diffusion  --  does not match execution pattern
+# differential_equations/elliptic/Poisson  --  serial execution only
+# These will be compiled, but not executed.
 
 # Valid flags are:
 # --noexec  build in serial and parallel, but do not execute
 # --noviz   do not convert data for visualization
+# --pvd     convert to PVD and VTI instead of PNG
 # --force   pass -B flag to make
 # --np X    pass mpirun X ranks (e.g., --np 3 yields mpirun -np 3)
+# --1D      initialize and run examples in 1D
+# --2D      initialize and run examples in 2D
+# --3D      initialize and run examples in 3D
 # --short   execute tests .1x default
 # --long    execute tests  5x longer  than default
 # --extra   execute tests 25x longer  than default
 # --clean   delete generated files (binaries, data, imges) after test completes
 
 # Set output colors
-RED='\033[0;31m'
-GRN='\033[0;32m'
-WHT='\033[0m' # No Color
+RED='\033[0;31m'  # red
+BRED='\033[1;31m'  # bold red
+GRN='\033[0;32m'  # green
+BGRN='\033[1;32m'  # bold green
+YLW='\033[0;33m'  # yellow
+BYLW='\033[1;33m' # bold yellow
+WHT='\033[0m'     # normal
 
 # Initialize timer and completion counters
 tstart=$(date +%s)
@@ -39,13 +48,17 @@ nParBld=0
 nParRun=0
 MFLAG="-s"
 
-# Set execution parameters
-ITERS=1000
-INTER=500
-CORES=4
-COREMAX=$(nproc)
+# Default execution parameters
+DIM=2            # grid dimensions
+ITERS=1000       # number of steps
+INTER=500        # steps between checkpoint
+ZED="0000"       # checkpoint filename format
+CORES=4          # MPI ranks to use
+COREMAX=$(nproc) # MPI ranks available
 if [[ $CORES -gt $COREMAX ]]
 then
+	# A lot of machines, Travis-CI build bots included,
+	# have only 2 cores available. Let's be polite.
 	CORES=$COREMAX
 fi
 
@@ -55,7 +68,6 @@ examples=$(pwd)
 
 echo -n "Building examples in serial and parallel"
 
-
 while [[ $# -gt 0 ]]
 do
 	key="$1"
@@ -64,7 +76,7 @@ do
 			echo -n ", forcing build"
 			MFLAG="-Bs"
 		;;
-			--clean)
+		--clean)
 			echo -n ", cleaning up after"
 		CLEAN=true
 		;;
@@ -72,9 +84,23 @@ do
 			echo -n ", not executing"
 			NEXEC=true
 		;;
+		--1D)
+			DIM=1
+		;;
+		--2D)
+			DIM=2
+		;;
+		--3D)
+			DIM=3
+		;;
+		--np)
+			shift
+			CORES=$1
+		;;
 		--short)
 			ITERS=$(($ITERS/10))
 			INTER=100
+			ZED="000"
 		;;
 		--long)
 			ITERS=$((5*$ITERS))
@@ -82,19 +108,18 @@ do
 		;;
 		--extra)
 			ITERS=$((25*$ITERS))
-			INTER=5000
+			INTER=1000
+			ZED="00000"
 		;;
 		--noviz)
 			echo -n ", no PNG output"
 			NOVIZ=true
 		;;
-		--np)
-			shift
-			CORES=$1
+		--pvd)
+			PVD=true
 		;;
 		*)
-			echo "WARNING: Unknown option ${key}."
-			echo
+			echo -ne ", ${BYLW}ignoring unknown option ${key}${WHT}"
     ;;
 	esac
 	shift # pop first entry from command-line argument list, reduce $# by 1
@@ -102,27 +127,44 @@ done
 
 if [[ ! $NEXEC ]]
 then
-		echo ", taking $ITERS steps, using $CORES/$COREMAX MPI ranks"
+	echo ", ${DIM}-dimensional, taking $ITERS steps, using $CORES/$COREMAX MPI ranks"
+	if [[ $DIM -eq 3 ]] && [[ $ITERS -gt 100 ]]
+	then
+		DENOM=$((6*$CORES))
+		if [[ $ITERS -gt 10000 ]]
+		then
+			# Not as much work at long times
+			DENOM=$((9*$CORES))
+		fi
+		RTIM=$(($ITERS/$DENOM))
+		echo -e "${BYLW}      Expected runtime is $RTIM minutes. Consider --short.${WHT}"
+	fi
 else
 	echo
 fi
 
 if [[ ! $NOVIZ ]]
 then
-	# Remove existing images first. If the test fails,
-	# no images in the directory is an obvious red flag.
-	rm -f test.*.png
-	if [[ $(which mmsp2png) == "" ]]
+	if [[ ! $PVD ]] && [[ $(which mmsp2png) == "" ]]
 	then
 		# Consult doc/MMSP.manual.pdf if this fails.
-		echo "mmsp2png utility not found. Please check your installation,"
-		echo " or pass --noviz flag to suppress PNG output."
+		echo -e "${BYLW}mmsp2png utility not found. Please check your installation, or pass --noviz.${WHT}"
+	fi
+	if [[ $PVD ]] && [[ $(which mmsp2pvd) == "" ]]
+	then
+		# Consult doc/MMSP.manual.pdf if this fails.
+		echo -e "${BYLW}mmsp2pvd utility not found. Please check your installation, or pass --noviz.${WHT}"
+	fi
+	if [[ $DIM -eq 3 ]] && [[ ! $PVD ]]
+	then
+		echo -e "${BYLW}Pass --pvd for ParaView Data output, recommended over PNG for 3D data.${WHT}"
 	fi
 fi
 
 echo "---------------------------------------------------------------------------"
 
-exdirs=("coarsening/grain_growth/anisotropic/Monte_Carlo/" \
+exdirs=("beginners_diffusion/" \
+"coarsening/grain_growth/anisotropic/Monte_Carlo/" \
 "coarsening/grain_growth/anisotropic/phase_field/" \
 "coarsening/grain_growth/anisotropic/sparsePF/" \
 "coarsening/grain_growth/isotropic/Monte_Carlo/" \
@@ -135,6 +177,7 @@ exdirs=("coarsening/grain_growth/anisotropic/Monte_Carlo/" \
 "coarsening/zener_pinning/isotropic/Monte_Carlo/" \
 "coarsening/zener_pinning/isotropic/phase_field/" \
 "coarsening/zener_pinning/isotropic/sparsePF/" \
+"differential_equations/elliptic/Poisson/" \
 "phase_transitions/allen-cahn/" \
 "phase_transitions/cahn-hilliard/convex_splitting/" \
 "phase_transitions/cahn-hilliard/explicit/" \
@@ -160,17 +203,26 @@ do
 	else
 		((nSerErr++))
 	fi
-	if make $MFLAG parallel
+	if [[ ${exdirs[$i]} != *"beginners"* ]]
 	then
-		((nParBld++))
-	else
-		((nParErr++))
+		if make $MFLAG parallel
+		then
+			((nParBld++))
+		else
+			((nParErr++))
+		fi
 	fi
 	if [[ -f parallel ]] && [[ ! $NEXEC ]]
 	then
+		rm -f test.*.dat test.*.png test.*.vti test.pvd
+		RUNCMD="mpirun -np $CORES ./parallel"
+		if [[ ${exdirs[$i]} == *"Poisson"* ]]
+		then
+			RUNCMD="./poisson"
+		fi
 		# Run the example in parallel, for speed.
-		mpirun -np $CORES ./parallel --example 2 test.0000.dat 1>test.log 2>error.log \
-		&& mpirun -np $CORES ./parallel test.0000.dat $ITERS $INTER 1>>test.log 2>>error.log
+		$RUNCMD --example $DIM test.$ZED.dat 1>test.log 2>error.log \
+		&& $RUNCMD test.$ZED.dat $ITERS $INTER 1>>test.log 2>>error.log
 		# Return codes are not reliable. Save errors to disk for postmortem.
 		if [[ -f error.log ]] && [[ $(wc -w error.log) > 1 ]]
 		then
@@ -191,9 +243,23 @@ do
 				do
 					mmsp2png --zoom $f >>test.log
 				done
+				if [[ $PVD ]]
+				then
+					mmsp2pvd --output=test.pvd test.*.dat >>test.log
+				fi
 			fi
 			exfin=$(date +%s)
 			exlapse=$(echo "$exfin-$exstart" | bc -l)
+			printf "${GRN}%3d seconds${WHT}\n" $exlapse
+		fi
+	elif [[ ${exdirs[$i]} == *"beginners"* ]]
+	then
+		exfin=$(date +%s)
+		exlapse=$(echo "$exfin-$exstart" | bc -l)
+		if [[ ! $NEXEC ]]
+		then
+			printf "${YLW}%3d seconds\n      example does not match generic pattern for execution${WHT}\n" $exlapse
+		else
 			printf "${GRN}%3d seconds${WHT}\n" $exlapse
 		fi
 	else
@@ -206,9 +272,8 @@ do
 	then
 		make -s clean
 		rm -f test.*.dat
-		rm -f test.log
-		rm -f error.log
-		rm -f test.*.png
+		rm -f test.log error.log
+		rm -f test.*.png test.pvd test.*.vti
 	fi
 done
 
@@ -219,17 +284,17 @@ elapsed=$(echo "$tfinish-$tstart" | bc -l)
 echo "---------------------------------------------------------------------------"
 printf "Elapsed time: %53d seconds\n" $elapsed
 echo
-printf "%2d serial   examples compiled successfully" $nSerBld
+printf "%2d examples compiled successfully in serial    " $nSerBld
 if [[ $nSerErr > 0 ]]
 then
 	printf ", %2d failed" $nSerErr
 fi
-printf "\n%2d parallel examples compiled successfully" $nParBld
+printf "\n%2d examples compiled successfully in parallel" $nParBld
 if [[ $nParErr > 0 ]]
 then
 	printf ", %2d failed" $nParErr
 fi
-printf "\n%2d parallel examples executed successfully" $nParRun
+printf "\n%2d examples executed successfully            " $nParRun
 if [[ $nRunErr > 0 ]]
 then
 	printf ", %2d failed" $nRunErr
@@ -241,6 +306,9 @@ AllERR=$(echo "$nSerErr+$nParErr+$nRunErr" | bc -l)
 if [[ $AllERR > 0 ]]
 then
 	echo
-	echo "Build error(s) detected: ${AllERR} tests failed."
+	echo -e "${BRED}Build error(s) detected: ${AllERR} tests failed.${WHT}"
 	exit 1
 fi
+
+echo
+echo -e "${BGRN}Build tests successfully completed.${WHT}"

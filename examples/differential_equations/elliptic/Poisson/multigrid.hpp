@@ -152,13 +152,13 @@ template <typename T> void refine(grid<3,T>& u, int stride, std::string method="
 	}
 }
 
-template <int dim, typename T> 
+template <int dim, typename T>
 void MG(grid<dim,T>& u, const grid<dim,T>& f, int stride, int gamma=1, int nu1=2, int nu2=2)
 {
-	// standard multigrid cycle 
+	// standard multigrid cycle
 	int s = stride;
 
-	// solve if at coarsest level
+	// solve at coarsest level
 	bool solve = false;
 	for (int i=0; i<dim; i++)
 		if (2*s+1==x1(u,i))
@@ -194,7 +194,7 @@ void MG(grid<dim,T>& u, const grid<dim,T>& f, int stride, int gamma=1, int nu1=2
 	smooth(u,f,s,nu2);
 }
 
-template <int dim, typename T> 
+template <int dim, typename T>
 void FMG(grid<dim,T>& u, const grid<dim,T>& f, int gamma=1, int nu1=2, int nu2=2)
 {
 	// solve at coarsest level

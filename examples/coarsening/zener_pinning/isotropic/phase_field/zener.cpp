@@ -14,18 +14,20 @@ void generate(int dim, const char* filename)
 {
 	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 	if (dim==1) {
-		GRID1D initGrid(3,0,128);
+		int L=1024;
+		GRID1D initGrid(3,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
 			initGrid(i)[0] = 0.0;
 			initGrid(i)[1] = 0.0;
-			double d = 64.0-x[0];
-			if (d<32.0) initGrid(i)[2] = 1.0;
+			double d = 32-x[0]%64;
+			if (d<16.0) initGrid(i)[2] = 1.0;
 			else initGrid(i)[1] = 1.0;
 		}
 
-		for (int j=0; j<50; j++) {
+		int nParticles=std::max(50,(50*8192)/nodes(initGrid));
+		for (int j=0; j<nParticles; j++) {
 			int i = rand()%nodes(initGrid);
 			vector<int> x = position(initGrid,i);
 			vector<int> p(x);
@@ -47,12 +49,13 @@ void generate(int dim, const char* filename)
 			vector<int> x = position(initGrid,i);
 			initGrid(i)[0] = 0.0;
 			initGrid(i)[1] = 0.0;
-			double d = sqrt(pow(L/2-x[0],2)+pow(L/2-x[1],2));
-			if (d<L/4.0) initGrid(i)[2] = 1.0;
+			double d = sqrt(pow(32-x[0]%64,2)+pow(32-x[1]%64,2));
+			if (d<16.0) initGrid(i)[2] = 1.0;
 			else initGrid(i)[1] = 1.0;
 		}
 
-		for (int j=0; j<50; j++) {
+		int nParticles=std::max(50,(50*8192)/nodes(initGrid));
+		for (int j=0; j<nParticles; j++) {
 			int i = rand()%nodes(initGrid);
 			vector<int> x = position(initGrid,i);
 			vector<int> p(x);
@@ -68,18 +71,20 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		GRID3D initGrid(3,0,64,0,64,0,64);
+		int L=64;
+		GRID3D initGrid(3,0,2*L,0,L,0,L/4);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
 			initGrid(i)[0] = 0.0;
 			initGrid(i)[1] = 0.0;
-			double d = sqrt(pow(32.0-x[0],2)+pow(32.0-x[1],2)+pow(32.0-x[2],2));
+			double d = sqrt(pow(32-x[0]%64,2)+pow(32-x[1]%64,2));
 			if (d<16.0) initGrid(i)[2] = 1.0;
 			else initGrid(i)[1] = 1.0;
 		}
 
-		for (int j=0; j<50; j++) {
+		int nParticles=std::max(50,(50*8192)/nodes(initGrid));
+		for (int j=0; j<nParticles; j++) {
 			int i = rand()%nodes(initGrid);
 			vector<int> x = position(initGrid,i);
 			vector<int> p(x);

@@ -475,22 +475,7 @@ int main(int argc, char* argv[])
 					print_scalars(output, GRID, flatten);
 				}
 			}
-			if (char_type) {
-				if (dim == 1) {
-					MMSP::grid<1, MMSP::scalar<char> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_scalars(output, GRID, flatten);
-				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::scalar<char> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_scalars(output, GRID, flatten);
-				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::scalar<char> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_scalars(output, GRID, flatten);
-				}
-			}
-			if (unsigned_char_type) {
+			else if (unsigned_char_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<unsigned char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -505,22 +490,22 @@ int main(int argc, char* argv[])
 					print_scalars(output, GRID, flatten);
 				}
 			}
-			if (int_type) {
+			else if (char_type) {
 				if (dim == 1) {
-					MMSP::grid<1, MMSP::scalar<int> > GRID(fields, lmin, lmax);
+					MMSP::grid<1, MMSP::scalar<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_scalars(output, GRID, flatten);
 				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::scalar<int> > GRID(fields, lmin, lmax);
+					MMSP::grid<2, MMSP::scalar<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_scalars(output, GRID, flatten);
 				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::scalar<int> > GRID(fields, lmin, lmax);
+					MMSP::grid<3, MMSP::scalar<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_scalars(output, GRID, flatten);
 				}
 			}
-			if (unsigned_int_type) {
+			else if (unsigned_int_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<unsigned int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -535,22 +520,22 @@ int main(int argc, char* argv[])
 					print_scalars(output, GRID, flatten);
 				}
 			}
-			if (long_type) {
+			else if (int_type) {
 				if (dim == 1) {
-					MMSP::grid<1, MMSP::scalar<long> > GRID(fields, lmin, lmax);
+					MMSP::grid<1, MMSP::scalar<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_scalars(output, GRID, flatten);
 				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::scalar<long> > GRID(fields, lmin, lmax);
+					MMSP::grid<2, MMSP::scalar<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_scalars(output, GRID, flatten);
 				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::scalar<long> > GRID(fields, lmin, lmax);
+					MMSP::grid<3, MMSP::scalar<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_scalars(output, GRID, flatten);
 				}
 			}
-			if (unsigned_long_type) {
+			else if (unsigned_long_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<unsigned long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -565,22 +550,22 @@ int main(int argc, char* argv[])
 					print_scalars(output, GRID, flatten);
 				}
 			}
-			if (short_type) {
+			else if (long_type) {
 				if (dim == 1) {
-					MMSP::grid<1, MMSP::scalar<short> > GRID(fields, lmin, lmax);
+					MMSP::grid<1, MMSP::scalar<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_scalars(output, GRID, flatten);
 				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::scalar<short> > GRID(fields, lmin, lmax);
+					MMSP::grid<2, MMSP::scalar<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_scalars(output, GRID, flatten);
 				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::scalar<short> > GRID(fields, lmin, lmax);
+					MMSP::grid<3, MMSP::scalar<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_scalars(output, GRID, flatten);
 				}
 			}
-			if (unsigned_short_type) {
+			else if (unsigned_short_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<unsigned short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -595,7 +580,22 @@ int main(int argc, char* argv[])
 					print_scalars(output, GRID, flatten);
 				}
 			}
-			if (float_type) {
+			else if (short_type) {
+				if (dim == 1) {
+					MMSP::grid<1, MMSP::scalar<short> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_scalars(output, GRID, flatten);
+				} else if (dim == 2) {
+					MMSP::grid<2, MMSP::scalar<short> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_scalars(output, GRID, flatten);
+				} else if (dim == 3) {
+					MMSP::grid<3, MMSP::scalar<short> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_scalars(output, GRID, flatten);
+				}
+			}
+			else if (float_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<float> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -610,22 +610,7 @@ int main(int argc, char* argv[])
 					print_scalars(output, GRID, flatten);
 				}
 			}
-			if (double_type) {
-				if (dim == 1) {
-					MMSP::grid<1, MMSP::scalar<double> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_scalars(output, GRID, flatten);
-				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::scalar<double> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_scalars(output, GRID, flatten);
-				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::scalar<double> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_scalars(output, GRID, flatten);
-				}
-			}
-			if (long_double_type) {
+			else if (long_double_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::scalar<long double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -636,6 +621,21 @@ int main(int argc, char* argv[])
 					print_scalars(output, GRID, flatten);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::scalar<long double> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_scalars(output, GRID, flatten);
+				}
+			}
+			else if (double_type) {
+				if (dim == 1) {
+					MMSP::grid<1, MMSP::scalar<double> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_scalars(output, GRID, flatten);
+				} else if (dim == 2) {
+					MMSP::grid<2, MMSP::scalar<double> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_scalars(output, GRID, flatten);
+				} else if (dim == 3) {
+					MMSP::grid<3, MMSP::scalar<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_scalars(output, GRID, flatten);
 				}
@@ -658,22 +658,7 @@ int main(int argc, char* argv[])
 					print_vectors(output, GRID, flatten, field);
 				}
 			}
-			if (char_type) {
-				if (dim == 1) {
-					MMSP::grid<1, MMSP::vector<char> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_vectors(output, GRID, flatten, field);
-				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::vector<char> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_vectors(output, GRID, flatten, field);
-				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::vector<char> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_vectors(output, GRID, flatten, field);
-				}
-			}
-			if (unsigned_char_type) {
+			else if (unsigned_char_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<unsigned char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -688,22 +673,22 @@ int main(int argc, char* argv[])
 					print_vectors(output, GRID, flatten, field);
 				}
 			}
-			if (int_type) {
+			else if (char_type) {
 				if (dim == 1) {
-					MMSP::grid<1, MMSP::vector<int> > GRID(fields, lmin, lmax);
+					MMSP::grid<1, MMSP::vector<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_vectors(output, GRID, flatten, field);
 				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::vector<int> > GRID(fields, lmin, lmax);
+					MMSP::grid<2, MMSP::vector<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_vectors(output, GRID, flatten, field);
 				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::vector<int> > GRID(fields, lmin, lmax);
+					MMSP::grid<3, MMSP::vector<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_vectors(output, GRID, flatten, field);
 				}
 			}
-			if (unsigned_int_type) {
+			else if (unsigned_int_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<unsigned int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -718,22 +703,22 @@ int main(int argc, char* argv[])
 					print_vectors(output, GRID, flatten, field);
 				}
 			}
-			if (long_type) {
+			else if (int_type) {
 				if (dim == 1) {
-					MMSP::grid<1, MMSP::vector<long> > GRID(fields, lmin, lmax);
+					MMSP::grid<1, MMSP::vector<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_vectors(output, GRID, flatten, field);
 				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::vector<long> > GRID(fields, lmin, lmax);
+					MMSP::grid<2, MMSP::vector<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_vectors(output, GRID, flatten, field);
 				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::vector<long> > GRID(fields, lmin, lmax);
+					MMSP::grid<3, MMSP::vector<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_vectors(output, GRID, flatten, field);
 				}
 			}
-			if (unsigned_long_type) {
+			else if (unsigned_long_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<unsigned long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -748,22 +733,22 @@ int main(int argc, char* argv[])
 					print_vectors(output, GRID, flatten, field);
 				}
 			}
-			if (short_type) {
+			else if (long_type) {
 				if (dim == 1) {
-					MMSP::grid<1, MMSP::vector<short> > GRID(fields, lmin, lmax);
+					MMSP::grid<1, MMSP::vector<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_vectors(output, GRID, flatten, field);
 				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::vector<short> > GRID(fields, lmin, lmax);
+					MMSP::grid<2, MMSP::vector<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_vectors(output, GRID, flatten, field);
 				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::vector<short> > GRID(fields, lmin, lmax);
+					MMSP::grid<3, MMSP::vector<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_vectors(output, GRID, flatten, field);
 				}
 			}
-			if (unsigned_short_type) {
+			else if (unsigned_short_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<unsigned short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -778,7 +763,22 @@ int main(int argc, char* argv[])
 					print_vectors(output, GRID, flatten, field);
 				}
 			}
-			if (float_type) {
+			else if (short_type) {
+				if (dim == 1) {
+					MMSP::grid<1, MMSP::vector<short> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_vectors(output, GRID, flatten, field);
+				} else if (dim == 2) {
+					MMSP::grid<2, MMSP::vector<short> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_vectors(output, GRID, flatten, field);
+				} else if (dim == 3) {
+					MMSP::grid<3, MMSP::vector<short> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_vectors(output, GRID, flatten, field);
+				}
+			}
+			else if (float_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<float> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -793,22 +793,7 @@ int main(int argc, char* argv[])
 					print_vectors(output, GRID, flatten, field);
 				}
 			}
-			if (double_type) {
-				if (dim == 1) {
-					MMSP::grid<1, MMSP::vector<double> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_vectors(output, GRID, flatten, field);
-				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::vector<double> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_vectors(output, GRID, flatten, field);
-				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::vector<double> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_vectors(output, GRID, flatten, field);
-				}
-			}
-			if (long_double_type) {
+			else if (long_double_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::vector<long double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -819,6 +804,21 @@ int main(int argc, char* argv[])
 					print_vectors(output, GRID, flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::vector<long double> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_vectors(output, GRID, flatten, field);
+				}
+			}
+			else if (double_type) {
+				if (dim == 1) {
+					MMSP::grid<1, MMSP::vector<double> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_vectors(output, GRID, flatten, field);
+				} else if (dim == 2) {
+					MMSP::grid<2, MMSP::vector<double> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_vectors(output, GRID, flatten, field);
+				} else if (dim == 3) {
+					MMSP::grid<3, MMSP::vector<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_vectors(output, GRID, flatten, field);
 				}
@@ -841,22 +841,7 @@ int main(int argc, char* argv[])
 					print_sparses(output, GRID, flatten, field);
 				}
 			}
-			if (char_type) {
-				if (dim == 1) {
-					MMSP::grid<1, MMSP::sparse<char> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_sparses(output, GRID, flatten, field);
-				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::sparse<char> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_sparses(output, GRID, flatten, field);
-				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::sparse<char> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_sparses(output, GRID, flatten, field);
-				}
-			}
-			if (unsigned_char_type) {
+			else if (unsigned_char_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<unsigned char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -871,22 +856,22 @@ int main(int argc, char* argv[])
 					print_sparses(output, GRID, flatten, field);
 				}
 			}
-			if (int_type) {
+			else if (char_type) {
 				if (dim == 1) {
-					MMSP::grid<1, MMSP::sparse<int> > GRID(fields, lmin, lmax);
+					MMSP::grid<1, MMSP::sparse<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_sparses(output, GRID, flatten, field);
 				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::sparse<int> > GRID(fields, lmin, lmax);
+					MMSP::grid<2, MMSP::sparse<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_sparses(output, GRID, flatten, field);
 				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::sparse<int> > GRID(fields, lmin, lmax);
+					MMSP::grid<3, MMSP::sparse<char> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_sparses(output, GRID, flatten, field);
 				}
 			}
-			if (unsigned_int_type) {
+			else if (unsigned_int_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<unsigned int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -901,22 +886,22 @@ int main(int argc, char* argv[])
 					print_sparses(output, GRID, flatten, field);
 				}
 			}
-			if (long_type) {
+			else if (int_type) {
 				if (dim == 1) {
-					MMSP::grid<1, MMSP::sparse<long> > GRID(fields, lmin, lmax);
+					MMSP::grid<1, MMSP::sparse<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_sparses(output, GRID, flatten, field);
 				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::sparse<long> > GRID(fields, lmin, lmax);
+					MMSP::grid<2, MMSP::sparse<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_sparses(output, GRID, flatten, field);
 				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::sparse<long> > GRID(fields, lmin, lmax);
+					MMSP::grid<3, MMSP::sparse<int> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_sparses(output, GRID, flatten, field);
 				}
 			}
-			if (unsigned_long_type) {
+			else if (unsigned_long_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<unsigned long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -931,22 +916,22 @@ int main(int argc, char* argv[])
 					print_sparses(output, GRID, flatten, field);
 				}
 			}
-			if (short_type) {
+			else if (long_type) {
 				if (dim == 1) {
-					MMSP::grid<1, MMSP::sparse<short> > GRID(fields, lmin, lmax);
+					MMSP::grid<1, MMSP::sparse<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_sparses(output, GRID, flatten, field);
 				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::sparse<short> > GRID(fields, lmin, lmax);
+					MMSP::grid<2, MMSP::sparse<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_sparses(output, GRID, flatten, field);
 				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::sparse<short> > GRID(fields, lmin, lmax);
+					MMSP::grid<3, MMSP::sparse<long> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_sparses(output, GRID, flatten, field);
 				}
 			}
-			if (unsigned_short_type) {
+			else if (unsigned_short_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<unsigned short> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -961,7 +946,22 @@ int main(int argc, char* argv[])
 					print_sparses(output, GRID, flatten, field);
 				}
 			}
-			if (float_type) {
+			else if (short_type) {
+				if (dim == 1) {
+					MMSP::grid<1, MMSP::sparse<short> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_sparses(output, GRID, flatten, field);
+				} else if (dim == 2) {
+					MMSP::grid<2, MMSP::sparse<short> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_sparses(output, GRID, flatten, field);
+				} else if (dim == 3) {
+					MMSP::grid<3, MMSP::sparse<short> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_sparses(output, GRID, flatten, field);
+				}
+			}
+			else if (float_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<float> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -976,22 +976,7 @@ int main(int argc, char* argv[])
 					print_sparses(output, GRID, flatten, field);
 				}
 			}
-			if (double_type) {
-				if (dim == 1) {
-					MMSP::grid<1, MMSP::sparse<double> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_sparses(output, GRID, flatten, field);
-				} else if (dim == 2) {
-					MMSP::grid<2, MMSP::sparse<double> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_sparses(output, GRID, flatten, field);
-				} else if (dim == 3) {
-					MMSP::grid<3, MMSP::sparse<double> > GRID(fields, lmin, lmax);
-					GRID.from_buffer(buffer);
-					print_sparses(output, GRID, flatten, field);
-				}
-			}
-			if (long_double_type) {
+			else if (long_double_type) {
 				if (dim == 1) {
 					MMSP::grid<1, MMSP::sparse<long double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
@@ -1002,6 +987,21 @@ int main(int argc, char* argv[])
 					print_sparses(output, GRID, flatten, field);
 				} else if (dim == 3) {
 					MMSP::grid<3, MMSP::sparse<long double> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_sparses(output, GRID, flatten, field);
+				}
+			}
+			else if (double_type) {
+				if (dim == 1) {
+					MMSP::grid<1, MMSP::sparse<double> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_sparses(output, GRID, flatten, field);
+				} else if (dim == 2) {
+					MMSP::grid<2, MMSP::sparse<double> > GRID(fields, lmin, lmax);
+					GRID.from_buffer(buffer);
+					print_sparses(output, GRID, flatten, field);
+				} else if (dim == 3) {
+					MMSP::grid<3, MMSP::sparse<double> > GRID(fields, lmin, lmax);
 					GRID.from_buffer(buffer);
 					print_sparses(output, GRID, flatten, field);
 				}

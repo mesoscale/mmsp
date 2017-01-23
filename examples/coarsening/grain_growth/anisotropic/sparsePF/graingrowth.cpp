@@ -14,37 +14,44 @@ namespace MMSP{
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		GRID1D initGrid(0,0,128);
+		int L=1024;
+		GRID1D initGrid(0,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
 
-			if (x[0]<32)      set(initGrid(i),3) = 1.0;
-			else if (x[0]>96) set(initGrid(i),3) = 1.0;
-			else              set(initGrid(i),0) = 1.0;
+			if (x[0]%128 < 32)
+				set(initGrid(i),3) = 1.0;
+			else if (x[0]%128 < 64)
+				set(initGrid(i),2) = 1.0;
+			else if (x[0]%128 < 96)
+				set(initGrid(i),1) = 1.0;
+			else
+				set(initGrid(i),0) = 1.0;
 		}
 
 		output(initGrid,filename);
 	}
 
 	if (dim==2) {
-		int L=128;
+		int L=256;
 		GRID2D initGrid(0,0,L,0,L);
 
+		// Divide domain into "unit cells", 128 points on an edge
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
 
-			if (x[0]<L/4) {
-				if (x[1]<L/2) set(initGrid(i),2) = 1.0;
-				else set(initGrid(i),3) = 1.0;
-			}
-			else if (x[0]>3*L/4) {
-				if (x[1]<L/2) set(initGrid(i),2) = 1.0;
-				else set(initGrid(i),3) = 1.0;
+			if (x[0]%128 < 32 || x[0]%128 > 96) { // less than 1/4, more than 3/4
+				if (x[1]%128 < 64) // less than 1/2
+					set(initGrid(i),2) = 1.0;
+				else
+					set(initGrid(i),3) = 1.0;
 			}
 			else {
-				if (x[1]<L/4 or x[1]>3*L/4) set(initGrid(i),1) = 1.0;
-				else set(initGrid(i),0) = 1.0;
+				if (x[1]%128 < 32 || x[1]%128 > 96) // less than 1/4, more than 3/4
+					set(initGrid(i),1) = 1.0;
+				else
+					set(initGrid(i),0) = 1.0;
 			}
 		}
 
@@ -52,22 +59,24 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		GRID3D initGrid(0,0,64,0,64,0,64);
+		int L=64;
+		GRID3D initGrid(0,0,2*L,0,L,0,L/4);
 
+		// Divide domain into "unit cells", 64 points on an edge
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
 
-			if (x[0]<16) {
-				if (x[1]<32) set(initGrid(i),2) = 1.0;
-				else set(initGrid(i),3) = 1.0;
-			}
-			else if (x[0]>48) {
-				if (x[1]<32) set(initGrid(i),2) = 1.0;
-				else set(initGrid(i),3) = 1.0;
+			if (x[0]%64 < 16 || x[0]%64 > 48) { // less than 1/4, more than 3/4
+				if (x[1]%64 < 32) // less than 1/2
+					set(initGrid(i),2) = 1.0;
+				else
+					set(initGrid(i),3) = 1.0;
 			}
 			else {
-				if (x[1]<16 or x[1]>48) set(initGrid(i),1) = 1.0;
-				else set(initGrid(i),0) = 1.0;
+				if (x[1]%64 < 16 || x[1]%64 > 48) // less than 1/4, more than 3/4
+					set(initGrid(i),1) = 1.0;
+				else
+					set(initGrid(i),0) = 1.0;
 			}
 		}
 

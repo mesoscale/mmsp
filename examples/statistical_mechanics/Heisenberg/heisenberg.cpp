@@ -1,9 +1,9 @@
-// spinenberg.cpp
-// 2D and 3D spinenberg model
+// heisenberg.cpp
+// 2D and 3D heisenberg model
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#ifndef spinENBERG_UPDATE
-#define spinENBERG_UPDATE
+#ifndef HEISENBERG_UPDATE
+#define HEISENBERG_UPDATE
 #include"MMSP.hpp"
 #include<cmath>
 #include"heisenberg.hpp"
@@ -14,7 +14,8 @@ void generate(int dim, const char* filename)
 {
 	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 	if (dim==1) {
-		GRID1D initGrid(3,0,128);
+		int L=1024;
+		GRID1D initGrid(3,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			double psi = 2.0*acos(-1.0)*double(rand())/double(RAND_MAX);
@@ -28,7 +29,8 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==2) {
-		GRID2D initGrid(3,0,256,0,256);
+		int L=256;
+		GRID2D initGrid(3,0,2*L,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			double psi = 2.0*acos(-1.0)*double(rand())/double(RAND_MAX);
@@ -42,7 +44,8 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		GRID3D initGrid(3,0,64,0,64,0,64);
+		int L=32;
+		GRID3D initGrid(3,0,2*L,0,L,0,L/4);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			double psi = 2.0*acos(-1.0)*double(rand())/double(RAND_MAX);

@@ -1,13 +1,13 @@
 // zener.cpp
-// Anisotropic coarsening algorithms for 2D and 3D Monte Carlo methods
+// Algorithms for anisotropic 2D and 3D Monte Carlo grain growth with Zener pinning
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef ZENER_UPDATE
 #define ZENER_UPDATE
-#include"MMSP.hpp"
-#include"anisotropy.hpp"
-#include"zener.hpp"
 #include<cmath>
+#include"MMSP.hpp"
+#include"zener.hpp"
+#include"anisotropy.hpp"
 
 namespace MMSP{
 
@@ -15,16 +15,18 @@ void generate(int dim, const char* filename)
 {
 	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
 	if (dim==1) {
-		GRID1D initGrid(0,0,128);
+		int L=1024;
+		GRID1D initGrid(0,0,L);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
-			double d = 64.0-x[0];
-			if (d<32.0) initGrid(i) = 2;
+			double r = 32-x[0]%64;
+			if (r<16.0) initGrid(i) = 2;
 			else initGrid(i) = 1;
 		}
 
-		for (int j=0; j<50; j++) {
+		int nParticles=std::max(50,(50*8192)/nodes(initGrid));
+		for (int j=0; j<nParticles; j++) {
 			int i = rand()%nodes(initGrid);
 			vector<int> x = position(initGrid,i);
 			vector<int> p(x);
@@ -41,12 +43,13 @@ void generate(int dim, const char* filename)
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
-			double d = sqrt(pow(L/2-x[0],2)+pow(L/2-x[1],2));
-			if (d<L/4.0) initGrid(i) = 2;
+			double r = sqrt(pow(32-x[0]%64,2)+pow(32-x[1]%64,2));
+			if (r<16.0) initGrid(i) = 2;
 			else initGrid(i) = 1;
 		}
 
-		for (int j=0; j<50; j++) {
+		int nParticles=std::max(50,(50*8192)/nodes(initGrid));
+		for (int j=0; j<nParticles; j++) {
 			int i = rand()%nodes(initGrid);
 			vector<int> x = position(initGrid,i);
 			vector<int> p(x);
@@ -59,16 +62,18 @@ void generate(int dim, const char* filename)
 	}
 
 	if (dim==3) {
-		GRID3D initGrid(0,0,64,0,64,0,64);
+		int L=64;
+		GRID3D initGrid(0,0,2*L,0,L,0,L/2);
 
 		for (int i=0; i<nodes(initGrid); i++) {
 			vector<int> x = position(initGrid,i);
-			double d = sqrt(pow(32.0-x[0],2)+pow(32.0-x[1],2)+pow(32.0-x[2],2));
-			if (d<16.0) initGrid(i) = 2;
+			double r = sqrt(pow(32-x[0]%64,2)+pow(32-x[1]%64,2));
+			if (r<16.0) initGrid(i) = 2;
 			else initGrid(i) = 1;
 		}
 
-		for (int j=0; j<50; j++) {
+		int nParticles=std::max(50,(50*8192)/nodes(initGrid));
+		for (int j=0; j<nParticles; j++) {
 			int i = rand()%nodes(initGrid);
 			vector<int> x = position(initGrid,i);
 			vector<int> p(x);
@@ -93,8 +98,8 @@ template <int dim> void update(grid<dim,int>& mcGrid, int steps)
 
 	const double kT = (dim==3)?0.75:0.50;
 	int gss = int(nodes(mcGrid));
-
 	// srand() is called exactly once in MMSP.main.hpp. Do not call it here.
+
 	for (int step=0; step<steps; step++) {
 		if (rank==0)
 			print_progress(step, steps);
@@ -202,7 +207,7 @@ template <int dim> void update(grid<dim,int>& mcGrid, int steps)
 	}
 }
 
-} // namespace MC
+} // namespace MMSP
 
 #endif
 

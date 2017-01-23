@@ -509,24 +509,30 @@ public:
 	{
 		for (int i=0; i<cells; i++)
 			data[i] = static_cast<T>(value);
+		return *this;
 	}
 
 	template <typename U> grid& operator=(const grid<dim, U>& GRID)
 	{
+		if (this == &GRID)
+			return *this;
 		for (int i=0; i<cells; i++)
 			data[i] = static_cast<T>(GRID.data[i]);
+		return *this;
 	}
 
 	template <typename U> grid& operator+=(const grid<dim, U>& GRID)
 	{
 		for (int i=0; i<cells; i++)
 			data[i] += static_cast<T>(GRID.data[i]);
+		return *this;
 	}
 
 	template <typename U> grid& operator-=(const grid<dim, U>& GRID)
 	{
 		for (int i=0; i<cells; i++)
 			data[i] -= static_cast<T>(GRID.data[i]);
+		return *this;
 	}
 
 
@@ -1560,6 +1566,7 @@ public:
 		unsigned int np = MPI::COMM_WORLD.Get_size();
 		MPI_Request request;
 		MPI_Status status;
+		int mpi_err = 0;
 
 		// Read filesystem block size (using statvfs). Default to 4096 B.
 		struct statvfs buf;
@@ -1568,13 +1575,16 @@ public:
 		if (blocksize<1048576) {
 			// Standard MPI-IO: every rank writes to disk
 			#ifdef BGQ
-			if (rank==0) std::cout<<"Bug: using normal IO, instead of BGQ IO!"<<std::endl;
+			if (rank==0) std::cout<<"Bug: using MPI-IO, instead of BGQ IO!"<<std::endl;
 			#endif
 			MPI_File output;
-			if (rank==0)
-				MPI_File_delete(fname,MPI_INFO_NULL);
-			MPI::COMM_WORLD.Barrier();
-			int mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
+			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
+			if (mpi_err != MPI_SUCCESS) {
+				if (rank==0)
+					MPI_File_delete(fname,MPI_INFO_NULL);
+				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+				assert(mpi_err==MPI_SUCCESS);
+			}
 			if (mpi_err != MPI_SUCCESS) {
 				char error_string[256];
 				int length_of_error_string=256;
@@ -1696,6 +1706,7 @@ public:
 			unsigned int* writeranks=NULL;
 			MPI_Request* recvrequests = NULL;
 			MPI_Status* recvstatuses = NULL;
+			int mpi_err = 0;
 
 			// get grid data to write
 			const unsigned long size_of_buffer = write_buffer(databuffer);
@@ -1890,10 +1901,14 @@ public:
 			if (rank==0) std::cout<<"  Opening "<<std::string(fname)<<" for output."<<std::endl;
 			#endif
 			MPI_File output;
-			if (rank==0)
-				MPI_File_delete(fname,MPI_INFO_NULL);
 			MPI::COMM_WORLD.Barrier();
-			int mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
+			mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_EXCL|MPI_MODE_WRONLY, MPI_INFO_NULL, &output);
+			if (mpi_err != MPI_SUCCESS) {
+				if (rank==0)
+					MPI_File_delete(fname,MPI_INFO_NULL);
+				mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
+				assert(mpi_err==MPI_SUCCESS);
+			}
 			if (mpi_err != MPI_SUCCESS) {
 				char error_string[256];
 				int length_of_error_string=256;

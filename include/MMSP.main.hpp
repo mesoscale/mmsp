@@ -120,6 +120,8 @@ int main(int argc, char* argv[]) {
 
 		// generate test problem
 		MMSP::generate(dim, filename);
+
+		delete [] filename;
 	}
 
 	// run simulation
