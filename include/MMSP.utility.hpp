@@ -345,24 +345,25 @@ template <typename T> T global(T& value, const char* operation) {
 	}
 */
 void print_progress(const int step, const int steps) {
-  char* timestring;
-  static unsigned long tstart;
-  struct tm* timeinfo;
-  static int iterations = 0;
+	char* timestring;
+	static unsigned long tstart;
+	struct tm* timeinfo;
+	static int iterations = 0;
 
-  if (step==0) {
-    tstart = time(NULL);
-    std::time_t rawtime;
-    std::time( &rawtime );
-    timeinfo = std::localtime( &rawtime );
-    timestring = std::asctime(timeinfo);
-    timestring[std::strlen(timestring)-1] = '\0';
-    std::cout<<"No. "<<1+iterations/steps<<":\t"<<timestring<<" ["<<std::flush;
-  } else if (step==steps-1) {
-    unsigned long deltat = time(NULL)-tstart;
-    printf("•] %2luh:%2lum:%2lus",deltat/3600,(deltat%3600)/60,deltat%60);
-    std::cout<<std::endl;
-  } else if ((20 * step) % steps == 0) std::cout<<"• "<<std::flush;
-  iterations++;
+	if (step==0) {
+		iterations++;
+		tstart = time(NULL);
+		std::time_t rawtime;
+		std::time( &rawtime );
+		timeinfo = std::localtime( &rawtime );
+		timestring = std::asctime(timeinfo);
+		timestring[std::strlen(timestring)-1] = '\0';
+		std::cout << "No. " << iterations << ":\t" << timestring << " [" << std::flush;
+	} else if (step==steps-1) {
+		unsigned long deltat = time(NULL)-tstart;
+		printf("•] %2luh:%2lum:%2lus",deltat/3600,(deltat%3600)/60,deltat%60);
+		std::cout << std::endl;
+	} else if ((20 * step) % steps == 0)
+		std::cout << "• " << std::flush;
 }
 #endif
