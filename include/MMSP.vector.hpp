@@ -5,7 +5,7 @@
 #ifndef MMSP_VECTOR
 #define MMSP_VECTOR
 #include"MMSP.utility.hpp"
-#include<stdexcept>
+#include<cassert>
 
 namespace MMSP {
 
@@ -47,13 +47,11 @@ public:
 
 	// data access operators
 	T& operator[](int i) {
-		if (i>=size)
-			throw std::out_of_range("index exceeds vector size");
+		assert(i < size);
 		return data[i];
 	}
 	const T& operator[](int i) const {
-		if (i>=size)
-			throw std::out_of_range("index exceeds vector size");
+		assert(i < size);
 		return data[i];
 	}
 
