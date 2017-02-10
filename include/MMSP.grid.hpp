@@ -2429,8 +2429,7 @@ template <int dim, typename T> T laplacian(const grid<dim, T>& GRID, const vecto
 
 template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& GRID, const vector<int>& x)
 {
-	int N = fields(GRID);
-	vector<T> laplacian(N, 0.0);
+	vector<T> laplacian(fields(GRID), 0.0);
 	vector<int> s = x;
 
 	const vector<T>& y = GRID(x);
@@ -2443,15 +2442,14 @@ template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& 
 		s[i] += 1;
 
 		double weight = 1.0 / (dx(GRID, i) * dx(GRID, i));
-		for (int j=0; j<N; j++)
-			laplacian[j] += weight * (yh[j] - 2.0 * y[j] + yl[j]);
+		laplacian += weight * (yh - 2.0 * y + yl);
 	}
 	return laplacian;
 }
 
 template<int dim, typename T> T laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field)
 {
-    double laplacian = 0.0;
+    T laplacian = 0.0;
     vector<int> s = x;
 
     const T& y = GRID(x)[field];
@@ -2579,10 +2577,8 @@ template <int dim, typename T> T divergence(const grid<dim, T>& GRID, const vect
 
 template <int dim, typename T> vector<T> divergence(const grid<dim, vector<T> >& GRID, const vector<int>& x)
 {
-	vector<T> divergence(dim, 0.0);
+	vector<T> divergence(fields(GRID), 0.0);
 	vector<int> s = x;
-
-	int N = length(GRID(x));
 
 	for (int i=0; i<dim; i++) {
 		s[i] += 1;
@@ -2592,8 +2588,7 @@ template <int dim, typename T> vector<T> divergence(const grid<dim, vector<T> >&
 		s[i] += 1;
 
 		double weight = 1.0 / (2.0 * dx(GRID, i));
-		for (int j=0; j<N; j++)
-			divergence[j] += weight * (yh[j] - yl[j]);
+		divergence += weight * (yh - yl);
 	}
 	return divergence;
 }
