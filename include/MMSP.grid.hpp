@@ -1612,10 +1612,9 @@ public:
 				char* header = new char[header_offset];
 				for (unsigned int i=0; i<header_offset; i++)
 					header[i] = outstr.str()[i];
-				MPI_File_sync(output);
 				MPI_File_iwrite_at(output,0,header, header_offset, MPI_CHAR, &request);
 				MPI_Wait(&request, &status);
-				MPI_File_sync(output);
+
 				// Write number of blocks (processors) to file
 				MPI_File_iwrite_at(output,header_offset,reinterpret_cast<char*>(&np), sizeof(np), MPI_CHAR, &request);
 				MPI_Wait(&request, &status);
@@ -1635,14 +1634,11 @@ public:
 
 			// Compute file offsets based on buffer sizes
 			unsigned long* datasizes = new unsigned long[np];
-			MPI::COMM_WORLD.Barrier();
 			MPI::COMM_WORLD.Allgather(&size_of_buffer, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
 
-			// Pre-allocate disk space
+			// Calculate disk space
 			unsigned long filesize=0;
 			for (unsigned int i=0; i<np; ++i) filesize+=datasizes[i];
-			MPI::COMM_WORLD.Barrier();
-			MPI_File_preallocate(output, filesize);
 
 			unsigned long* offsets = new unsigned long[np];
 			offsets[0]=header_offset;
@@ -1656,7 +1652,6 @@ public:
 			#endif
 
 			// Write buffer to disk
-			MPI_File_sync(output);
 			MPI::COMM_WORLD.Barrier();
 			MPI_File_iwrite_at(output,offsets[rank],buffer,datasizes[rank],MPI_CHAR,&request);
 			MPI_Wait(&request, &status);
