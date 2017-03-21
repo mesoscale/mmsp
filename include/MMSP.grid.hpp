@@ -1592,6 +1592,7 @@ public:
 				fprintf(stderr, "Error opening output file %s on rank %3d: %s\n", fname, rank, error_string);
 				MMSP::Abort(-1);
 			}
+			MPI_File_sync(output);
 
 			// Generate MMSP header from rank 0
 			unsigned long header_offset=0;
@@ -1607,24 +1608,23 @@ public:
 				for (int i=0; i<dim; i++) outstr << g0[i] << " " << g1[i] << '\n'; // global grid dimensions
 				for (int i=0; i<dim; i++) outstr << dx[i] << '\n'; // grid spacing
 
-				// Write MMSP header to file
+				// Calculate header size
 				header_offset=outstr.str().size();
 				char* header = new char[header_offset];
 				for (unsigned int i=0; i<header_offset; i++)
 					header[i] = outstr.str()[i];
-				MPI_File_iwrite_at(output,0,header, header_offset, MPI_CHAR, &request);
-				MPI_Wait(&request, &status);
+
+				// Write MMSP header to file
+				MPI_File_write_at(output, 0, header, header_offset, MPI_CHAR, &status);
 
 				// Write number of blocks (processors) to file
-				MPI_File_iwrite_at(output,header_offset,reinterpret_cast<char*>(&np), sizeof(np), MPI_CHAR, &request);
-				MPI_Wait(&request, &status);
-				MPI_File_sync(output);
+				MPI_File_write_at(output, header_offset, reinterpret_cast<char*>(&np), sizeof(np), MPI_CHAR, &status);
+
 				header_offset+=sizeof(np);
 				delete [] header;
 				header=NULL;
 			}
 			MPI::COMM_WORLD.Barrier();
-			MPI_File_sync(output);
 			MPI::COMM_WORLD.Bcast(&header_offset, 1, MPI_UNSIGNED_LONG, 0); // broadcast header size from rank 0
 
 			// get grid data to write
@@ -1653,8 +1653,7 @@ public:
 
 			// Write buffer to disk
 			MPI::COMM_WORLD.Barrier();
-			MPI_File_iwrite_at(output,offsets[rank],buffer,datasizes[rank],MPI_CHAR,&request);
-			MPI_Wait(&request, &status);
+			MPI_File_write_at_all(output, offsets[rank], buffer, datasizes[rank], MPI_CHAR, &status);
 			#ifdef GRIDDEBUG
 			int error, write_errors=0;
 			MPI_Get_count(&status, MPI_INT, &error);
@@ -1667,11 +1666,16 @@ public:
 			delete [] buffer;
 			buffer=NULL;
 
-			MPI::COMM_WORLD.Barrier();
-			MPI_File_sync(output);
 			// Make sure everything's written before closing the file.
+			MPI_File_sync(output);
+			MPI::COMM_WORLD.Barrier();
+
 			MPI_Offset actual_size;
-			MPI_File_get_size(output,&actual_size);
+			MPI_File_get_size(output, &actual_size);
+
+			MPI::COMM_WORLD.Barrier();
+			MPI_File_close(&output);
+
 			if (rank==0) {
 				#ifdef GRIDDEBUG
 				std::cout<<fname<<" should be "<<offsets[np-1]+datasizes[np-1]<<" B;";
@@ -1679,8 +1683,7 @@ public:
 				#endif
 				assert(offsets[np-1]+datasizes[np-1] == static_cast<unsigned long>(actual_size));
 			}
-			MPI::COMM_WORLD.Barrier();
-			MPI_File_close(&output);
+
 			delete [] offsets;
 			offsets=NULL;
 			delete [] datasizes;
@@ -1816,7 +1819,6 @@ public:
 			}
 			// Collect block misalignments
 			misalignments = new unsigned long[np];
-			MPI::COMM_WORLD.Barrier();
 			MPI::COMM_WORLD.Allgather(&deficiency, 1, MPI_UNSIGNED_LONG, misalignments, 1, MPI_UNSIGNED_LONG);
 
 			#ifdef GRIDDEBUG
@@ -1827,6 +1829,7 @@ public:
 			// Accumulate data
 			const unsigned int silentranks=writeranks[nextwriter]-rank; // number of MPI ranks between this rank and the next writer
 			MPI_Request sendrequest;
+
 			MPI::COMM_WORLD.Barrier();
 			if (isWriter) {
 				// This rank is a writer.
@@ -1882,6 +1885,9 @@ public:
 					MPI_Isend(q, misalignments[rank], MPI_CHAR, writeranks[prevwriter], rank, MPI::COMM_WORLD, &sendrequest);
 				}
 			}
+
+			MPI::COMM_WORLD.Barrier();
+
 			if (misalignments[rank] >= datasizes[rank]) {
 				assert(writeranks[prevwriter]<rank && writeranks[prevwriter]<np);
 				MPI_Isend(databuffer, datasizes[rank], MPI_CHAR, writeranks[prevwriter], rank, MPI::COMM_WORLD, &sendrequest);
@@ -1911,6 +1917,8 @@ public:
 				fprintf(stderr, "Error opening output file %s on rank %3d: %s\n", fname, rank, error_string);
 				MMSP::Abort(-1);
 			}
+			MPI_File_sync(output);
+			MPI::COMM_WORLD.Barrier();
 
 			// Write to disk
 			if (filebuffer!=NULL) {
@@ -1930,8 +1938,9 @@ public:
 			} else {
 				ws = 0; // not a writer
 			}
-
+			MPI_File_sync(output);
 			MPI::COMM_WORLD.Barrier();
+
 			MPI_File_close(&output);
 			if (recvrequests!=NULL) {
 				delete [] recvrequests;
