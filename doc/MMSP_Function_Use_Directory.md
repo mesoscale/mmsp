@@ -55,7 +55,7 @@
 * ```operator=``` sets each value in ```data``` to the given value cast to type ```T```, and returns ```*this```
 * ```operator=``` with a ```vector``` object input deletes ```data```, sets it to ```NULL```, makes the first object a deep copy of the second, and returns ```*this```
 
-### User Functions for ```MMSP::vector``
+### User Functions for ```MMSP::vector```
 * ```vector<T> min(const vector<T>& x, const vector<T>& y)```
   - returns a vector with each element being the smaller of the corresponding elements in ```x``` and ```y```
 * ```vector<T> max(const vector<T>& x, const vector<T>& y)```
@@ -234,7 +234,7 @@
 * ```scalar& operator=(const scalar<U>& s)```
   - casts ```s``` to ```T```, sets ```data``` to it, an returns ```*this```
 
-### User Functions for ```MMSP::scalar`` are provided by the underlying type (```int```, ```double```, etc.)
+### User Functions for ```MMSP::scalar``` are provided by the underlying type (```int```, ```double```, etc.)
 
 ### Member Functions for ```MMSP::scalar``
 * ```int buffer_size() const```
@@ -340,15 +340,14 @@
 ```template <typename T> class sparse```
 
 * class for sparsely populated arrays, done by an array of item objects
-* empty constructor sets ```size``` to 0 and ```data``` to ```NULL```
-* constructor with a sparse object input sets ```size``` and ```data``` to that of the input sparse object
+* constructors:
+  - empty constructor sets ```size``` to 0 and ```data``` to ```NULL```
+  - constructor with a sparse object input sets ```size``` and ```data``` to that of the input sparse object
 * destructor deletes ```data``` and sets to ```NULL``` if it is not already
 * ```sparse& operator=(const sparse& x)```
   - sets ```size``` and ```data``` to that of ```x```, and returns ```*this```
 * ```sparse& operator=(const sparse<U>& x)```
   - sets ```size``` and ```data``` to that of ```x```, casting each value in ```data```, then returns ```*this```
-* ```T& set(int index)```
-  - creates a new item in the object with the given ```index``` and a value of 0
 * ```T operator[](int index) const```
   - returns the value associated with the ```index``` in the object, or 0 if there is none
 * ```sparse<T>& operator+=(sparse<T>&x, const sparse<U>& y)```
@@ -363,6 +362,8 @@
   - returns a sparse object equal to each item in ```x``` multiplied by ```value```
 
 ### User Functions for ```MMSP::sparse``` 
+* ```T& set(sparse<T>& s, int index)```
+  - calls ```s.set(index)```
 * ```unsigned int grain_id() const```
   - returns the index associated with the highest value in the sparse object
 * ```double getMagPhi() const```
@@ -379,6 +380,8 @@
   - returns a sparse object filled with the smaller values from ```x``` or ```y``` at the proper indices    
 
 ### Member Functions of ```MMSP::sparse```
+* ```T& set(int index)```
+  - creates a new item in the object with the given ```index``` and a value of 0
 * ```int buffer_size() const```
   - returns ```sizeof(size) + size * sizeof(item<T>)```, the size of the buffer
 * ```int to_buffer(char* buffer)```
@@ -416,8 +419,6 @@
   - calls ```s.copy(t)```
 * ```void swap(sparse<T>& s, sparse<T>& t)```
   - calls ```s.swap(t)```
-* ```T& set(sparse<T>& s, int index)```
-  - calls ```s.set(index)```
 * ```int index(const sparse<T>& s, int i)```
   - returns ```s.index(i)```
 * ```T value(const sparse<T>& s, int i)```
@@ -525,8 +526,6 @@
   - constructor with a ```const grid``` object will make this object a deep copy of that object
   - constructor with a ```const grid``` object of type u and int FIELDS will set fields to FIELDS and make this grid object a deep copy of the given object
   - constructor with ```const char* filename``` and ```int GHOSTS``` (with default of 1) will set ```data``` to ```NULL``` and call ```input(filename, GHOSTS)``` to read ```data``` from the file
-* ```void setup(bool SINGLE=false)```
-  - sets grid default values and does the base work to allow parallel computation if the MPI version is being used
 * destructor deletes ```data``` and sets to ```NULL```
 * ```grid& operator=(const U& value)```
   - sets each entry in ```data``` to ```value``` cast to ```T```
@@ -660,6 +659,8 @@
   - calls ```GRID.ghostswap(sublattice)```
 
 ### Member Functions of ```MMSP::grid```
+* ```void setup(bool SINGLE=false)```
+  - sets grid default values and does the base work to allow parallel computation if the MPI version is being used
 * ```T& operator()(MMSP::vector<int> x) const```
   - returns a pointer to ```data``` after calling ```check_boundary(x[i],x0[i],x1[i],b0[i],b1[i])``` for each dimension and increasing the pointer by ```(x[i]-s0[i])*sx[i]``` for each dimension
 * ```T& operator()(int i) const```
