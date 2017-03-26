@@ -74,7 +74,7 @@
 * ```void swap(vector& v)```
   - swaps ```data``` and ```size``` for two vectors
 * ```void append(const U& value)```
-  - increases the size of the vector by 1 and places the given value as the last element, cast to T
+  - increases the size of the vector by 1 and places the given value as the last element, cast to ```T```
 * ```void append(const vector<U>& v)```
   - appends the given vector to this vector, increasing ```size``` by the length of the given vector
 
@@ -127,7 +127,7 @@
 ```template <int ind, typename T> class target<0,ind,vector<T>>```
 
 * ```dim==0``` specialization for vector class
-* constructor takes pointers to data, s0, sx, x0, x1, b0, and b1 and sets those member variables equal to the pointers
+* constructor takes pointers to ```data, s0, sx, x0, x1, b0, b1``` and sets those member variables equal to the pointers
 * ```operator vector<T>&()```
   - returns a pointer to ```data```
 * ```operator const vector<T>&() const```
@@ -215,7 +215,7 @@
 
 * empty constructor does nothing
 * constructor with ```const T& value``` sets ```data``` to value
-* constructor with ```const scalar& s``` sets ```data``` to s's data
+* constructor with ```const scalar& s``` sets ```data``` to ```s```'s ```data```
 * constructor with ```const U& value``` or ```const scalar<U>& s``` casts the given parameter to ```T``` and sets ```data``` to it
 * ```operator T&()```
   - returns ```data```
@@ -232,9 +232,9 @@
 * ```int buffer_size() const```
   - returns the size of ```T```
 * ```int to_buffer(char* buffer) const```
-  - sends ```data``` to ```buffer```, then returns the size of ```T``
+  - sends ```data``` to ```buffer```, then returns the size of ```T```
 * ```int from_buffer(const char* buffer)```
-  - sends information from ```buffer``` to data, then returns the size of ```T```
+  - sends information from ```buffer``` to ```data```, then returns the size of ```T```
 * ```void write(std::ofstream& file) const```
   - writes ```data``` to ```file```
 * ```void read(std::ifstream& file)```
@@ -273,9 +273,9 @@
 * ```dim==0``` specialization for scalar class
 * constructor takes pointers to ```scalar<T> data```, const ints s0, sx, x0, x1, b0, b1, and sets those variables in the objects to the pointers
 * ```operator T&()```
-  - returns pointer to data
+  - returns pointer to ```data```
 * ```operator const T&() const```
-  - returns pointer to data
+  - returns pointer to ```data```
 * ```scalar<T>& operator=(const T& value) const```
   - returns ```data->operator=(value)```
 * ```scalar<T>& operator=(const scalar<T>& s)```
@@ -414,7 +414,7 @@
 ```template <int ind, typename T> class target<0,ind,sparse<T>>```
 
 * specialization for ```target``` class when ```dim==0```
-* constructor takes pointers to data, s0, sx, x0, x1, b0, b1, and sets member variables to these
+* constructor takes pointers to ```data, s0, sx, x0, x1, b0, b1``` and sets member variables to these
 * ```operator sparse<T>&()```
   - returns ```*data```
 * ```operator const sparse<T>&() const```
@@ -575,7 +575,7 @@
   - returns ```GRID.g0[i]```
 * ```friend int g1(const grid& GRID, int i)```
   - returns ```GRID.g1[i]```
-* ```friend int b0(const grid& GRID, int i)``
+* ```friend int b0(const grid& GRID, int i)```
   - returns ```GRID.b0[i]```
 * ```friend int b1(const grid& GRID, int i)```
   - returns ```GRID.b1[i]```
@@ -637,7 +637,7 @@
   - returns ```GRID.dx[1]```
 * ```friend int z0(const grid& GRID)```
   - returns ```GRID.x0[2]```
-* ```friend int z1(const grid& GRID)``
+* ```friend int z1(const grid& GRID)```
   - returns ```GRID.x1[2]```
 * ```friend int zmin(const grid& GRID)```
   - returns ```GRID.x0[2]```
@@ -673,7 +673,7 @@
 * ```int& b1(const grid<dim,T>& GRID, int i)```
   - returns ```b1(GRID, i)```
 * ```int x0(const grid<dim,T>& GRID, int i)```
-  - returns ``x0(GRID, i)```
+  - returns ```x0(GRID, i)```
 * ```int x1(const grid<dim,T>& GRID, int i)```
   - returns ```x1(GRID, i)```
 * ```int xmin(const grid<dim,T>& GRID, int i)```
@@ -762,7 +762,7 @@
   - calls ```GRID.ghostswap()```
 * ```void ghostswap(grid<dim,T>& GRID, const int sublattice)```
   - calls ```GRID.ghostswap(sublattice)```
-* ```unsigned long buffer_size(const grid<dim,T>& GRID)``
+* ```unsigned long buffer_size(const grid<dim,T>& GRID)```
   - returns ```GRID.buffer_size()```
 * ```unsigned long to_buffer(const grid<dim,T>& GRID, char* buffer)```
   - returns ```GRID.to_buffer(buffer)```
