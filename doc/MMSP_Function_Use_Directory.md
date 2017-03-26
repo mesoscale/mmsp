@@ -1,7 +1,6 @@
-## MMSP.utility.hpp
+# MMSP.utility.hpp
 
-```template <int dim, int index, typename T> class target```
-
+## Utility Functions for MMSP Classes
 * ```void check_boundary(int& x, int x0, int x1, int b0, int b1)```
   - changes coordinate ```x``` to different values depending on limiting coordinates and boundary conditions; called once per dimension
 * ```unsigned long buffer_size(const T& value)```
@@ -33,6 +32,9 @@
 * ```void print_progress(const int step, const int steps)```
   - prints a progress bar and timestamps depending on how far along a process is
 
+### Target Class
+```template <int dim, int index, typename T> class target```
+
 * utility class that allows grids to be made with subscripting
 * must be constructed with pointers to ```data```, ```s0```, ```sx```, ```x0```, ```x1```, ```b0```, and ```b1```
 * ```operator[]``` calls ```check_boundary``` and returns a target object of ```<dim-1,index+1,T>``` with ```data``` increased by ```(x-s0[index+1])*sx[index+1]```
@@ -41,7 +43,9 @@
 * ```operator()``` returns ```*data```
 
 
-## MMSP.vector.hpp
+# MMSP.vector.hpp
+
+## Vector class
 ```template <typename T> class vector```
 
 * vector class designed to work with MMSP
@@ -125,6 +129,7 @@
 * ```std::string name(const vector<T> s)```
   - returns ```"vector:"+name(T())```
 
+## Vector specialization of Target class
 ```template <int ind, typename T> class target<0,ind,vector<T>>```
 
 * ```dim==0``` specialization for vector class
@@ -212,7 +217,9 @@
 * ```bool operator==(const vector<T>& a, const vector<T>& b)```
   - returns ```false``` if a and b do not have the same length or have nonidentical corresponding elements, otherwise ```true```
 
-## MMSP.scalar.hpp
+# MMSP.scalar.hpp
+
+## Scalar class
 ```template <typename T> class scalar```
 
 * scalar class designed to work with MMSP
@@ -236,7 +243,7 @@
 
 ### User Functions for ```MMSP::scalar``` are provided by the underlying type (```int```, ```double```, etc.)
 
-### Member Functions for ```MMSP::scalar``
+### Member Functions for ```MMSP::scalar```
 * ```int buffer_size() const```
   - returns the size of ```T```
 * ```int to_buffer(char* buffer) const```
@@ -278,6 +285,7 @@
 * ```std::string name(const scalar<T>& s)```
   - returns ```"scalar:" + name(T())```
 
+## Scalar specialization of Target class
 ```template <int ind, typename T> class target<0,ind,scalar<T>>```
 
 * ```dim==0``` specialization for scalar class
@@ -336,7 +344,9 @@
   - returns ```"scalar:" + name(T())```
 
 
-## MMSP.sparse.hpp
+# MMSP.sparse.hpp
+
+## Sparse class
 ```template <typename T> class sparse```
 
 * class for sparsely populated arrays, done by an array of item objects
@@ -399,7 +409,6 @@
 * ```void swap(sparse& s)```
   - switches ```size``` and ```data``` of this object and ```s```
 
-
 ### Utility Functions for ```MMSP::sparse```
 * ```int buffer_size(const sparse<T>& s)```
   - returns ```s.buffer_size()```
@@ -426,10 +435,13 @@
 * ```std::string name(const sparse<T>& s)```
   - returns ```"sparse:" + name(T())```
 
+## Item class
 ```template <typename T> struct item```
 
+* public representation
 * holds ```int index``` and ```T value```
 
+## Sparse specialization of Target class
 ```template <int ind, typename T> class target<0,ind,sparse<T>>```
 
 * specialization for ```target``` class when ```dim==0```
@@ -515,8 +527,9 @@
 * ```bool operator==(const sparse<T>& a, const sparse<T>& b)```
   - returns ```true``` if all indices of both objects contain the same values, otherwise ```false```
 
+# MMSP.grid.hpp
 
-## MMSP.grid.hpp
+## Grid class
 ```template <int dim, typename T> class grid```
 
 * central class of MMSP, allows for calculation of mathematical functions of arrays of 1, 2, or 3 dimensions with nearly identical function calls
