@@ -32,10 +32,7 @@ template <int dim, typename T> int radiussq(const MMSP::vector<T>& a, const MMSP
 int seeds_to_buffer(const std::vector<MMSP::vector<int> >& vp, int* &q) {
   int size = 0;
   // q should already point to an array of T[size]
-  if (q == NULL) {
-    std::cerr << "\nError in seeds_to_buffer: send_buffer not initialized." << std::endl;
-    exit(1);
-  }
+  assert(q != NULL);
   int* p = q;
   for (unsigned int i=0; i<vp.size(); ++i) {
   	for (int d=0; d<3; ++d) {
@@ -49,10 +46,7 @@ int seeds_to_buffer(const std::vector<MMSP::vector<int> >& vp, int* &q) {
 
 // Given an empty vector<MMSP::vector<int>> and a populated array of T[size], populate the vector
 void seeds_from_buffer(std::vector<MMSP::vector<int> >& vp, int* &q, const int& size) {
-  if (q == NULL) {
-    std::cerr << "\nError in seeds_from_buffer: recv_buffer not initialized." << std::endl;
-    exit(1);
-  }
+  assert(q != NULL);
   MMSP::vector<int> v(3);
   for (int* p = q + 2; p < q + size; p += 3) {
     v[0] = *(p - 2);
