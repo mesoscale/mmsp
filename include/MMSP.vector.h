@@ -5,10 +5,9 @@
 #ifndef MMSP_VECTOR
 #define MMSP_VECTOR
 #include"MMSP.utility.h"
-#include<stdexcept>
+#include<cassert>
 
 namespace MMSP {
-
 
 template <typename T> class vector {
 public:
@@ -27,13 +26,11 @@ public:
 
 	// data access operators
 	T& operator[](int i) {
-		if (i>=size)
-			throw std::out_of_range("index exceeds vector size");
+		assert(i < size);
 		return data[i];
 	}
 	const T& operator[](int i) const {
-		if (i>=size)
-			throw std::out_of_range("index exceeds vector size");
+		assert(i < size);
 		return data[i];
 	}
 
@@ -165,6 +162,9 @@ template <typename T, typename U> vector<T> operator*(const U& value, const vect
 	vector<T> z(N);
 	for (int i = 0; i < N; i++) z[i] = static_cast<T>(value) * x[i];
 	return z;
+}
+template <typename T, typename U> vector<T> operator*(const vector<T>& x, const U& value) {
+	return value*x;
 }
 template <typename T> T operator*(const vector<T>& x, const vector<T>& y) {
 	int N = (x.length()>y.length())?y.length():x.length();
