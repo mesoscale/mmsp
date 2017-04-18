@@ -14,5 +14,4 @@
 #include"MMSP.sparse.cpp"
 
 #include"MMSP.grid.h"
-#include"MMSP.grid.cpp" 
-
+#include"MMSP.grid.cpp"

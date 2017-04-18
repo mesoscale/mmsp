@@ -229,20 +229,9 @@ template <typename T> T min(const T& x, const T& y) {
 // global reducing function
 template <typename T> T global(T& value, const char* operation);
 
-} // namespace MMSP
-
-/*
-	Prints timestamps and a 20-point progress bar to stdout.
-	Call once inside the update function (or equivalent).
-
-	for (int step=0; step<steps; step++) {
-		print_progress(step, steps);
-		...
-		for (int n=0; n<nodes(grid); n++) {
-			...
-		}
-	}
-*/
+// simple progress bar for the terminal
 void print_progress(const int step, const int steps);
+
+} // namespace MMSP
 
 #endif

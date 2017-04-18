@@ -51,8 +51,8 @@ public:
 	int from_buffer(const char* buffer);
 
 	// file I/O functions
-	void write(std::ofstream& file) const
-;
+	void write(std::ofstream& file) const;
+
 	void read(std::ifstream& file);
 
 	// utility functions
@@ -342,6 +342,7 @@ vector<T> operator*(const U& value, const target<0, ind, vector<T> >& x) {
 	return operator*(value, *(x.data));
 }
 template <typename T> bool operator==(const vector<T>& a, const vector<T>& b);
+
 
 } // namespace MMSP
 

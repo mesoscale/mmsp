@@ -234,7 +234,7 @@ public:
 	// parallelization
 	void ghostswap();
 
-	void ghostswap(const int sublattice); 
+	void ghostswap(const int sublattice);
 
 	unsigned long buffer_size_save(const int min[dim], const int max[dim]) const;
 
@@ -247,7 +247,7 @@ public:
 	unsigned long from_buffer_save(char* buffer, const int min[dim], const int max[dim]);
 
 	unsigned long from_buffer_save(char* buffer, T* p, int i, const int min[dim], const int max[dim]);
-	
+
 	unsigned long buffer_size() const;
 
 	unsigned long buffer_size(const int min[dim], const int max[dim]) const;

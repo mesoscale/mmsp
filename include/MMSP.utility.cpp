@@ -1,24 +1,28 @@
-namespace MMSP {
+namespace MMSP
+{
 
 // MMSP Init function
-void Init(int argc, char* argv[]) {
-#ifdef MPI_VERSION
+void Init(int argc, char* argv[])
+{
+	#ifdef MPI_VERSION
 	MPI::Init(argc, argv);
-#endif
+	#endif
 }
 
 // MMSP Finalize function
-void Finalize() {
-#ifdef MPI_VERSION
+void Finalize()
+{
+	#ifdef MPI_VERSION
 	MPI::Finalize();
-#endif
+	#endif
 }
 
 // MMSP Abort function
-void Abort(int err) {
-#ifdef MPI_VERSION
+void Abort(int err)
+{
+	#ifdef MPI_VERSION
 	MPI::COMM_WORLD.Abort(err);
-#endif
+	#endif
 	exit(err);
 }
 
@@ -26,29 +30,31 @@ void Abort(int err) {
 
 // check_boundary: a utility function that adjusts coordinates
 // based on limiting coordinates and boundary conditions
-void check_boundary(int& x, int x0, int x1, int b0, int b1) {
+void check_boundary(int& x, int x0, int x1, int b0, int b1)
+{
 	if (x < x0) {
 		if (b0 == Neumann or b0 == Dirichlet) x = x0;
-#ifndef MPI_VERSION
+		#ifndef MPI_VERSION
 		else if (b0 == periodic) x = x1 - (x0 - x);
-#endif
+		#endif
 		else if (b0 == mirror) x = 2 * x0 - x;
 	} else if (x >= x1) {
 		if (b1 == Neumann or b1 == Dirichlet) x = (x1 - 1);
-#ifndef MPI_VERSION
+		#ifndef MPI_VERSION
 		else if (b1 == periodic) x = x0 + (x - x1);
-#endif
+		#endif
 		else if (b1 == mirror) x = 2 * (x1 - 1) - x;
 	}
 }
 
 
 // global reducing function
-template <typename T> T global(T& value, const char* operation) {
+template <typename T> T global(T& value, const char* operation)
+{
 	// initialize global value
 	T global = value;
 
-#ifdef MPI_VERSION
+	#ifdef MPI_VERSION
 	int rank = MPI::COMM_WORLD.Get_rank();
 	int np = MPI::COMM_WORLD.Get_size();
 
@@ -113,14 +119,14 @@ template <typename T> T global(T& value, const char* operation) {
 	}
 
 	MPI::COMM_WORLD.Barrier();
-#endif
+	#endif
 
 	return global;
 }
 
-} // namespace MMSP
-
-/*
+void print_progress(const int step, const int steps)
+{
+	/*
 	Prints timestamps and a 20-point progress bar to stdout.
 	Call once inside the update function (or equivalent).
 
@@ -132,8 +138,7 @@ template <typename T> T global(T& value, const char* operation) {
 			...
 		}
 	}
-*/
-void print_progress(const int step, const int steps) {
+	*/
 	char* timestring;
 	static unsigned long tstart;
 	struct tm* timeinfo;
@@ -156,3 +161,5 @@ void print_progress(const int step, const int steps) {
 		std::cout << "• " << std::flush;
 }
 
+
+} // namespace MMSP
