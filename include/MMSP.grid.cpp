@@ -317,24 +317,28 @@ template<int dim, typename T> template <typename U> grid<dim,T>& grid<dim,T>::op
 	{
 		for (int i=0; i<cells; i++)
 			data[i] = static_cast<T>(value);
+		return *this;
 	}
 
 template<int dim, typename T> template <typename U> grid<dim,T>& grid<dim,T>::operator=(const grid<dim, U>& GRID)
 	{
 		for (int i=0; i<cells; i++)
 			data[i] = static_cast<T>(GRID.data[i]);
+		return *this;
 	}
 
 template<int dim, typename T> template <typename U> grid<dim,T>& grid<dim,T>::operator+=(const grid<dim, U>& GRID)
 	{
 		for (int i=0; i<cells; i++)
 			data[i] += static_cast<T>(GRID.data[i]);
+		return *this;
 	}
 
 template<int dim, typename T> template <typename U> grid<dim,T>& grid<dim,T>::operator-=(const grid<dim, U>& GRID)
 	{
 		for (int i=0; i<cells; i++)
 			data[i] -= static_cast<T>(GRID.data[i]);
+		return *this;
 	}
 
 	// subscript operators

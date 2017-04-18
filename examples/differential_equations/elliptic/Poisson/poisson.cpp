@@ -191,11 +191,12 @@ void defect(const grid<3,T>& u, const grid<3,T>& f, grid<3,T>& d, int stride)
 void generate(int dim, const char* filename)
 {
 	if (dim==1) {
-		grid<1,double> initGrid(1,0,2049);
+		int L=2049;
+		grid<1,double> initGrid(1,0,L);
 
 		for (int n=0; n<nodes(initGrid); n++) {
 			vector<int> x = position(initGrid, n);
-			double X = double(x[0])/128.0;
+			double X = double(x[0])/L;
 			initGrid(n) = exp(X);
 		}
 

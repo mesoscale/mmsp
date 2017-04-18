@@ -4,8 +4,7 @@
 
 #ifndef ISING_UPDATE
 #define ISING_UPDATE
-#include"MMSP.grid.hpp"
-#include<cmath>
+#include"MMSP.hpp"
 #include"ising.hpp"
 
 namespace MMSP{

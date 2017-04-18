@@ -5,7 +5,7 @@
 #ifndef MULTIGRID
 #define MULTIGRID
 
-#include"MMSP.grid.hpp"
+#include"MMSP.hpp"
 
 namespace MMSP {
 
