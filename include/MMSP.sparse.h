@@ -281,6 +281,9 @@ sparse<T> operator*(const U& value, const target<0, ind, sparse<T> >& x) {
 }
 template <typename T> bool operator==(const sparse<T>& a, const sparse<T>& b);
 
+
 } // namespace MMSP
+
+#include "MMSP.sparse.cpp"
 
 #endif

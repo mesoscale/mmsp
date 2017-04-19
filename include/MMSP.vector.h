@@ -346,4 +346,6 @@ template <typename T> bool operator==(const vector<T>& a, const vector<T>& b);
 
 } // namespace MMSP
 
+#include "MMSP.vector.cpp"
+
 #endif

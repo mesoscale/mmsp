@@ -603,5 +603,6 @@ template <int dim, typename T> std::string name(const grid<dim, T>& GRID)
 } // namespace MMSP
 
 
+#include "MMSP.grid.cpp"
 
 #endif
