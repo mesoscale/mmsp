@@ -1,21 +1,10 @@
-// MMSP.grid.hpp
-// MMSP grid class definition and implementation
+// MMSP.grid.h
+// MMSP grid class definition
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef MMSP_GRID
 #define MMSP_GRID
-#include<iostream>
-#include<cstdlib>
-#include<cstdarg>
-#include<sstream>
-#include<cmath>
-#include<iomanip>
-#include<limits>
-#include<cassert>
-#include <sys/statvfs.h>
-#ifndef RAW
-#include<zlib.h>
-#endif
+
 #include "MMSP.utility.h"
 #include "MMSP.scalar.h"
 #include "MMSP.vector.h"

@@ -4,9 +4,7 @@
 
 #ifndef MMSP_SPARSE
 #define MMSP_SPARSE
-#include <cmath>
-#include <limits>
-#include <cassert>
+
 #include "MMSP.utility.h"
 
 namespace MMSP {

@@ -1,3 +1,12 @@
+// MMSP.utility.cpp
+// Utility function and class implementations for MMSP
+// Questions/comments to gruberja@gmail.com (Jason Gruber)
+
+#include<cstdlib>
+#include<iostream>
+#include<ciso646>
+#include<ctime>
+
 namespace MMSP
 {
 

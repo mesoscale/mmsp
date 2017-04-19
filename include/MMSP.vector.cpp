@@ -1,4 +1,6 @@
-#include "MMSP.vector.h"
+// MMSP.vector.cpp
+// Class implementation for the MMSP vector data structure
+// Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 namespace MMSP
 {

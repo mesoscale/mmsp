@@ -1,3 +1,20 @@
+// MMSP.grid.cpp
+// MMSP grid class implementation
+// Questions/comments to gruberja@gmail.com (Jason Gruber)
+
+#include<iostream>
+#include<cstdlib>
+#include<cstdarg>
+#include<sstream>
+#include<cmath>
+#include<iomanip>
+#include<limits>
+#include<cassert>
+#include <sys/statvfs.h>
+#ifndef RAW
+#include<zlib.h>
+#endif
+
 namespace MMSP
 {
 

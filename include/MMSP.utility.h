@@ -1,15 +1,12 @@
 // MMSP.utility.h
-// Utility functions and classes for MMSP
+// Utility function and class declarations for MMSP
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef MMSP_UTILITY
 #define MMSP_UTILITY
-#include<fstream>
+
 #include<cstring>
-#include<cstdlib>
-#include<iostream>
-#include<ciso646>
-#include<ctime>
+#include<fstream>
 
 namespace MMSP {
 

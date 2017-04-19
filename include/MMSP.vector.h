@@ -1,11 +1,12 @@
-// MMSP.vector.hpp
+// MMSP.vector.h
 // Class definition for the MMSP vector data structure
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef MMSP_VECTOR
 #define MMSP_VECTOR
-#include"MMSP.utility.h"
+
 #include<cassert>
+#include"MMSP.utility.h"
 
 namespace MMSP {
 

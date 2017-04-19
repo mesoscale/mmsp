@@ -1,4 +1,10 @@
-#include "MMSP.sparse.h"
+// MMSP.sparse.h
+// Class implementation for the MMSP sparse data structure
+// Questions/comments to gruberja@gmail.com (Jason Gruber)
+
+#include <cmath>
+#include <limits>
+#include <cassert>
 
 namespace MMSP
 {
