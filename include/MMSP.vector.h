@@ -1,49 +1,29 @@
-// MMSP.vector.hpp
+// MMSP.vector.h
 // Class definition for the MMSP vector data structure
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef MMSP_VECTOR
 #define MMSP_VECTOR
-#include"MMSP.utility.hpp"
+
 #include<cassert>
+#include"MMSP.utility.h"
 
 namespace MMSP {
 
 template <typename T> class vector {
 public:
 	// constructors / destructor
-	vector() {
-		size = 0;
-		data = NULL;
-	}
-	vector(const vector& v) {
-		size = v.length();
-		data = new T[size];
-		for (int i = 0; i < size; i++)
-			data[i] = static_cast<T>(v[i]);
-	}
-	template <typename U> vector(const vector<U>& v) {
-		size = v.length();
-		data = new T[size];
-		for (int i = 0; i < size; i++)
-			data[i] = static_cast<T>(v[i]);
-	}
-	vector(int N) {
-		size = N;
-		data = new T[size];
-	}
-	template <typename U> vector(int N, const U& value) {
-		size = N;
-		data = new T[size];
-		for (int i = 0; i < size; i++)
-			data[i] = static_cast<T>(value);
-	}
-	~vector() {
-		if (data!=NULL) {
-			delete [] data;
-			data=NULL;
-		}
-	}
+	vector();
+
+	vector(const vector& v);
+
+	template <typename U> vector(const vector<U>& v);
+
+	vector(int N);
+
+	template <typename U> vector(int N, const U& value);
+
+	~vector();
 
 	// data access operators
 	T& operator[](int i) {
@@ -56,157 +36,38 @@ public:
 	}
 
 	// assignment operator
-	vector& operator=(const T& value) {
-		for (int i = 0; i < size; i++)
-			data[i] = static_cast<T>(value);
-		return *this;
-	}
-	vector& operator=(const vector& v) {
-		if (data!=NULL) {
-			delete [] data;
-			data=NULL;
-		}
-		size = v.length();
-		data = new T[size];
-		for (int i = 0; i < size; i++)
-			data[i] = static_cast<T>(v[i]);
-		return *this;
-	}
-	template <typename U> vector& operator=(const U& value) {
-		for (int i = 0; i < size; i++)
-			data[i] = static_cast<T>(value);
-		return *this;
-	}
-	template <typename U> vector& operator=(const vector<U>& v) {
-		if (data!=NULL) {
-			delete [] data;
-			data=NULL;
-		}
-		size = v.length();
-		data = new T[size];
-		for (int i = 0; i < size; i++)
-			data[i] = static_cast<T>(v[i]);
-		return *this;
-	}
+	vector& operator=(const T& value);
+
+	vector& operator=(const vector& v);
+
+	template <typename U> vector& operator=(const U& value);
+
+	template <typename U> vector& operator=(const vector<U>& v);
 
 	// buffer I/O functions
-	int buffer_size() const {
-		return sizeof(size) + size * sizeof(T);
-	}
-	int to_buffer(char* buffer) const {
-		memcpy(buffer, &size, sizeof(size));
-		memcpy(buffer + sizeof(size), data, size * sizeof(T));
-		return sizeof(size) + size * sizeof(T);
-	}
-	int from_buffer(const char* buffer) {
-		if (data!=NULL) {
-			delete [] data;
-			data=NULL;
-		}
-		memcpy(&size, buffer, sizeof(size));
-		data = new T[size];
-		memcpy(data, buffer + sizeof(size), size * sizeof(T));
-		return sizeof(size) + size * sizeof(T);
-	}
+	int buffer_size() const;
+
+	int to_buffer(char* buffer) const;
+
+	int from_buffer(const char* buffer);
 
 	// file I/O functions
-	void write(std::ofstream& file) const {
-		file.write(reinterpret_cast<const char*>(data), size * sizeof(T));
-	}
-	void read(std::ifstream& file) {
-		file.read(reinterpret_cast<char*>(data), size * sizeof(T));
-	}
+	void write(std::ofstream& file) const;
+
+	void read(std::ifstream& file);
 
 	// utility functions
-	int length() const {
-		return size;
-	}
-	void resize(int N) {
-		if (size == 0) {
-			size = N;
-			data = new T[size];
-		} else if (N > size) {
-			T* temp = new T[N];
-			memcpy(temp, data, size * sizeof(T));
-			if (data!=NULL) {
-				delete [] data;
-				data=NULL;
-			}
-			size = N;
-			data = new T[size];
-			memcpy(data, temp, size * sizeof(T));
-			if (temp!=NULL) {
-				delete [] temp;
-				temp=NULL;
-			}
-		} else if (N < size) {
-			T* temp = new T[N];
-			memcpy(temp, data, N * sizeof(T));
-			if (data!=NULL) {
-				delete [] data;
-				data=NULL;
-			}
-			size = N;
-			data = new T[size];
-			memcpy(data, temp, N * sizeof(T));
-			if (temp!=NULL) {
-				delete [] temp;
-				temp=NULL;
-			}
-		}
-	}
-	void copy(const vector& v) {
-		if (data!=NULL) {
-			delete [] data;
-			data=NULL;
-		}
-		size = v.size;
-		data = new T[size];
-		memcpy(data, v.data, size * sizeof(T));
-	}
-	void swap(vector& v) {
-		T* temp = data;
-		data = v.data;
-		v.data = temp;
-		int s = size;
-		size = v.size;
-		v.size = s;
-	}
-	template <typename U> void append(const U& value) {
-		T* temp = new T[size];
-		memcpy(temp, data, size * sizeof(T));
-		if (data!=NULL) {
-			delete [] data;
-			data=NULL;
-		}
-		size += 1;
-		data = new T[size];
-		memcpy(data, temp, size * sizeof(T));
-		if (temp!=NULL) {
-			delete [] temp;
-			temp=NULL;
-		}
-		data[size - 1] = static_cast<T>(value);
-	}
-	template <typename U> void append(const vector<U>& v) {
-		int N = size;
-		T* temp = new T[size];
-		memcpy(temp, data, size * sizeof(T));
-		if (data!=NULL) {
-			delete [] data;
-			data=NULL;
-		}
-		size += v.length();
-		data = new T[size];
-		memcpy(data, temp, size * sizeof(T));
-		if (temp!=NULL) {
-			delete [] temp;
-			temp=NULL;
-		}
-		for (int i = N; i < size; i++)
-			data[i] = static_cast<T>(v[i - N]);
-	}
+	int length() const;
 
+	void resize(int N);
+
+	void copy(const vector& v);
+
+	void swap(vector& v);
+
+	template <typename U> void append(const U& value);
+
+	template <typename U> void append(const vector<U>& v);
 private:
 	// object data
 	T* data;
@@ -481,14 +342,11 @@ template <int ind, typename T, typename U>
 vector<T> operator*(const U& value, const target<0, ind, vector<T> >& x) {
 	return operator*(value, *(x.data));
 }
-template <typename T> bool operator==(const vector<T>& a, const vector<T>& b) {
-	int N=a.length();
-	if (N != b.length()) return false;
-	for (int i=0; i<N; ++i)
-		if (a[i]!=b[i]) return false;
-	return true;
-}
+template <typename T> bool operator==(const vector<T>& a, const vector<T>& b);
+
 
 } // namespace MMSP
+
+#include "MMSP.vector.cpp"
 
 #endif

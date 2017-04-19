@@ -1,10 +1,10 @@
-// MMSP.scalar.hpp
+// MMSP.scalar.h
 // Class definition for the MMSP scalar data structure
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 #ifndef MMSP_SCALAR
 #define MMSP_SCALAR
-#include"MMSP.utility.hpp"
+#include"MMSP.utility.h"
 
 namespace MMSP {
 
