@@ -1534,10 +1534,12 @@ public:
 		outstr << fields << '\n';
 
 		// get grid size
-		for (int i=0; i<dim; i++) outstr << g0[i] << " " << g1[i] << '\n';
+		for (int i=0; i<dim; i++)
+			outstr << g0[i] << " " << g1[i] << '\n';
 
 		// get cell spacing
-		for (int i=0; i<dim; i++) outstr << dx[i] << '\n';
+		for (int i=0; i<dim; i++)
+			outstr << dx[i] << '\n';
 
 		// Write file header to file
 		output.write(outstr.str().c_str(), outstr.str().size());
@@ -1592,7 +1594,6 @@ public:
 				fprintf(stderr, "Error opening output file %s on rank %3d: %s\n", fname, rank, error_string);
 				MMSP::Abort(-1);
 			}
-			MPI_File_sync(output);
 
 			// Generate MMSP header from rank 0
 			unsigned long header_offset=0;
@@ -1605,8 +1606,10 @@ public:
 				outstr << dim << '\n';
 				outstr << fields << '\n';
 
-				for (int i=0; i<dim; i++) outstr << g0[i] << " " << g1[i] << '\n'; // global grid dimensions
-				for (int i=0; i<dim; i++) outstr << dx[i] << '\n'; // grid spacing
+				for (int i=0; i<dim; i++)
+					outstr << g0[i] << " " << g1[i] << '\n'; // global grid dimensions
+				for (int i=0; i<dim; i++)
+					outstr << dx[i] << '\n'; // grid spacing
 
 				// Calculate header size
 				header_offset=outstr.str().size();
@@ -1624,6 +1627,7 @@ public:
 				delete [] header;
 				header=NULL;
 			}
+			MPI_File_sync(output);
 			MPI::COMM_WORLD.Barrier();
 			MPI::COMM_WORLD.Bcast(&header_offset, 1, MPI_UNSIGNED_LONG, 0); // broadcast header size from rank 0
 
@@ -1638,7 +1642,8 @@ public:
 
 			// Calculate disk space
 			unsigned long filesize=0;
-			for (unsigned int i=0; i<np; ++i) filesize+=datasizes[i];
+			for (unsigned int i=0; i<np; ++i)
+				filesize+=datasizes[i];
 
 			unsigned long* offsets = new unsigned long[np];
 			offsets[0]=header_offset;
@@ -1720,8 +1725,10 @@ public:
 				outstr << dim << '\n';
 				outstr << MMSP::fields(*this) << '\n';
 
-				for (int i=0; i<dim; i++) outstr << MMSP::g0(*this,i) << " " << MMSP::g1(*this,i) << '\n'; // global grid dimensions
-				for (int i=0; i<dim; i++) outstr << MMSP::dx(*this,i) << '\n'; // grid spacing
+				for (int i=0; i<dim; i++)
+					outstr << MMSP::g0(*this,i) << " " << MMSP::g1(*this,i) << '\n'; // global grid dimensions
+				for (int i=0; i<dim; i++)
+					outstr << MMSP::dx(*this,i) << '\n'; // grid spacing
 
 				// Write MMSP header to buffer
 				header_offset=outstr.str().size();
