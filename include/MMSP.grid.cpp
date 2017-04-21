@@ -1347,7 +1347,7 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 	if (!output) {
 		std::cerr << "File output error: could not open ";
 		std::cerr << filename << "." << std::endl;
-		exit(-1);
+		MMSP::Abort(-1);
 	}
 
 	std::stringstream outstr;
@@ -1363,10 +1363,12 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 	outstr << fields << '\n';
 
 	// get grid size
-	for (int i=0; i<dim; i++) outstr << g0[i] << " " << g1[i] << '\n';
+	for (int i=0; i<dim; i++)
+		outstr << g0[i] << " " << g1[i] << '\n';
 
 	// get cell spacing
-	for (int i=0; i<dim; i++) outstr << dx[i] << '\n';
+	for (int i=0; i<dim; i++)
+			outstr << dx[i] << '\n';
 
 	// Write file header to file
 	output.write(outstr.str().c_str(), outstr.str().size());
@@ -1404,7 +1406,7 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 	if (blocksize<1048576) {
 		// Standard MPI-IO: every rank writes to disk
 		#ifdef BGQ
-		if (rank==0) std::cout<<"Bug: using stock MPI-IO, instead of BGQ IO!"<<std::endl;
+		if (rank==0) std::cout<<"Bug: using MPI-IO, instead of BGQ IO!"<<std::endl;
 		#endif
 		MPI_File output;
 		mpi_err = MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_WRONLY|MPI_MODE_EXCL|MPI_MODE_CREATE, MPI_INFO_NULL, &output);
@@ -1418,6 +1420,7 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 			std::cerr << "File output error: could not open " << fname << "." << std::endl;
 			exit(-1);
 		}
+		MPI::COMM_WORLD.Barrier();
 
 		// Generate MMSP header from rank 0
 		unsigned long header_offset=0;
@@ -1430,28 +1433,29 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 			outstr << dim << '\n';
 			outstr << fields << '\n';
 
-			for (int i=0; i<dim; i++) outstr << g0[i] << " " << g1[i] << '\n'; // global grid dimensions
-			for (int i=0; i<dim; i++) outstr << dx[i] << '\n'; // grid spacing
+			for (int i=0; i<dim; i++)
+				outstr << g0[i] << " " << g1[i] << '\n'; // global grid dimensions
+			for (int i=0; i<dim; i++)
+				outstr << dx[i] << '\n'; // grid spacing
 
-			// Write MMSP header to file
+			// Calculate header size
 			header_offset=outstr.str().size();
 			char* header = new char[header_offset];
 			for (unsigned int i=0; i<header_offset; i++)
 				header[i] = outstr.str()[i];
-			MPI_File_sync(output);
-			MPI_File_iwrite_at(output,0,header, header_offset, MPI_CHAR, &request);
-			MPI_Wait(&request, &status);
-			MPI_File_sync(output);
+
+			// Write MMSP header to file
+			MPI_File_write_at(output, 0, header, header_offset, MPI_CHAR, &status);
+
 			// Write number of blocks (processors) to file
-			MPI_File_iwrite_at(output,header_offset,reinterpret_cast<char*>(&np), sizeof(np), MPI_CHAR, &request);
-			MPI_Wait(&request, &status);
-			MPI_File_sync(output);
+			MPI_File_write_at(output, header_offset, reinterpret_cast<char*>(&np), sizeof(np), MPI_CHAR, &status);
+
 			header_offset+=sizeof(np);
 			delete [] header;
 			header=NULL;
 		}
-		MPI::COMM_WORLD.Barrier();
 		MPI_File_sync(output);
+		MPI::COMM_WORLD.Barrier();
 		MPI::COMM_WORLD.Bcast(&header_offset, 1, MPI_UNSIGNED_LONG, 0); // broadcast header size from rank 0
 
 		// get grid data to write
@@ -1461,14 +1465,12 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 
 		// Compute file offsets based on buffer sizes
 		unsigned long* datasizes = new unsigned long[np];
-		MPI::COMM_WORLD.Barrier();
 		MPI::COMM_WORLD.Allgather(&size_of_buffer, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
 
-		// Pre-allocate disk space
+		// Calculate disk space
 		unsigned long filesize=0;
-		for (unsigned int i=0; i<np; ++i) filesize+=datasizes[i];
-		MPI::COMM_WORLD.Barrier();
-		MPI_File_preallocate(output, filesize);
+		for (unsigned int i=0; i<np; ++i)
+			filesize+=datasizes[i];
 
 		unsigned long* offsets = new unsigned long[np];
 		offsets[0]=header_offset;
@@ -1482,27 +1484,31 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 		#endif
 
 		// Write buffer to disk
-		MPI_File_sync(output);
 		MPI::COMM_WORLD.Barrier();
-		MPI_File_iwrite_at(output,offsets[rank],buffer,datasizes[rank],MPI_CHAR,&request);
-		MPI_Wait(&request, &status);
+		MPI_File_write_at_all(output, offsets[rank], buffer, datasizes[rank], MPI_CHAR, &status);
 		#ifdef GRIDDEBUG
 		int error, write_errors=0;
 		MPI_Get_count(&status, MPI_INT, &error);
 		if (error!=0)
-			std::cerr<<"  Error on Rank "<<rank<<": "<<MPI::Get_error_class(error)<<std::endl;
+			std::cerr<<"  Error on Rank "<<rank<<": "<<MPI::Get_error_class(error-1)<<std::endl;
 		MPI::COMM_WORLD.Allreduce(&error, &write_errors, 1, MPI_INT, MPI_SUM);
-		if (rank==0) std::cout<<"  Write finished on "<<np-write_errors<<'/'<<np<<" ranks."<<std::endl;
+		if (rank==0)
+			std::cout<<"  Write finished on "<<write_errors<<'/'<<np<<" ranks."<<std::endl;
 		assert(write_errors==0);
 		#endif
 		delete [] buffer;
 		buffer=NULL;
 
-		MPI::COMM_WORLD.Barrier();
-		MPI_File_sync(output);
 		// Make sure everything's written before closing the file.
+		MPI_File_sync(output);
+		MPI::COMM_WORLD.Barrier();
+
 		MPI_Offset actual_size;
-		MPI_File_get_size(output,&actual_size);
+		MPI_File_get_size(output, &actual_size);
+
+		MPI::COMM_WORLD.Barrier();
+		MPI_File_close(&output);
+
 		if (rank==0) {
 			#ifdef GRIDDEBUG
 			std::cout<<fname<<" should be "<<offsets[np-1]+datasizes[np-1]<<" B;";
@@ -1510,8 +1516,7 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 			#endif
 			assert(offsets[np-1]+datasizes[np-1] == static_cast<unsigned long>(actual_size));
 		}
-		MPI::COMM_WORLD.Barrier();
-		MPI_File_close(&output);
+
 		delete [] offsets;
 		offsets=NULL;
 		delete [] datasizes;
@@ -1548,8 +1553,10 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 			outstr << dim << '\n';
 			outstr << MMSP::fields(*this) << '\n';
 
-			for (int i=0; i<dim; i++) outstr << MMSP::g0(*this,i) << " " << MMSP::g1(*this,i) << '\n'; // global grid dimensions
-			for (int i=0; i<dim; i++) outstr << MMSP::dx(*this,i) << '\n'; // grid spacing
+			for (int i=0; i<dim; i++)
+				outstr << MMSP::g0(*this,i) << " " << MMSP::g1(*this,i) << '\n'; // global grid dimensions
+			for (int i=0; i<dim; i++)
+				outstr << MMSP::dx(*this,i) << '\n'; // grid spacing
 
 			// Write MMSP header to buffer
 			header_offset=outstr.str().size();
@@ -1647,7 +1654,6 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 		}
 		// Collect block misalignments
 		misalignments = new unsigned long[np];
-		MPI::COMM_WORLD.Barrier();
 		MPI::COMM_WORLD.Allgather(&deficiency, 1, MPI_UNSIGNED_LONG, misalignments, 1, MPI_UNSIGNED_LONG);
 
 		#ifdef GRIDDEBUG
@@ -1735,16 +1741,10 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 			assert(mpi_err==MPI_SUCCESS);
 		}
 		if (!output) {
-			if (rank==0) std::cerr << "File output error: could not open " << fname << "." << std::endl;
-			if (rank==0) std::cerr << "                   If it already exists, delete it and try again." << std::endl;
+			std::cerr << "File output error: could not open " << fname << "." << std::endl;
 			exit(-1);
 		}
-		if (mpi_err != MPI_SUCCESS) {
-			char error_string[256];
-			int length_of_error_string=256;
-			MPI_Error_string(mpi_err, error_string, &length_of_error_string);
-			fprintf(stderr, "%3d: %s\n", rank, error_string);
-		}
+		MPI::COMM_WORLD.Barrier();
 
 		// Write to disk
 		if (filebuffer!=NULL) {
@@ -1765,7 +1765,9 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 			ws = 0; // not a writer
 		}
 
+		MPI_File_sync(output);
 		MPI::COMM_WORLD.Barrier();
+
 		MPI_File_close(&output);
 		if (recvrequests!=NULL) {
 			delete [] recvrequests;
@@ -2067,7 +2069,7 @@ template <int dim, typename T> vector<T> laplacian(const grid<dim, vector<T> >& 
 
 template<int dim, typename T> T laplacian(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field)
 {
-	double laplacian = 0.0;
+	T laplacian = 0.0;
 	vector<int> s = x;
 
 	const T& y = GRID(x)[field];
@@ -2141,7 +2143,7 @@ template <int dim, typename T> MMSP::vector<T> gradient(const grid<dim, T>& GRID
 		const T& yl = GRID(s);
 		s[i] += 1;
 
-		double weight = 1.0 / (2.0 * dx(GRID, i) );
+		double weight = 1.0 / (2.0 * dx(GRID, i));
 		gradient[i] = weight * (yh - yl);
 	}
 	return gradient;
