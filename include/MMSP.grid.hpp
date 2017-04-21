@@ -1924,7 +1924,6 @@ public:
 				fprintf(stderr, "Error opening output file %s on rank %3d: %s\n", fname, rank, error_string);
 				MMSP::Abort(-1);
 			}
-			MPI_File_sync(output);
 			MPI::COMM_WORLD.Barrier();
 
 			// Write to disk
