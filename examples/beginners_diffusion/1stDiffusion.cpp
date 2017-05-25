@@ -1,4 +1,5 @@
-#include"MMSP.hpp"
+#include <stdio.h>
+#include "MMSP.hpp"
 using namespace MMSP;
 
 int main(int argc, char* argv[])
@@ -9,11 +10,11 @@ int main(int argc, char* argv[])
   int iterations;
   float dt, diffusionCoefficient, dx;
 
-  nodes = 100;
+  nodes = 10;
   iterations = 100;
   diffusionCoefficient = 1.0;
   dx = 1.0;
-  dt = dx*dx/D/4;
+  dt = dx*dx/diffusionCoefficient/4;
 	  
   grid<1,scalar<double> > GRID(1,0,nodes);
   grid<1,scalar<double> > GRID2(1,0,nodes);
@@ -43,7 +44,6 @@ int main(int argc, char* argv[])
     std::cout<<GRID[x]<<std::endl;
   }
 
-  // SInce we called Init(), we must also call Finalize()
   Finalize();
 
   return 0;
