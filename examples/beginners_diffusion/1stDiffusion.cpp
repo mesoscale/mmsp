@@ -4,46 +4,47 @@ using namespace MMSP;
 
 int main(int argc, char* argv[])
 {
-  Init(argc, argv);
+	Init(argc, argv);
 
-  int nx = 10;
-  int iterations = 1000;
-  double diffusionCoefficient = 1.0, dx = 1.0;
+	int nx = 10;
+	double dx = 1.0;
+	int iterations = 1000;
+	double diffusionCoefficient = 1.0;
 
-  // Choice of dt depends on stability criteria.  This
-  // choice maintains stability.
-  double dt = dx*dx/diffusionCoefficient/4;
-	  
-  grid<1,scalar<double> > newGrid(1,0,nx);
-  grid<1,scalar<double> > oldGrid(1,0,nx);
+	// Choice of dt depends on stability criteria.  This
+	// choice maintains stability.
+	double dt = dx*dx/diffusionCoefficient/4;
 
-  for (int x=x0(newGrid); x<x1(newGrid); x++)
-    if (x<nx/2) {
-      newGrid[x]=1;
-      oldGrid[x]=1;
-    } else {
-      newGrid[x]=0;
-      oldGrid[x]=0;
-    }
+	grid<1,scalar<double> > newGrid(0,0,nx);
+	grid<1,scalar<double> > oldGrid(0,0,nx);
 
-  for (int i=0; i<iterations; i++) {
-    for (int x=x0(newGrid); x<x1(newGrid); x++) {
-      if (x==0 || x==nx-1) {
-      }
-      else {
-	newGrid[x]=(diffusionCoefficient*dt)*(oldGrid[x-1]-2*oldGrid[x]+oldGrid[x+1])/(dx*dx)+oldGrid[x];
-      }
-    }
-    swap(oldGrid,newGrid);
-  }
+	for (int x=x0(newGrid); x<x1(newGrid); x++)
+		if (x<nx/2) {
+			newGrid[x]=1;
+			oldGrid[x]=1;
+		} else {
+			newGrid[x]=0;
+			oldGrid[x]=0;
+		}
 
-  //This prints the results of the grid to cout
-  for (int x=x0(oldGrid); x<x1(oldGrid); x++) {
-    std::cout<<oldGrid[x]<<std::endl;
-  }
+	for (int i=0; i<iterations; i++) {
+		for (int x=x0(newGrid); x<x1(newGrid); x++) {
+			if (x==0 || x==nx-1) {
+			} else {
+				double laplacian = (oldGrid[x-1]-2*oldGrid[x]+oldGrid[x+1])/(dx*dx);
+				newGrid[x] = (diffusionCoefficient*dt)*laplacian + oldGrid[x];
+			}
+		}
+		swap(oldGrid,newGrid);
+	}
 
-  Finalize();
+	//This prints the results of the grid to cout
+	for (int x=x0(oldGrid); x<x1(oldGrid); x++) {
+		std::cout<<oldGrid[x]<<std::endl;
+	}
 
-  return 0;
+	Finalize();
+
+	return 0;
 }
 
