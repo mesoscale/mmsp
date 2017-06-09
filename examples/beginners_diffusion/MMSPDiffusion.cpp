@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 			newGrid[x]=0;
 			oldGrid[x]=0;
 		}
-	
+
 	if (x0(newGrid)==g0(newGrid, 0)) {
 	  b0(newGrid, 0) = Dirichlet;
 	  b0(oldGrid, 0) = Dirichlet;
@@ -31,17 +31,17 @@ int main(int argc, char* argv[])
 	  b1(newGrid, 0) = Dirichlet;
 	  b1(oldGrid, 0) = Dirichlet;
 	} 
-
-	ghostswap(newGrid);
+	
+	ghostswap(oldGrid);
 
 	for (int k=0; k<iterations; k++) {
 		for (int i=0; i<nodes(newGrid); i++) {
-		  oldGrid(i)=(diffusionCoefficient*dt)*laplacian(newGrid,i)/(dx*dx)+newGrid[i];
+		  newGrid(i)=(diffusionCoefficient*dt)*laplacian(oldGrid,i)/(dx*dx)+oldGrid[i];
 			oldGrid[x0(newGrid)] = 1.0;
 			oldGrid[x1(newGrid)] = 0.0;
 		}
-		swap(newGrid,oldGrid);
 		ghostswap(newGrid);
+		swap(newGrid,oldGrid);
 	};
 
 
