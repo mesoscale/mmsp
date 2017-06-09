@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
   int iterations = 1000;
   double diffusionCoefficient = 1.0, dx = 1.0;
 
-  // Choice of dt depends on sability criteria.  This
+  // Choice of dt depends on stability criteria.  This
   // choice maintains stability.
   double dt = dx*dx/diffusionCoefficient/4;
 	  
