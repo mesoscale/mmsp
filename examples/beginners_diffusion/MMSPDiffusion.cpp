@@ -5,48 +5,48 @@ int main(int argc, char* argv[])
 {
 	Init(argc, argv);
 
-	int nx;
-	int iterations;
-	float dt, diffusionCoefficient, dx;
+	int nx = 10;
+	int iterations = 100;
+	double diffusionCoefficient = 1.0, dx = 1.0;
 
-	nx = 10;
-	iterations = 100;
-	diffusionCoefficient = 1.0;
-	dx = 1.0;
-	dt = dx*dx/diffusionCoefficient/4;
+	double dt = dx*dx/diffusionCoefficient/4.0;
 
-	grid<1,scalar<double> > GRID(1,0,nx);
-	grid<1,scalar<double> > update(1,0,nx);
+	grid<1,scalar<double> > newGrid(1,0,nx);
+	grid<1,scalar<double> > oldGrid(1,0,nx);
 
-	for (int x=x0(GRID); x<x1(GRID); x++)
+	for (int x=x0(newGrid); x<x1(newGrid); x++)
 		if (x<nx/2) {
-			GRID[x]=1;
-			update[x]=1;
+			newGrid[x]=1;
+			oldGrid[x]=1;
 		} else {
-			GRID[x]=0;
-			update[x]=1;
+			newGrid[x]=0;
+			oldGrid[x]=0;
 		}
+	
+	if (x0(newGrid)==g0(newGrid, 0)) {
+	  b0(newGrid, 0) = Dirichlet;
+	  b0(oldGrid, 0) = Dirichlet;
+	}
+	if (x1(newGrid)==g1(newGrid, 0)) {
+	  b1(newGrid, 0) = Dirichlet;
+	  b1(oldGrid, 0) = Dirichlet;
+	} 
 
-	b0(GRID,0) = Dirichlet;
-	b1(GRID,0) = Dirichlet;
-	b0(update,0) = Dirichlet;
-	b1(update,0) = Dirichlet;
-
-	ghostswap(GRID);
+	ghostswap(newGrid);
 
 	for (int k=0; k<iterations; k++) {
-		for (int i=0; i<nodes(GRID); i++) {
-			update(i)=(diffusionCoefficient*dt/dx/dx)*laplacian(GRID,i)+GRID[i];
-			update[x0(GRID)] = 1.0;
-			update[x1(GRID)] = 0.0;
+		for (int i=0; i<nodes(newGrid); i++) {
+		  oldGrid(i)=(diffusionCoefficient*dt)*laplacian(newGrid,i)/(dx*dx)+newGrid[i];
+			oldGrid[x0(newGrid)] = 1.0;
+			oldGrid[x1(newGrid)] = 0.0;
 		}
-		swap(GRID,update);
-		ghostswap(GRID);
+		swap(newGrid,oldGrid);
+		ghostswap(newGrid);
 	};
 
 
-	for (int x=x0(GRID); x<x1(GRID); x++)
-		std::cout<<GRID[x]<<std::endl;
+	for (int x=x0(newGrid); x<x1(newGrid); x++)
+		std::cout<<newGrid[x]<<std::endl;
 
 	Finalize();
 	return 0;
