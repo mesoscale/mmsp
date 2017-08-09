@@ -283,6 +283,10 @@ int main(int argc, char* argv[])
 	// read grid dimension
 	int dim;
 	input >> dim;
+	if (dim < 1 or dim > 3) {
+		std::cerr << "File input error: grid dimension must be 1, 2, or 3." << std::endl;
+		exit(-1);
+	}
 
 	// read number of fields
 	int fields;
@@ -1124,7 +1128,7 @@ template <int dim, typename T> void convert_sparses(const MMSP::grid<dim,MMSP::s
 					sum = GRID(n)[*it];
 			}
 		} else if (mode==3) { //  --exclude
-			for (int h=0; h<MMSP::fields(GRID); h++) {
+			for (int h=0; h<GRID(n).length(); h++) {
 				int i = GRID(n).index(h);
 				std::set<int>::iterator it=fieldset.find(i);
 				if (it == fieldset.end())
@@ -1157,8 +1161,8 @@ template <int dim, typename T> void convert_sparses(const MMSP::grid<dim,MMSP::s
 						sum = GRID(x)[*it];
 				}
 			} else if (mode==3) { //  --exclude
-				for (int h=0; h<MMSP::fields(GRID); h++) {
-					int i=GRID(x).index(i);
+				for (int h=0; h<GRID(x).length(); h++) {
+					int i = GRID(x).index(h);
 					std::set<int>::iterator it=fieldset.find(i);
 					if (it == fieldset.end())
 						sum += pow(GRID(x).value(h),2.0);
@@ -1191,8 +1195,8 @@ template <int dim, typename T> void convert_sparses(const MMSP::grid<dim,MMSP::s
 							sum = GRID(x)[*it];
 					}
 				} else if (mode==3) { //  --exclude
-					for (int h=0; h<MMSP::fields(GRID); h++) {
-						int i=GRID(x).index(i);
+					for (int h=0; h<GRID(x).length(); h++) {
+						int i = GRID(x).index(h);
 						std::set<int>::iterator it=fieldset.find(i);
 						if (it == fieldset.end())
 							sum += pow(GRID(x).value(h),2.0);
@@ -1228,8 +1232,8 @@ template <int dim, typename T> void convert_sparses(const MMSP::grid<dim,MMSP::s
 								sum = GRID(x)[*it];
 						}
 					} else if (mode==3) { //  --exclude
-						for (int h=0; h<MMSP::fields(GRID); h++) {
-							int i=GRID(x).index(i);
+						for (int h=0; h<GRID(x).length(); h++) {
+							int i = GRID(x).index(h);
 							std::set<int>::iterator it=fieldset.find(i);
 							if (it == fieldset.end())
 								sum += pow(GRID(x).value(h),2.0);

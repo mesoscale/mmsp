@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
 	// read grid dimension
 	int dim;
 	input >> dim;
-	if (dim<2 || dim>3) {
+	if (dim < 2 or dim > 3) {
 		std::cerr << "ERROR in " << argv[1] << ": "<<dim<<"-dimensional topology is not implemented.\n" << std::endl;
 		exit(-1);
 	}

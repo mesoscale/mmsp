@@ -35,8 +35,8 @@ public:
 	unsigned int grain_id() const;
 	double getMagPhi() const;
 
-	int index(int i) const;
-	T value(int i) const;
+	int index(const int& i) const;
+	T value(const int& i) const;
 
 	// buffer I/O functions
 	int buffer_size() const;

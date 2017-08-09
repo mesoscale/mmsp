@@ -123,13 +123,15 @@ template <typename T> double sparse<T>::getMagPhi() const
 	return sqrt(sum);
 }
 
-template <typename T> int sparse<T>::index(int i) const
+template <typename T> int sparse<T>::index(const int& i) const
 {
+	assert(i < size);
 	return data[i].index;
 }
 
-template <typename T> T sparse<T>::value(int i) const
+template <typename T> T sparse<T>::value(const int& i) const
 {
+	assert(i < size);
 	return data[i].value;
 }
 
