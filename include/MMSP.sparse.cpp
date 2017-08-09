@@ -314,7 +314,7 @@ template <typename T> bool operator==(const sparse<T>& a, const sparse<T>& b)
 {
 	int N=a.length();
 	if (N != b.length()) return false;
-	for (int i=0; i<N; ++i) {
+	for (int i = 0; i < N; i++) {
 		int indexA = a.index(i);
 		bool found=false;
 		bool match=false;

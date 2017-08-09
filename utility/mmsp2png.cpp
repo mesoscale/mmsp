@@ -1125,7 +1125,7 @@ template <int dim, typename T> void convert_sparses(const MMSP::grid<dim,MMSP::s
 			}
 		} else if (mode==3) { //  --exclude
 			for (int h=0; h<MMSP::fields(GRID); h++) {
-				int i=GRID(n).index(i);
+				int i = GRID(n).index(h);
 				std::set<int>::iterator it=fieldset.find(i);
 				if (it == fieldset.end())
 					sum += pow(GRID(n).value(h),2.0);
