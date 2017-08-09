@@ -63,7 +63,13 @@ then
 fi
 
 # Get going
-cd ../examples
+root_dir=$(pwd)/../
+
+echo "Building utilities"
+cd ${root_dir}/utility
+make
+
+cd ${root_dir}/examples
 examples=$(pwd)
 
 echo -n "Building examples in serial and parallel"
@@ -145,12 +151,12 @@ fi
 
 if [[ ! $NOVIZ ]]
 then
-	if [[ ! $PVD ]] && [[ $(which mmsp2png) == "" ]]
+	if [[ ! $PVD ]] && [[ ! -f ${root_dir}/utility/mmsp2png ]]
 	then
 		# Consult doc/MMSP.manual.pdf if this fails.
 		echo -e "${BYLW}mmsp2png utility not found. Please check your installation, or pass --noviz.${WHT}"
 	fi
-	if [[ $PVD ]] && [[ $(which mmsp2pvd) == "" ]]
+	if [[ $PVD ]] && [[ ! -f ${root_dir}/utility/mmsp2pvd ]]
 	then
 		# Consult doc/MMSP.manual.pdf if this fails.
 		echo -e "${BYLW}mmsp2pvd utility not found. Please check your installation, or pass --noviz.${WHT}"
@@ -241,11 +247,11 @@ do
 				# Show the result
 				for f in *.dat
 				do
-					mmsp2png --zoom $f >>test.log
+					${root_dir}/utility/./mmsp2png --zoom $f >>test.log
 				done
 				if [[ $PVD ]]
 				then
-					mmsp2pvd --output=test.pvd test.*.dat >>test.log
+					${root_dir}/utility/./mmsp2pvd --output=test.pvd test.*.dat >>test.log
 				fi
 			fi
 			exfin=$(date +%s)
@@ -300,7 +306,7 @@ then
 	printf ", %2d failed" $nRunErr
 fi
 echo
-cd ../test/
+cd ${root_dir}/test
 
 AllERR=$(echo "$nSerErr+$nParErr+$nRunErr" | bc -l)
 if [[ $AllERR > 0 ]]
