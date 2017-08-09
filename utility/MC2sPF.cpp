@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
 	// read fields
 	int fields;
 	input >> fields;
-	if (not fields == 1) {
+	if (fields != 1) {
 		std::cerr << "File input error: number of fields must equal 1." << std::endl;
 		exit(-1);
 	}
