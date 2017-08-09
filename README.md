@@ -11,9 +11,9 @@ for three-dimensional simulations, single processor programs are easily parallel
 fundamentally different methods like Monte Carlo or phase field have the same look and feel.
 Finally, extensible means that it's straightforward to add new grid types or physical behaviors
 to the package. Other considerations include efficiency and portability (MMSP is written
-entirely in ISO compliant c++). For more details, see the documentation.
+entirely in ISO compliant C++). For more details, see the documentation.
 
-MMSP is nothing more than a collection of c++ header files that declare a number of grid objects
+MMSP is nothing more than a collection of C++ header files that declare a number of grid objects
 (classes) and define how most of their methods (member functions) are implemented.
 
 *Some things MMSP provides include:*
@@ -42,9 +42,10 @@ MMSP is nothing more than a collection of c++ header files that declare a number
 *MMSP requires:*
 
  * Minimal programming experience
- * An ISO compliant c++ compiler (e.g. GCC 2.95 or later)
+ * An ISO compliant C++ compiler (e.g. GCC 2.95 or later)
  * zlib libraries for data compression (e.g. zlib 1.2.7)
- * MPI libraries are required if compiling parallel programs (e.g. Open MPI )
+ * libpng headers for mmsp2png image generation utility (e.g. libpng12-dev)
+ * MPI libraries if compiling parallel programs (e.g. Open MPI)
 
 *Documentation*
 
@@ -55,4 +56,4 @@ The MMSP manual is a work in progress. It is currently the only source for detai
 The administrators for the MMSP source code are Jason Gruber (gruberja@gmail.com) and Trevor Keller (trevor.keller@gmail.com). Please do not hesitate to send questions or comments.
 
 
-This work is supported in part by the US NSF under award #1056704 through the Metals and Metallic Nanostructures Program, Division of Materials Research. 
+This work was supported in part by the US NSF under award #1056704 through the Metals and Metallic Nanostructures Program, Division of Materials Research. 

@@ -4,7 +4,7 @@
 
 # compilers/flags
 compiler = g++
-flags = -O2 -Wall -I ../include/
+flags = -O2 -Wall -pedantic -I ../include/
 
 topo = ../algorithms/topology
 
@@ -103,4 +103,4 @@ clean :
 	      PF2MC PF2sPF \
 	      sPF2MC sPF2PF \
 	      vox2MC MC2vox \
-	      mmsp2topo mmsp2z wrongendian
+	      mmsp2topo mmsp2xyz mmsp2z wrongendian

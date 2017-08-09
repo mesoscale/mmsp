@@ -123,13 +123,15 @@ template <typename T> double sparse<T>::getMagPhi() const
 	return sqrt(sum);
 }
 
-template <typename T> int sparse<T>::index(int i) const
+template <typename T> int sparse<T>::index(const int& i) const
 {
+	assert(i < size);
 	return data[i].index;
 }
 
-template <typename T> T sparse<T>::value(int i) const
+template <typename T> T sparse<T>::value(const int& i) const
 {
+	assert(i < size);
 	return data[i].value;
 }
 
@@ -314,7 +316,7 @@ template <typename T> bool operator==(const sparse<T>& a, const sparse<T>& b)
 {
 	int N=a.length();
 	if (N != b.length()) return false;
-	for (int i=0; i<N; ++i) {
+	for (int i = 0; i < N; i++) {
 		int indexA = a.index(i);
 		bool found=false;
 		bool match=false;
