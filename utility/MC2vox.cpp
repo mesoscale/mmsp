@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 	// read grid dimension
 	int dim;
 	input >> dim;
-	if (not dim == 3) {
+	if (dim != 3) {
 		std::cerr << "File input error: grid dimension must be 3." << std::endl;
 		exit(-1);
 	}
