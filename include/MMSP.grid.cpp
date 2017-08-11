@@ -1051,13 +1051,13 @@ template<int dim,typename T> unsigned long grid<dim,T>::buffer_size_save(const i
 template<int dim, typename T> unsigned long grid<dim,T>::buffer_size_save(T* p, int i, const int min[dim], const int max[dim]) const
 {
 	unsigned long size = 0;
-	if (i == dim - 1)
+	if (i == dim - 1) {
 		for (int x = min[i]; x < max[i]; x+=2)
 			size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
-
-	else
+	} else if (i >= 0 && i < dim) {
 		for (int x = min[i]; x < max[i]; x+=2)
 			size += buffer_size_save(p + (x - s0[i]) * sx[i], i + 1, min, max);
+	}
 	return size;
 }
 
@@ -1069,12 +1069,13 @@ template<int dim, typename T> unsigned long grid<dim,T>::to_buffer_save(char* bu
 template<int dim, typename T> unsigned long grid<dim,T>::to_buffer_save(char* buffer, T* p, int i, const int min[dim], const int max[dim]) const
 {
 	unsigned long size = 0;
-	if (i == dim - 1)
+	if (i == dim - 1) {
 		for (int x = min[i]; x < max[i]; x+=2)
 			size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-	else
+	} else if (i >= 0 && i < dim) {
 		for (int x = min[i]; x < max[i]; x+=2)
 			size += to_buffer_save(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max);
+	}
 	return size;
 }
 
@@ -1089,7 +1090,7 @@ template<int dim, typename T> unsigned long grid<dim,T>::from_buffer_save(char* 
 	if (i == dim - 1) {
 		for (int x = min[i]; x < max[i]; x+=2)
 			size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-	} else {
+	} else if (i >= 0 && i < dim) {
 		for (int x = min[i]; x < max[i]; x+=2)
 			size += from_buffer_save(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max);
 	}
@@ -1100,12 +1101,13 @@ template<int dim, typename T> unsigned long grid<dim,T>::from_buffer_save(char* 
 template<int dim, typename T> unsigned long grid<dim,T>::buffer_size(T* p, int i, const int min[dim], const int max[dim]) const
 {
 	unsigned long size = 0;
-	if (i == dim - 1)
+	if (i == dim - 1) {
 		for (int x = min[i]; x < max[i]; x++)
 			size += MMSP::buffer_size(*(p + (x - s0[i]) * sx[i]));
-	else
+	} else if (i >= 0 && i < dim) {
 		for (int x = min[i]; x < max[i]; x++)
 			size += buffer_size(p + (x - s0[i]) * sx[i], i + 1, min, max);
+	}
 	return size;
 }
 
@@ -1134,12 +1136,13 @@ template<int dim, typename T> unsigned long grid<dim,T>::to_buffer(char* buffer,
 template<int dim, typename T> unsigned long grid<dim,T>::to_buffer(char* buffer, T* p, int i, const int min[dim], const int max[dim]) const
 {
 	unsigned long size = 0;
-	if (i == dim - 1)
+	if (i == dim - 1) {
 		for (int x = min[i]; x < max[i]; x++)
 			size += MMSP::to_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-	else
+	} else if (i >= 0 && i < dim) {
 		for (int x = min[i]; x < max[i]; x++)
 			size += to_buffer(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max);
+	}
 	return size;
 }
 
@@ -1159,7 +1162,7 @@ template<int dim, typename T> unsigned long grid<dim,T>::from_buffer(char* buffe
 	if (i == dim - 1) {
 		for (int x = min[i]; x < max[i]; x++)
 			size += MMSP::from_buffer(*(p + (x - s0[i]) * sx[i]), buffer + size);
-	} else {
+	} else if (i >= 0 && i < dim) {
 		for (int x = min[i]; x < max[i]; x++)
 			size += from_buffer(buffer + size, p + (x - s0[i]) * sx[i], i + 1, min, max);
 	}

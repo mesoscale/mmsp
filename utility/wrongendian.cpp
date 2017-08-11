@@ -296,19 +296,27 @@ void* swap_block_kernel(void* x)
 			case Z_MEM_ERROR:
 				std::cerr << "Uncompress: out of memory.\n" << std::endl;
 				st->ofile->close();
-				delete [] st->uncompress_buf; st->uncompress_buf=NULL;
-				if (st->compressed_buf!=NULL) delete [] st->compressed_buf; st->compressed_buf=NULL;
+				delete [] st->uncompress_buf;
+				st->uncompress_buf=NULL;
+				if (st->compressed_buf!=NULL)
+					delete [] st->compressed_buf;
+				st->compressed_buf=NULL;
 				exit(-1);
 				break;
 			case Z_BUF_ERROR:
 				std::cerr << "Uncompress: output buffer ("<<size_in_mem<<" B) wasn't large enough for data ("<<size_on_disk<<" B).\n" << std::endl;
 				st->ofile->close();
-				delete [] st->uncompress_buf; st->uncompress_buf=NULL;
-				if (st->compressed_buf!=NULL) delete [] st->compressed_buf; st->compressed_buf=NULL;
+				delete [] st->uncompress_buf;
+				st->uncompress_buf=NULL;
+				if (st->compressed_buf!=NULL)
+					delete [] st->compressed_buf;
+				st->compressed_buf=NULL;
 				exit(-1);
 				break;
 		}
-		if (st->compressed_buf!=NULL) delete [] st->compressed_buf; st->compressed_buf=NULL;
+		if (st->compressed_buf!=NULL)
+			delete [] st->compressed_buf;
+		st->compressed_buf=NULL;
 	}
 	// Invert raw data
 	if (scalar_type) {
@@ -316,8 +324,12 @@ void* swap_block_kernel(void* x)
 		st->q = st->uncompress_buf;
 		if (bool_type or char_type or unsigned_char_type) {
 			std::cout<<"Grid type ("<<type<<") does not need byte-swapping."<<std::endl;
-			if (st->uncompress_buf!=NULL) delete [] st->uncompress_buf; st->uncompress_buf=NULL;
-			if (st->compressed_buf!=NULL) delete [] st->compressed_buf; st->compressed_buf=NULL;
+			if (st->uncompress_buf!=NULL)
+				delete [] st->uncompress_buf;
+			st->uncompress_buf=NULL;
+			if (st->compressed_buf!=NULL)
+				delete [] st->compressed_buf;
+			st->compressed_buf=NULL;
 			exit(-1);
 		} else if (int_type or unsigned_int_type) {
 			while (st->q < st->uncompress_buf+size_in_mem) {
@@ -351,8 +363,12 @@ void* swap_block_kernel(void* x)
 			}
 		} else {
 			std::cerr<<"ERROR: Grid type ("<<type<<") is not implemented.\n"<<std::endl;
-			if (st->uncompress_buf!=NULL) delete [] st->uncompress_buf; st->uncompress_buf=NULL;
-			if (st->compressed_buf!=NULL) delete [] st->compressed_buf; st->compressed_buf=NULL;
+			if (st->uncompress_buf!=NULL)
+				delete [] st->uncompress_buf;
+			st->uncompress_buf=NULL;
+			if (st->compressed_buf!=NULL)
+				delete [] st->compressed_buf;
+			st->compressed_buf=NULL;
 			exit(-1);
 		}
 	} else if (vector_type) {
@@ -437,8 +453,12 @@ void* swap_block_kernel(void* x)
 			}
 		} else {
 			std::cerr<<"ERROR: Grid type ("<<type<<") is not implemented.\n"<<std::endl;
-			if (st->uncompress_buf!=NULL) delete [] st->uncompress_buf; st->uncompress_buf=NULL;
-			if (st->compressed_buf!=NULL) delete [] st->compressed_buf; st->compressed_buf=NULL;
+			if (st->uncompress_buf!=NULL)
+				delete [] st->uncompress_buf;
+			st->uncompress_buf=NULL;
+			if (st->compressed_buf!=NULL)
+				delete [] st->compressed_buf;
+			st->compressed_buf=NULL;
 			exit(-1);
 		}
 	} else if (sparse_type) {
@@ -550,14 +570,22 @@ void* swap_block_kernel(void* x)
 			}
 		} else {
 			std::cerr<<"ERROR: Grid type ("<<type<<") is not implemented.\n"<<std::endl;
-			if (st->uncompress_buf!=NULL) delete [] st->uncompress_buf; st->uncompress_buf=NULL;
-			if (st->compressed_buf!=NULL) delete [] st->compressed_buf; st->compressed_buf=NULL;
+			if (st->uncompress_buf!=NULL)
+				delete [] st->uncompress_buf;
+			st->uncompress_buf=NULL;
+			if (st->compressed_buf!=NULL)
+				delete [] st->compressed_buf;
+			st->compressed_buf=NULL;
 			exit(-1);
 		}
 	} else {
 		std::cerr<<"ERROR: Grid type ("<<type<<") is not implemented.\n"<<std::endl;
-		if (st->uncompress_buf!=NULL) delete [] st->uncompress_buf; st->uncompress_buf=NULL;
-		if (st->compressed_buf!=NULL) delete [] st->compressed_buf; st->compressed_buf=NULL;
+		if (st->uncompress_buf!=NULL)
+			delete [] st->uncompress_buf;
+		st->uncompress_buf=NULL;
+		if (st->compressed_buf!=NULL)
+			delete [] st->compressed_buf;
+		st->compressed_buf=NULL;
 		exit(-1);
 	}
 
@@ -570,18 +598,26 @@ void* swap_block_kernel(void* x)
 			break;
 		case Z_MEM_ERROR:
 			std::cerr << "Compress: out of memory.\n" << std::endl;
-			if (st->uncompress_buf!=NULL) delete [] st->uncompress_buf; st->uncompress_buf=NULL;
-			delete [] st->compressed_buf; st->compressed_buf=NULL;
+			if (st->uncompress_buf!=NULL)
+				delete [] st->uncompress_buf;
+			st->uncompress_buf=NULL;
+			delete [] st->compressed_buf;
+			st->compressed_buf=NULL;
 			exit(-1);
 			break;
 		case Z_BUF_ERROR:
 			std::cerr << "Compress: output buffer wasn't large enough.\n" << std::endl;
-			if (st->uncompress_buf!=NULL) delete [] st->uncompress_buf; st->uncompress_buf=NULL;
-			delete [] st->compressed_buf; st->compressed_buf=NULL;
+			if (st->uncompress_buf!=NULL)
+				delete [] st->uncompress_buf;
+			st->uncompress_buf=NULL;
+			delete [] st->compressed_buf;
+			st->compressed_buf=NULL;
 			exit(-1);
 			break;
 	}
-	if (st->uncompress_buf!=NULL) delete [] st->uncompress_buf; st->uncompress_buf=NULL;
+	if (st->uncompress_buf!=NULL)
+		delete [] st->uncompress_buf;
+	st->uncompress_buf=NULL;
 
 	pthread_mutex_lock(&write_lock);
 	for (st->j = 0; st->j < dim; st->j++) {
@@ -597,7 +633,9 @@ void* swap_block_kernel(void* x)
 	st->ofile->write(reinterpret_cast<const char*>(st->compressed_buf), size_on_disk);
 	pthread_mutex_unlock(&write_lock);
 
-	if (st->compressed_buf!=NULL) delete [] st->compressed_buf; st->compressed_buf=NULL;
+	if (st->compressed_buf!=NULL)
+		delete [] st->compressed_buf;
+	st->compressed_buf=NULL;
 
 	pthread_exit((void*)0);
 	return NULL;
