@@ -501,6 +501,8 @@ template <int dim, typename T> sparse<T> laplacian(const grid<dim, sparse<T> >& 
 
 template <int dim, typename T> vector<T> gradient(const grid<dim, T>& GRID, const vector<int>& x);
 
+template <int dim, typename T> vector<T> gradient(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field);
+
 template <int dim, typename T> vector<T> grad(const grid<dim, T>& GRID, const vector<int>& x);
 
 template <int dim, typename T> T divergence(const grid<dim, T>& GRID, const vector<int>& x);

@@ -2152,6 +2152,24 @@ template <int dim, typename T> MMSP::vector<T> gradient(const grid<dim, T>& GRID
 	return gradient;
 }
 
+template <int dim, typename T> MMSP::vector<T> gradient(const grid<dim,vector<T> >& GRID, const vector<int>& x, const int field)
+{
+	vector<T> gradient(dim);
+	vector<int> s = x;
+
+	for (int i=0; i<dim; i++) {
+		s[i] += 1;
+		const T& yh = GRID(s)[field];
+		s[i] -= 2;
+		const T& yl = GRID(s)[field];
+		s[i] += 1;
+
+		double weight = 1.0 / (2.0 * dx(GRID, i));
+		gradient[i] = weight * (yh - yl);
+	}
+	return gradient;
+}
+
 template <int dim, typename T> vector<T> grad(const grid<dim, T>& GRID, const vector<int>& x)
 {
 	return gradient(GRID, x);
