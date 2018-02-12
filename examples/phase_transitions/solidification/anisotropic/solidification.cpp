@@ -50,7 +50,9 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 
 	ghostswap(oldGrid);
 
-	static grid<dim,T> refGrid(oldGrid,0); // constructor copies only field 0
+	static grid<dim,T> refGrid(oldGrid,0); 
+	for (int i=0; i<nodes(refGrid); ++i) //initialize values for refGrid
+			refGrid(i)=oldGrid(i)[0];
 	grid<dim,vector<T> > newGrid(oldGrid);
 
 	double      dt=5e-5;    // time-step
