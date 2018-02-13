@@ -13,141 +13,159 @@
 namespace MMSP
 {
 
+/* Grid contains two fields:
+   0. Phase fraction solid (phi)
+   1. Undercooling (u)
+*/
+
 void generate(int dim, const char* filename)
 {
-	const int L=128;
-	const double deltaX=0.025;
-	const double undercooling=-0.5;
-	if (dim==2) {
+	const int L = 128;
+	const double deltaX = 0.025;
+	const double undercooling = -0.5;
+
+	if (dim == 2) {
 		GRID2D initGrid(2,0,L,0,L);
-		for (int d=0; d<dim; ++d) dx(initGrid,d)=deltaX;
+		for (int d = 0; d < dim; d++)
+			dx(initGrid,d) = deltaX;
 
 		// Seed a circle of radius N*dx
-		int R=5;
-		for (int i=0; i<nodes(initGrid); ++i) {
-			initGrid(i)[1]=undercooling; // Initial undercooling
+		int R = 5;
+		for (int i = 0; i < nodes(initGrid); i++) {
+			initGrid(i)[1] = undercooling; // Initial undercooling
 			vector<int> x = position(initGrid,i);
-			int r=sqrt(pow(x[0]-L/2,2)+pow(x[1]-L/2,2));
-			if (r<=R) initGrid(i)[0]=1.;
-			else initGrid(i)[0]=0.;
+			int r = sqrt(pow(x[0]-L/2,2) + pow(x[1]-L/2,2));
+			if (r <= R)
+				initGrid(i)[0] = 1.;
+			else
+				initGrid(i)[0] = 0.;
 		}
 		output(initGrid,filename);
 	} else {
-		std::cerr<<"Anisotropic solidification code is only implemented for 2D."<<std::endl;
+		std::cerr << "Anisotropic solidification code is only implemented for 2D." << std::endl;
 		MMSP::Abort(-1);
 	}
 }
 
 template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int steps)
 {
-	int id=0;
-	int np=1;
-	static int iterations=1;
+	int id = 0;
+	int np = 1;
+	static int iterations = 1;
 	#ifdef MPI_VERSION
-	id=MPI::COMM_WORLD.Get_rank();
-	np=MPI::COMM_WORLD.Get_size();
+	id = MPI::COMM_WORLD.Get_rank();
+	np = MPI::COMM_WORLD.Get_size();
 	#endif
 
 	ghostswap(oldGrid);
 
-	static grid<dim,T> refGrid(oldGrid,0); 
-	for (int i=0; i<nodes(refGrid); ++i) //initialize values for refGrid
-			refGrid(i)=oldGrid(i)[0];
 	grid<dim,vector<T> > newGrid(oldGrid);
+	static grid<dim,T>   refGrid(oldGrid, 0);  // create scalar- from vector-valued grid
+	for (int i = 0; i < nodes(refGrid); i++) // initialize values for refGrid
+		refGrid(i) = oldGrid(i)[0];
 
-	double      dt=5e-5;    // time-step
-	double   theta=0.;      // angle relative to lab frame
-	double       c=0.02;   // degree of anisotropy
-	double       N=6.;      // symmetry
-	double   alpha=0.015;   // gradient-energy coefficient
-	double     tau=3e-4;    // time normalization constant
-	double      k1=0.9;
-	double      k2=20.;
-	double   DiffT=2.25;    // thermal diffusivity
-	double     CFL=tau/(2*alpha*alpha*(1./pow(dx(oldGrid,0),2)+1./pow(dx(oldGrid,1),2))); // Courant-Friedrich-Lewy condition on dt
+	      double    dt = 5e-5;  // time-step
+	const double theta = 0.;    // angle relative to lab frame
+	const double     c = 0.02;  // degree of anisotropy
+	const double     N = 6.;    // symmetry
+	const double alpha = 0.015; // gradient-energy coefficient
+	const double   tau = 3e-4;  // time normalization constant
+	const double    k1 = 0.9;
+	const double    k2 = 20.;
+	const double DiffT = 2.25;  // thermal diffusivity
+	const double   CFL = tau/(2*alpha*alpha*(1./pow(dx(oldGrid,0),2)+1./pow(dx(oldGrid,1),2))); // Courant-Friedrich-Lewy condition on dt
 
 	if (dt>0.5*CFL) {
-		if (id==0) std::cout<<"dt="<<dt<<" is unstable; reduced to ";
-		while (dt>0.5*CFL) dt*=3./4;
-		if (id==0) std::cout<<dt<<"."<<std::endl;
+		if (id == 0)
+			std::cout << "dt = " << dt << " is unstable; reduced to ";
+		while (dt > 0.5*CFL)
+			dt *= 3./4;
+		if (id == 0)
+			std::cout << dt << "." << std::endl;
 	}
-
 	std::cout.precision(2);
 
-	int minus=0;
-	int plus=0;
-	for (int step=0; step<steps; ++step) {
-		if (id==0)
+	ghostswap(oldGrid);
+
+	int minus = 0;
+	int plus = 0;
+	for (int step = 0; step < steps; step++) {
+		if (id == 0)
 			print_progress(step, steps);
 
-		ghostswap(oldGrid);
 		grid<dim,vector<T> > Dgradphi(oldGrid);
 
-		for (int i=0; i<nodes(oldGrid); ++i) {
-			vector<int> x=position(oldGrid,i);
+		for (int i = 0; i < nodes(oldGrid); i++) {
+			vector<int> x = position(oldGrid,i);
+			const T& center = oldGrid(x)[0];
 
 			// calculate grad(phi)
 			vector<T> gradphi(dim,0.); // (0,0)
-			for (int d=0; d<dim; ++d) {
-				++x[d];
-				T right=oldGrid(x)[0];
-				--x[d];
-				gradphi[d]=(right-oldGrid(x)[0])/dx(oldGrid,d);
+			for (int d = 0; d < dim; d++) {
+				x[d]++;
+				const T& right = oldGrid(x)[0];
+				x[d]--;
+				gradphi[d] = (right - center) / dx(oldGrid,d);
 			}
 			T psi = theta + atan2(gradphi[1], gradphi[0]);
 			T Phi = tan(N*psi/2.);
 			T PhiSq = Phi*Phi;
 			T beta = (1.-PhiSq)/(1.+PhiSq);
 			T dBetadPsi = (-2.*N*Phi)/(1.+PhiSq);
-			// Origin of this form for D is uncertain.
-			Dgradphi(i)[0]=alpha*alpha*(1.+c*beta)*(   (1.+c*beta)*gradphi[0] - (c*dBetadPsi)*gradphi[1] );
-			Dgradphi(i)[1]=alpha*alpha*(1.+c*beta)*( (c*dBetadPsi)*gradphi[0] +   (1.+c*beta)*gradphi[1] );
+
+			// calculate D*grad(phi) from 2x2 diffusivity and 2x1 grad(phi)
+			Dgradphi(i)[0] = alpha*alpha*(1.+c*beta)*(   (1.+c*beta)*gradphi[0] - (c*dBetadPsi)*gradphi[1] );
+			Dgradphi(i)[1] = alpha*alpha*(1.+c*beta)*( (c*dBetadPsi)*gradphi[0] +   (1.+c*beta)*gradphi[1] );
 		}
+
 		// Sync parallel grids
 		ghostswap(Dgradphi);
 
-		for (int i=0; i<nodes(oldGrid); ++i) {
+		for (int i = 0; i < nodes(oldGrid); i++) {
 			vector<int> x = position(oldGrid,i);
+			const vector<T>& oldX = oldGrid(x);
+			const vector<T>& dgpX = Dgradphi(x);
+			      vector<T>& newX = newGrid(x);
 
 			// Update phase field
 			T divDgradphi = 0.;
-			for (int d=0; d<dim; ++d) {
-				--x[d];
-				T left=Dgradphi(x)[d];
-				++x[d];
-				divDgradphi+=(Dgradphi(x)[d]-left)/dx(oldGrid,d);
+			for (int d = 0; d < dim; d++) {
+				x[d]--;
+				const T& left = Dgradphi(x)[d];
+				x[d]++;
+				divDgradphi += (DgpX[d] - left) / dx(oldGrid,d);
 			}
-			vector<T> old=oldGrid(i);
-			T m_phi=old[0]-0.5-(k1/M_PI)*atan(k2*old[1]);
-			// Semi-implicit scheme per Warren 2003
-			if (m_phi>0) {
-				newGrid(x)[0] = ((m_phi+tau/dt)*old[0]+divDgradphi)/(tau/dt+old[0]*m_phi);
-			} else {
-				newGrid(x)[0] = (old[0]*tau/dt+divDgradphi)/(tau/dt-(1.-old[0])*m_phi);
-			}
-			// Fully explicit forward-Euler discretization
-			//newGrid(x)[0] = oldGrid(i)[0] + dt*dphidt/tau;
+
+			// Semi-implicit scheme per Warren 2003, Eqn. A.21
+			T m_phi = oldX[0]-0.5-(k1/M_PI)*atan(k2*oldX[1]);
+			if (m_phi>0)
+				newX[0] = ((m_phi+tau/dt)*oldX[0]+divDgradphi)/(tau/dt+oldX[0]*m_phi);
+			else
+				newX[0] = (oldX[0]*tau/dt+divDgradphi)/(tau/dt-(1.-oldX[0])*m_phi);
 
 			// Update undercooling field
-			T lapT=0;
-			for (int d=0; d<dim; ++d) {
-				++x[d];
-				T right=oldGrid(x)[1];
-				x[d]-=2;
-				T left=oldGrid(x)[1];
-				++x[d];
-				lapT+=(right-(2*oldGrid(x)[1])+left)/pow(dx(oldGrid,d),2); // Laplacian
+			T lapT = 0.;
+			for (int d = 0; d <dim; d++) {
+				x[d]++;
+				const T& right = oldGrid(x)[1];
+				x[d] -= 2;
+				const T& left = oldGrid(x)[1];
+				x[d]++;
+				lapT += (right - 2.*oldX[1] + left)/pow(dx(oldGrid,d),2); // Laplacian
 			}
-			T dTdt = DiffT*lapT+(old[0]-refGrid(i))/dt;
-			newGrid(x)[1] = old[1] + dt*dTdt;
+
+			T dTdt = DiffT * lapT+(oldX[0] - refGrid(i))/dt;
+			newX[1] = oldX[1] + dt*dTdt;
+
+			// store old-old values of u since newGrid is lost after each checkpoint
+			refGrid(i) = oldX[0];
 		}
-		for (int i=0; i<nodes(refGrid); ++i)
-			refGrid(i)=oldGrid(i)[0];
 
 		swap(oldGrid,newGrid);
+		ghostswap(oldGrid);
 	}
-	ghostswap(oldGrid);
-	++iterations;
+
+	iterations++;
 }
 
 } // namespace MMSP
