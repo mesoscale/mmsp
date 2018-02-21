@@ -8,7 +8,7 @@
 
 bool fexists(const char *filename) {
 	std::ifstream ifile(filename);
-	return ifile;
+	return (bool)ifile;
 }
 
 int main(int argc, char* argv[]) {

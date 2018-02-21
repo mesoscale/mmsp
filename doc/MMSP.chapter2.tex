@@ -42,7 +42,18 @@ which should indicate that folders such as {\tt mmsp/doc}, {\tt mmsp/examples}, 
 Mac OS users will follow much of the same procedure as Linux users, so it is advisible to read the previous section on Linux installation.  For those uninitiated, or who have never had any previous reason to use it, the {\tt Terminal} application can be found under {\tt Applications/Utilities}.  Again, all steps described above for Linux installation should apply here as well.
 
 \paragraph{Windows}
-For those who insist on using Windows, it is still possible to use \MMSP.  The preferred way to do this is to use the \href{http://www.cygwin.com}{cygwin} environment.  To use {\tt cygwin} with \MMSP, it is necessary that appropriate packages, such as {\tt gcc} (the GNU compiler) and {\tt make} (the GNU make utility), have been installed.  These are optional packages that must be chosen manually during installation.  If {\tt cygwin} has been installed properly, \MMSP\ may be installed by following the steps described above for Linux installations.
+For those who insist on using Windows, it is still possible to use \MMSP.  The preferred way to do this is to use the \href{http://www.cygwin.com}{cygwin} environment.  To use {\tt cygwin} with \MMSP, it is necessary that appropriate packages have been installed.  The following packages are required to run \MMSP\ : 
+
+\begin{itemize}
+  \item \textbf{gcc-g++}
+  \item \textbf{make}
+  \item \textbf{zlib-devel}
+  \item \textbf{libpng-devel}
+  \item \textbf{openmpi}
+  \item \textbf{libopenmpi-devel}
+\end{itemize}
+
+If {\tt cygwin} has been installed properly, \MMSP\ may be installed by following the steps described above for Linux installations.
 
 It is also possible to compile \MMSP\ source code within a code development environment such as Visual Studio, however, \MMSP\ code is typically so simple that any code management beyond command line or makefile compilation is only a hinderance.
 
