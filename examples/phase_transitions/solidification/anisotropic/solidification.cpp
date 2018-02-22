@@ -133,7 +133,7 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 				x[d]--;
 				const T& left = Dgradphi(x)[d];
 				x[d]++;
-				divDgradphi += (DgpX[d] - left) / dx(oldGrid,d);
+				divDgradphi += (dgpX[d] - left) / dx(oldGrid,d);
 			}
 
 			// Semi-implicit scheme per Warren 2003, Eqn. A.21
