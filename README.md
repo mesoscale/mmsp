@@ -53,7 +53,7 @@ The MMSP manual is a work in progress. It is currently the only source for detai
 
 *Contact us*
 
-The administrators for the MMSP source code are Jason Gruber (gruberja@gmail.com) and Trevor Keller (trevor.keller@gmail.com). Please do not hesitate to send questions or comments.
+The administrators for the MMSP source code are Jason Gruber (gruberja@gmail.com), Trevor Keller (trevor.keller@gmail.com) and Dan Lewis (lucentdan@gmail.com). Please do not hesitate to send questions or comments.
 
 
 This work was supported in part by the US NSF under award #1056704 through the Metals and Metallic Nanostructures Program, Division of Materials Research. 
