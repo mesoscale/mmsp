@@ -84,7 +84,7 @@ be patched.
 *Please neither commit directly to the `master` branch, nor push directly to
 mesoscale/mmsp.*
 
-1. Create a fork of [HiPerC][_hiperc] on your personal GitHub account.
+1. Create a fork of [MMSP][_mmsp] on your personal GitHub account.
 2. For obvious changes, such as typos or edits to `.gitignore`, you can edit
    your fork directly in the browser, then file a [pull request][_pr].
 3. Most changes begin with an [Issue][_issue]. If one does not exist, create it.
@@ -99,7 +99,7 @@ mesoscale/mmsp.*
      create a local feature branch off of `master`.
    - Write your edits, updates, or feature code.
    - `git status`, `git add -u`, `git status`, and `git commit`,
-     in that order, to carefully add your changes. If something is amiss, follow
+     in that order, to add your changes. If something is amiss, follow
      the terminal guidance to fix it.
    - Write a concise commit message (first line), then in-depth commentary below
      using the keywords ["Addresses" or "Closes"][_ghkey] where appropriate.
