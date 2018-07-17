@@ -385,61 +385,61 @@ public:
 	// grid utility functions (y direction)
 	friend int y0(const grid& GRID)
 	{
-		return GRID.x0[1];
+		return (dim>1) ? GRID.x0[1] : 0;
 	}
 	friend int y1(const grid& GRID)
 	{
-		return GRID.x1[1];
+		return (dim>1) ? GRID.x1[1] : 0;
 	}
 	friend int ymin(const grid& GRID)
 	{
-		return GRID.x0[1];
+		return (dim>1) ? GRID.x0[1] : 0;
 	}
 	friend int ymax(const grid& GRID)
 	{
-		return GRID.x1[1];
+		return (dim>1) ? GRID.x1[1] : 0;
 	}
 	friend int ylength(const grid& GRID)
 	{
-		return GRID.x1[1] - GRID.x0[1];
+		return (dim>1) ? GRID.x1[1] - GRID.x0[1] : 0;
 	}
 	friend double dy(const grid& GRID)
 	{
-		return GRID.dx[1];
+		return (dim>1) ? GRID.dx[1] : 1;
 	}
 	friend double& dy(grid& GRID)
 	{
-		return GRID.dx[1];
+		return (dim>1) ? GRID.dx[1] : 1;
 	}
 
 	// grid utility functions (z direction)
 	friend int z0(const grid& GRID)
 	{
-		return GRID.x0[2];
+		return (dim>2) ? GRID.x0[2] : 0;
 	}
 	friend int z1(const grid& GRID)
 	{
-		return GRID.x1[2];
+		return (dim>2) ? GRID.x1[2] : 0;
 	}
 	friend int zmin(const grid& GRID)
 	{
-		return GRID.x0[2];
+		return (dim>2) ? GRID.x0[2] : 0;
 	}
 	friend int zmax(const grid& GRID)
 	{
-		return GRID.x1[2];
+		return (dim>2) ? GRID.x1[2] : 0;
 	}
 	friend int zlength(const grid& GRID)
 	{
-		return GRID.x1[2] - GRID.x0[2];
+		return (dim>2) ? GRID.x1[2] - GRID.x0[2] : 0;
 	}
 	friend double dz(const grid& GRID)
 	{
-		return GRID.dx[2];
+		return (dim>2) ? GRID.dx[2] : 0;
 	}
 	friend double& dz(grid& GRID)
 	{
-		return GRID.dx[2];
+		return (dim>2) ? GRID.dx[2] : 0;
 	}
 
 
@@ -451,10 +451,10 @@ public:
 protected:
 	T* data;        // local grid data
 
-	int nodes;			// number of nodes (excluding ghosts)
-	int cells;			// number of nodes (including ghosts)
-	int fields;			// number of fields
-	int ghosts;			// ghost cell depth
+	int nodes;      // number of nodes (excluding ghosts)
+	int cells;      // number of nodes (including ghosts)
+	int fields;     // number of fields
+	int ghosts;	    // ghost cell depth
 
 	int g0[dim];    // global lower coordinate limit (excluding ghosts)
 	int g1[dim];    // global upper coordinate limit (excluding ghosts)
