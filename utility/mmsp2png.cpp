@@ -860,9 +860,9 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 	double max=zoomax;
 
 	for (int n=0; n<MMSP::nodes(GRID); n++) {
-		T val = GRID(n);
+		double val = GRID(n);
 		if (mode==1) // mag
-			val = std::abs(val);
+			val = std::fabs(val);
 		if (val>max)
 			max=val;
 		else if (val<min)
@@ -875,9 +875,9 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 		unsigned int n=0;
 		MMSP::vector<int> x(1,0);
 		for (x[0] = MMSP::g0(GRID,0); x[0] < MMSP::g1(GRID,0); x[0]++) {
-			T val = GRID(x);
+			double val = GRID(x);
 			if (mode==1) //mag
-				val = std::abs(val);
+				val = std::fabs(val);
 			assert(n<bufsize);
 			buffer[n] = 255*((val-min)/(max-min));
 			if (mode==4) //contour
@@ -891,9 +891,9 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 		MMSP::vector<int> x(2,0);
 		for (x[1] = MMSP::g1(GRID,1)-1; x[1] >= MMSP::g0(GRID,1); x[1]--)
 			for (x[0] = MMSP::g0(GRID,0); x[0] < MMSP::g1(GRID,0); x[0]++) {
-				T val = GRID(x);
+				double val = GRID(x);
 				if (mode==1) //mag
-					val = std::abs(val);
+					val = std::fabs(val);
 				assert(n<bufsize);
 				buffer[n] = 255*((val-min)/(max-min));
 				if (mode==4) //contour
@@ -910,9 +910,9 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 				for (x[0] = MMSP::g0(GRID,0); x[0] < MMSP::g1(GRID,0); x[0]++) {
 					if (x[sliceaxis]!=slicelevel) // clumsy, but effective
 						continue;
-					T val = GRID(x);
+					double val = GRID(x);
 					if (mode==1) //mag
-						val = std::abs(val);
+						val = std::fabs(val);
 					assert(n<bufsize);
 					buffer[n] = 255*((val-min)/(max-min));
 					if (levelset.size()>0) //contour

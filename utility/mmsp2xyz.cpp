@@ -231,16 +231,8 @@ int main(int argc, char* argv[])
 		// write grid data
 		if (scalar_type or (not vector_type and not sparse_type)) { // must be scalar or built-in
 			if (bool_type) {
-				if (dim == 1) {
-					MMSP::grid<1,bool> GRID(argv[datindex]);
-					convert_scalars(GRID, mode, normal, levelset, lvlfield, contol, xyzfil);
-				} else if (dim == 2) {
-					MMSP::grid<2,bool> GRID(argv[datindex]);
-					convert_scalars(GRID, mode, normal, levelset, lvlfield, contol, xyzfil);
-				} else if (dim == 3) {
-					MMSP::grid<3,bool> GRID(argv[datindex]);
-					convert_scalars(GRID, mode, normal, levelset, lvlfield, contol, xyzfil);
-				}
+				std::cerr << "Error: boolean fields are incompatible with " << argv[0] << std::endl;
+				MMSP::Abort(-1);
 			}
 			else if (unsigned_char_type) {
 				if (dim == 1) {
@@ -378,16 +370,8 @@ int main(int argc, char* argv[])
 
 		else if (vector_type) {
 			if (bool_type) {
-				if (dim == 1) {
-					MMSP::grid<1,MMSP::vector<bool> > GRID(argv[datindex]);
-					convert_vectors(GRID, mode, normal, levelset, lvlfield, contol, fieldset, xyzfil);
-				} else if (dim == 2) {
-					MMSP::grid<2,MMSP::vector<bool> > GRID(argv[datindex]);
-					convert_vectors(GRID, mode, normal, levelset, lvlfield, contol, fieldset, xyzfil);
-				} else if (dim == 3) {
-					MMSP::grid<3,MMSP::vector<bool> > GRID(argv[datindex]);
-					convert_vectors(GRID, mode, normal, levelset, lvlfield, contol, fieldset, xyzfil);
-				}
+				std::cerr << "Error: boolean fields are incompatible with " << argv[0] << std::endl;
+				MMSP::Abort(-1);
 			}
 			else if (unsigned_char_type) {
 				if (dim == 1) {
@@ -525,16 +509,8 @@ int main(int argc, char* argv[])
 
 		else if (sparse_type) {
 			if (bool_type) {
-				if (dim == 1) {
-					MMSP::grid<1,MMSP::sparse<bool> > GRID(argv[datindex]);
-					convert_sparses(GRID, mode, normal, levelset, lvlfield, contol, fieldset, xyzfil);
-				} else if (dim == 2) {
-					MMSP::grid<2,MMSP::sparse<bool> > GRID(argv[datindex]);
-					convert_sparses(GRID, mode, normal, levelset, lvlfield, contol, fieldset, xyzfil);
-				} else if (dim == 3) {
-					MMSP::grid<3,MMSP::sparse<bool> > GRID(argv[datindex]);
-					convert_sparses(GRID, mode, normal, levelset, lvlfield, contol, fieldset, xyzfil);
-				}
+				std::cerr << "Error: boolean fields are incompatible with " << argv[0] << std::endl;
+				MMSP::Abort(-1);
 			}
 			else if (unsigned_char_type) {
 				if (dim == 1) {
@@ -679,9 +655,9 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 	if (dim==1) {
 		for (int n=0; n<MMSP::nodes(GRID); n++) {
 			bool excluded=true;
-			T val = GRID(n);
+			double val = GRID(n);
 			if (mode==1) //mag
-				val = std::abs(val);
+				val = std::fabs(val);
 			if (levelset.size()!=0) //contour
 				for (std::set<double>::iterator it=levelset.begin(); excluded && it!=levelset.end(); it++)
 					if (std::fabs(val-*it)/std::fabs(*it)<contol)
@@ -699,9 +675,9 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 	} else if (dim==2) {
 		for (int n=0; n<MMSP::nodes(GRID); n++) {
 			bool excluded=true;
-			T val = GRID(n);
+			double val = GRID(n);
 			if (mode==1) //mag
-				val = std::abs(val);
+				val = std::fabs(val);
 			if (levelset.size()!=0) //contour
 				for (std::set<double>::iterator it=levelset.begin(); excluded && it!=levelset.end(); it++)
 					if (std::fabs(val-*it)/std::fabs(*it)<contol)
@@ -719,9 +695,9 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 	} else if (dim==3) {
 		for (int n=0; n<MMSP::nodes(GRID); n++) {
 			bool excluded=true;
-			T val = GRID(n);
+			double val = GRID(n);
 			if (mode==1) //mag
-				val = std::abs(val);
+				val = std::fabs(val);
 			if (levelset.size()!=0) //contour
 				for (std::set<double>::iterator it=levelset.begin(); excluded && it!=levelset.end(); it++)
 					if (std::fabs(val-*it)/std::fabs(*it)<contol)
