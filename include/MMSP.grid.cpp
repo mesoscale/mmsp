@@ -1398,7 +1398,7 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 	MPI::COMM_WORLD.Barrier();
 	unsigned int rank = MPI::COMM_WORLD.Get_rank();
 	unsigned int np = MPI::COMM_WORLD.Get_size();
-	MPI_Request request;
+	MPIO_Request request;
 	MPI_Status status;
 	int mpi_err = 0;
 
@@ -1757,7 +1757,7 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 			if (w==nwriters-1)
 				assert(filesize-aoffsets[w]==ws);
 			mpi_err = MPI_File_iwrite_at(output, aoffsets[w], filebuffer, ws, MPI_CHAR, &request);
-			MPI_Wait(&request, &status);
+			MPIO_Wait(&request, &status);
 			if (mpi_err != MPI_SUCCESS) {
 				char error_string[256];
 				int length_of_error_string=256;
