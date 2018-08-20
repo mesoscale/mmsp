@@ -4,8 +4,8 @@
 
 # compilers/flags
 compiler = g++
-flags = -O2 -Wall -pedantic -I ../include/
-
+flags = -O2 -Wall -I ../include -I /usr/include/vtk-6.3 -L /usr/lib/x86_64-linux-gnu
+vtklinks = -lvtkCommonCore-6.3 -lvtkCommonDataModel-6.3 -lvtkIOXML-6.3
 topo = ../algorithms/topology
 
 # conversion programs
@@ -35,6 +35,10 @@ mmsp2tsv : mmsp2tsv.cpp
 # convert MMSP grid file to VTK Image file type
 mmsp2vti : mmsp2vti.cpp
 	$(compiler) $(flags) $< -o $@ -lz
+
+# convert MMSP grid file to compressed VTK Image file type
+mmsp2vtz : mmsp2vti.cpp
+	$(compiler) $(flags) -O0 -g $< -o $@ $(vtklinks) -lz
 
 # convert MMSP grid file to XYZ point cloud file type
 mmsp2xyz : mmsp2xyz.cpp
