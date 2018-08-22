@@ -6,27 +6,27 @@
 #include <fstream>
 #include <string>
 #include <vtkImageData.h>
-#include <vtkInformation.h>
 #include <vtkPointData.h>
-#include <vtkProperty.h>
 #include <vtkSmartPointer.h>
 #include <vtkVersion.h>
 #include <vtkXMLImageDataWriter.h>
-#include <vtkXMLWriter.h>
 #include "MMSP.hpp"
 
 template<int dim, typename T> void print_scalars(std::string filename, const MMSP::grid<dim,T>& GRID, const int mode)
 {
 	vtkSmartPointer<vtkImageData> vtkData = vtkSmartPointer<vtkImageData>::New();
-	vtkData->SetDimensions(MMSP::xlength(GRID, 0), MMSP::xlength(GRID, 1), MMSP::xlength(GRID, 2));
-	#if VTK_MAJOR_VERSION <= 5
-	vtkData->SetNumberOfScalarComponents(1);
-	vtkData->SetScalarTypeToDouble();
-	#else
-	vtkData->AllocateScalars(VTK_DOUBLE, 1);
-	#endif
 
 	if (dim==1) {
+		vtkData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID), 1, 1);
+		vtkData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1, 0, 0, 0, 0);
+		vtkData->SetSpacing(MMSP::dx(GRID), 1, 1);
+		#if VTK_MAJOR_VERSION <= 5
+		vtkData->SetScalarTypeToDouble();
+		vtkData->SetNumberOfScalarComponents(1);
+		#else
+		vtkData->AllocateScalars(VTK_DOUBLE, 1);
+		#endif
+
 		MMSP::vector<int> x(1,0);
 		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 			double* pixel = static_cast<double*>(vtkData->GetScalarPointer(x[0], 0, 0));
@@ -37,6 +37,20 @@ template<int dim, typename T> void print_scalars(std::string filename, const MMS
 			}
 		}
 	} else if (dim==2) {
+		vtkData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID),
+		                       MMSP::y1(GRID)-MMSP::y0(GRID),
+		                       1);
+		vtkData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1,
+		                   MMSP::y0(GRID), MMSP::y1(GRID) - 1,
+		                   0, 0);
+		vtkData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), 1);
+		#if VTK_MAJOR_VERSION <= 5
+		vtkData->SetScalarTypeToDouble();
+		vtkData->SetNumberOfScalarComponents(1);
+		#else
+		vtkData->AllocateScalars(VTK_DOUBLE, 1);
+		#endif
+
 		MMSP::vector<int> x(2,0);
 		for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
 			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
@@ -49,6 +63,20 @@ template<int dim, typename T> void print_scalars(std::string filename, const MMS
 			}
 		}
 	} else if (dim==3) {
+		vtkData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID),
+		                       MMSP::y1(GRID)-MMSP::y0(GRID),
+		                       MMSP::z1(GRID)-MMSP::z0(GRID));
+		vtkData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1,
+		                   MMSP::y0(GRID), MMSP::y1(GRID) - 1,
+		                   MMSP::z0(GRID), MMSP::z1(GRID) - 1);
+		vtkData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), MMSP::dx(GRID, 2));
+		#if VTK_MAJOR_VERSION <= 5
+		vtkData->SetScalarTypeToDouble();
+		vtkData->SetNumberOfScalarComponents(1);
+		#else
+		vtkData->AllocateScalars(VTK_DOUBLE, 1);
+		#endif
+
 		MMSP::vector<int> x(3,0);
 		for (x[2]=MMSP::z0(GRID); x[2]<MMSP::z1(GRID); x[2]++) {
 			for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
@@ -63,10 +91,10 @@ template<int dim, typename T> void print_scalars(std::string filename, const MMS
 			}
 		}
 	}
+	vtkData->GetPointData()->GetAbstractArray(0)->SetName("scalar_data");
 
 	vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
 	writer->SetFileName(filename.c_str());
-	writer->SetCompressorTypeToZLib();
 	#if VTK_MAJOR_VERSION <= 5
 	writer->SetInputConnection(vtkData->GetProducerPort());
 	#else
@@ -82,15 +110,13 @@ template<int dim, typename T> void print_vectors(std::string filename, const MMS
         const int mode, const int field)
 {
 	vtkSmartPointer<vtkImageData> vtkData = vtkSmartPointer<vtkImageData>::New();
-	#if VTK_MAJOR_VERSION <= 5
-	vtkData->SetScalarTypeToDouble();
-	#endif
 
 	if (dim==1) {
 		vtkData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID), 1, 1);
-	    vtkData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1, 0, 0, 0, 0);
+		vtkData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1, 0, 0, 0, 0);
 		vtkData->SetSpacing(MMSP::dx(GRID), 1, 1);
 		#if VTK_MAJOR_VERSION <= 5
+		vtkData->SetScalarTypeToDouble();
 		if (mode==1 || mode==2 || mode==3)
 			vtkData->SetNumberOfScalarComponents(1);
 		else
@@ -126,10 +152,15 @@ template<int dim, typename T> void print_vectors(std::string filename, const MMS
 			}
 		}
 	} else if (dim==2) {
-		vtkData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID), MMSP::y1(GRID)-MMSP::y0(GRID), 1);
-		vtkData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1, MMSP::y0(GRID), MMSP::y1(GRID) - 1, 0, 0);
+		vtkData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID),
+		                       MMSP::y1(GRID)-MMSP::y0(GRID),
+		                       1);
+		vtkData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1,
+		                   MMSP::y0(GRID), MMSP::y1(GRID) - 1,
+		                   0, 0);
 		vtkData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), 1);
 		#if VTK_MAJOR_VERSION <= 5
+		vtkData->SetScalarTypeToDouble();
 		if (mode==1 || mode==2 || mode==3)
 			vtkData->SetNumberOfScalarComponents(1);
 		else
@@ -167,10 +198,15 @@ template<int dim, typename T> void print_vectors(std::string filename, const MMS
 			}
 		}
 	} else if (dim==3) {
-		vtkData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID), MMSP::y1(GRID)-MMSP::y0(GRID), MMSP::z1(GRID)-MMSP::z0(GRID));
-		vtkData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1, MMSP::y0(GRID), MMSP::y1(GRID) - 1, MMSP::z0(GRID), MMSP::z1(GRID) - 1);
+		vtkData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID),
+		                       MMSP::y1(GRID)-MMSP::y0(GRID),
+		                       MMSP::z1(GRID)-MMSP::z0(GRID));
+		vtkData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1,
+		                   MMSP::y0(GRID), MMSP::y1(GRID) - 1,
+		                   MMSP::z0(GRID), MMSP::z1(GRID) - 1);
 		vtkData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), MMSP::dx(GRID, 2));
 		#if VTK_MAJOR_VERSION <= 5
+		vtkData->SetScalarTypeToDouble();
 		if (mode==1 || mode==2 || mode==3)
 			vtkData->SetNumberOfScalarComponents(1);
 		else
@@ -214,12 +250,12 @@ template<int dim, typename T> void print_vectors(std::string filename, const MMS
 
 	vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
 	writer->SetFileName(filename.c_str());
-	writer->SetCompressorTypeToZLib();
 	#if VTK_MAJOR_VERSION <= 5
 	writer->SetInputConnection(vtkData->GetProducerPort());
 	#else
 	writer->SetInputData(vtkData);
 	#endif
+
 	writer->Write();
 
 	vtkData = NULL;
@@ -230,15 +266,18 @@ template<int dim, typename T> void print_sparses(std::string filename, const MMS
         const int mode, const int field)
 {
 	vtkSmartPointer<vtkImageData> vtkData = vtkSmartPointer<vtkImageData>::New();
-	vtkData->SetDimensions(MMSP::xlength(GRID, 0), MMSP::xlength(GRID, 1), MMSP::xlength(GRID, 2));
-	#if VTK_MAJOR_VERSION <= 5
-	vtkData->SetNumberOfScalarComponents(1);
-	vtkData->SetScalarTypeToDouble();
-	#else
-	vtkData->AllocateScalars(VTK_DOUBLE, 1);
-	#endif
 
 	if (dim==1) {
+		vtkData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID), 1, 1);
+		vtkData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1, 0, 0, 0, 0);
+		vtkData->SetSpacing(MMSP::dx(GRID, 0), 1, 1);
+		#if VTK_MAJOR_VERSION <= 5
+		vtkData->SetNumberOfScalarComponents(1);
+		vtkData->SetScalarTypeToDouble();
+		#else
+		vtkData->AllocateScalars(VTK_DOUBLE, 1);
+		#endif
+
 		MMSP::vector<int> x(1,0);
 		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 			const MMSP::sparse<T>& s = GRID(x);
@@ -260,6 +299,20 @@ template<int dim, typename T> void print_sparses(std::string filename, const MMS
 			}
 		}
 	} else if (dim==2) {
+		vtkData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID),
+		                       MMSP::y1(GRID)-MMSP::y0(GRID),
+		                       1);
+		vtkData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1,
+		                   MMSP::y0(GRID), MMSP::y1(GRID) - 1,
+		                   0, 0);
+		vtkData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), 1);
+		#if VTK_MAJOR_VERSION <= 5
+		vtkData->SetNumberOfScalarComponents(1);
+		vtkData->SetScalarTypeToDouble();
+		#else
+		vtkData->AllocateScalars(VTK_DOUBLE, 1);
+		#endif
+
 		MMSP::vector<int> x(2,0);
 		for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
 			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
@@ -283,6 +336,20 @@ template<int dim, typename T> void print_sparses(std::string filename, const MMS
 			}
 		}
 	} else if (dim==3) {
+		vtkData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID),
+		                       MMSP::y1(GRID)-MMSP::y0(GRID),
+		                       MMSP::z1(GRID)-MMSP::z0(GRID));
+		vtkData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1,
+		                   MMSP::y0(GRID), MMSP::y1(GRID) - 1,
+		                   MMSP::z0(GRID), MMSP::z1(GRID) - 1);
+		vtkData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), MMSP::dx(GRID, 2));
+		#if VTK_MAJOR_VERSION <= 5
+		vtkData->SetNumberOfScalarComponents(1);
+		vtkData->SetScalarTypeToDouble();
+		#else
+		vtkData->AllocateScalars(VTK_DOUBLE, 1);
+		#endif
+
 		MMSP::vector<int> x(3,0);
 		for (x[2]=MMSP::z0(GRID); x[2]<MMSP::z1(GRID); x[2]++) {
 			for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
@@ -308,10 +375,10 @@ template<int dim, typename T> void print_sparses(std::string filename, const MMS
 			}
 		}
 	}
+	vtkData->GetPointData()->GetAbstractArray(0)->SetName("sparse_data");
 
 	vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
 	writer->SetFileName(filename.c_str());
-	writer->SetCompressorTypeToZLib();
 	#if VTK_MAJOR_VERSION <= 5
 	writer->SetInputConnection(vtkData->GetProducerPort());
 	#else

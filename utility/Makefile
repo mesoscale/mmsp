@@ -4,8 +4,8 @@
 
 # compilers/flags
 compiler = g++
-flags = -O2 -Wall -I ../include -I /usr/include/vtk-6.3 -L /usr/lib/x86_64-linux-gnu
-vtklinks = -lvtkCommonCore-6.3 -lvtkCommonDataModel-6.3 -lvtkIOXML-6.3
+flags = -O2 -Wall -I ../include -I /usr/include/vtk -L /usr/lib/x86_64-linux-gnu
+vtklinks = -lvtkCommonCore -lvtkCommonDataModel -lvtkIOXML
 topo = ../algorithms/topology
 
 # conversion programs
