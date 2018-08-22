@@ -21,15 +21,15 @@ template<int dim, typename T> void print_scalars(std::string filename, const MMS
 		scalarData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1, 0, 0, 0, 0);
 		scalarData->SetSpacing(MMSP::dx(GRID), 1, 1);
 		#if VTK_MAJOR_VERSION <= 5
-		scalarData->SetScalarTypeToDouble();
+		scalarData->SetScalarTypeToFloat();
 		scalarData->SetNumberOfScalarComponents(1);
 		#else
-		scalarData->AllocateScalars(VTK_DOUBLE, 1);
+		scalarData->AllocateScalars(VTK_FLOAT, 1);
 		#endif
 
 		MMSP::vector<int> x(1,0);
 		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
-			double* pixel = static_cast<double*>(scalarData->GetScalarPointer(x[0], 0, 0));
+			float* pixel = static_cast<float*>(scalarData->GetScalarPointer(x[0], 0, 0));
 			if (mode==1) { // --mag
 				*pixel = std::sqrt(GRID(x)*GRID(x));
 			} else {
@@ -45,16 +45,16 @@ template<int dim, typename T> void print_scalars(std::string filename, const MMS
 		                   0, 0);
 		scalarData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), 1);
 		#if VTK_MAJOR_VERSION <= 5
-		scalarData->SetScalarTypeToDouble();
+		scalarData->SetScalarTypeToFloat();
 		scalarData->SetNumberOfScalarComponents(1);
 		#else
-		scalarData->AllocateScalars(VTK_DOUBLE, 1);
+		scalarData->AllocateScalars(VTK_FLOAT, 1);
 		#endif
 
 		MMSP::vector<int> x(2,0);
 		for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
 			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
-				double* pixel = static_cast<double*>(scalarData->GetScalarPointer(x[0], x[1], 0));
+				float* pixel = static_cast<float*>(scalarData->GetScalarPointer(x[0], x[1], 0));
 				if (mode==1) { // --mag
 					*pixel = std::sqrt(GRID(x)*GRID(x));
 				} else {
@@ -71,17 +71,17 @@ template<int dim, typename T> void print_scalars(std::string filename, const MMS
 		                   MMSP::z0(GRID), MMSP::z1(GRID) - 1);
 		scalarData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), MMSP::dx(GRID, 2));
 		#if VTK_MAJOR_VERSION <= 5
-		scalarData->SetScalarTypeToDouble();
+		scalarData->SetScalarTypeToFloat();
 		scalarData->SetNumberOfScalarComponents(1);
 		#else
-		scalarData->AllocateScalars(VTK_DOUBLE, 1);
+		scalarData->AllocateScalars(VTK_FLOAT, 1);
 		#endif
 
 		MMSP::vector<int> x(3,0);
 		for (x[2]=MMSP::z0(GRID); x[2]<MMSP::z1(GRID); x[2]++) {
 			for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
 				for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
-					double* pixel = static_cast<double*>(scalarData->GetScalarPointer(x[0], x[1], x[2]));
+					float* pixel = static_cast<float*>(scalarData->GetScalarPointer(x[0], x[1], x[2]));
 					if (mode==1) { // --mag
 						*pixel = std::sqrt(GRID(x)*GRID(x));
 					} else {
@@ -116,22 +116,22 @@ template<int dim, typename T> void print_vectors(std::string filename, const MMS
 		vectorData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1, 0, 0, 0, 0);
 		vectorData->SetSpacing(MMSP::dx(GRID), 1, 1);
 		#if VTK_MAJOR_VERSION <= 5
-		vectorData->SetScalarTypeToDouble();
+		vectorData->SetScalarTypeToFloat();
 		if (mode==1 || mode==2 || mode==3)
 			vectorData->SetNumberOfScalarComponents(1);
 		else
 			vectorData->SetNumberOfScalarComponents(MMSP::fields(GRID));
 		#else
 		if (mode==1 || mode==2 || mode==3)
-			vectorData->AllocateScalars(VTK_DOUBLE, 1);
+			vectorData->AllocateScalars(VTK_FLOAT, 1);
 		else
-			vectorData->AllocateScalars(VTK_DOUBLE, MMSP::fields(GRID));
+			vectorData->AllocateScalars(VTK_FLOAT, MMSP::fields(GRID));
 		#endif
 
 		MMSP::vector<int> x(1,0);
 		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 			const MMSP::vector<T>& v = GRID(x);
-			double* pixel = static_cast<double*>(vectorData->GetScalarPointer(x[0], 0, 0));
+			float* pixel = static_cast<float*>(vectorData->GetScalarPointer(x[0], 0, 0));
 			if (mode==1) { // --mag
 				double sum = 0.0;
 				for (int h = 0; h < v.length(); h++)
@@ -160,23 +160,23 @@ template<int dim, typename T> void print_vectors(std::string filename, const MMS
 		                   0, 0);
 		vectorData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), 1);
 		#if VTK_MAJOR_VERSION <= 5
-		vectorData->SetScalarTypeToDouble();
+		vectorData->SetScalarTypeToFloat();
 		if (mode==1 || mode==2 || mode==3)
 			vectorData->SetNumberOfScalarComponents(1);
 		else
 			vectorData->SetNumberOfScalarComponents(MMSP::fields(GRID));
 		#else
 		if (mode==1 || mode==2 || mode==3)
-			vectorData->AllocateScalars(VTK_DOUBLE, 1);
+			vectorData->AllocateScalars(VTK_FLOAT, 1);
 		else
-			vectorData->AllocateScalars(VTK_DOUBLE, MMSP::fields(GRID));
+			vectorData->AllocateScalars(VTK_FLOAT, MMSP::fields(GRID));
 		#endif
 
 		MMSP::vector<int> x(2,0);
 		for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
 			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 				const MMSP::vector<T>& v = GRID(x);
-				double* pixel = static_cast<double*>(vectorData->GetScalarPointer(x[0], x[1], 0));
+				float* pixel = static_cast<float*>(vectorData->GetScalarPointer(x[0], x[1], 0));
 				if (mode==1) { // --mag
 					double sum = 0.0;
 					for (int h = 0; h < v.length(); h++)
@@ -206,16 +206,16 @@ template<int dim, typename T> void print_vectors(std::string filename, const MMS
 		                   MMSP::z0(GRID), MMSP::z1(GRID) - 1);
 		vectorData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), MMSP::dx(GRID, 2));
 		#if VTK_MAJOR_VERSION <= 5
-		vectorData->SetScalarTypeToDouble();
+		vectorData->SetScalarTypeToFloat();
 		if (mode==1 || mode==2 || mode==3)
 			vectorData->SetNumberOfScalarComponents(1);
 		else
 			vectorData->SetNumberOfScalarComponents(MMSP::fields(GRID));
 		#else
 		if (mode==1 || mode==2 || mode==3)
-			vectorData->AllocateScalars(VTK_DOUBLE, 1);
+			vectorData->AllocateScalars(VTK_FLOAT, 1);
 		else
-			vectorData->AllocateScalars(VTK_DOUBLE, MMSP::fields(GRID));
+			vectorData->AllocateScalars(VTK_FLOAT, MMSP::fields(GRID));
 		#endif
 
 		MMSP::vector<int> x(3,0);
@@ -223,7 +223,7 @@ template<int dim, typename T> void print_vectors(std::string filename, const MMS
 			for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
 				for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 					const MMSP::vector<T>& v = GRID(x);
-					double* pixel = static_cast<double*>(vectorData->GetScalarPointer(x[0], x[1], x[2]));
+					float* pixel = static_cast<float*>(vectorData->GetScalarPointer(x[0], x[1], x[2]));
 					if (mode==1) { // --mag
 						double sum = 0.0;
 						for (int h = 0; h < v.length(); h++)
@@ -273,15 +273,15 @@ template<int dim, typename T> void print_sparses(std::string filename, const MMS
 		sparseData->SetSpacing(MMSP::dx(GRID, 0), 1, 1);
 		#if VTK_MAJOR_VERSION <= 5
 		sparseData->SetNumberOfScalarComponents(1);
-		sparseData->SetScalarTypeToDouble();
+		sparseData->SetScalarTypeToFloat();
 		#else
-		sparseData->AllocateScalars(VTK_DOUBLE, 1);
+		sparseData->AllocateScalars(VTK_FLOAT, 1);
 		#endif
 
 		MMSP::vector<int> x(1,0);
 		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 			const MMSP::sparse<T>& s = GRID(x);
-			double* pixel = static_cast<double*>(sparseData->GetScalarPointer(x[0], 0, 0));
+			float* pixel = static_cast<float*>(sparseData->GetScalarPointer(x[0], 0, 0));
 			if (mode==2) { // --max
 				// Export index of field with greatest magnitude
 				int max = 0;
@@ -308,16 +308,16 @@ template<int dim, typename T> void print_sparses(std::string filename, const MMS
 		sparseData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), 1);
 		#if VTK_MAJOR_VERSION <= 5
 		sparseData->SetNumberOfScalarComponents(1);
-		sparseData->SetScalarTypeToDouble();
+		sparseData->SetScalarTypeToFloat();
 		#else
-		sparseData->AllocateScalars(VTK_DOUBLE, 1);
+		sparseData->AllocateScalars(VTK_FLOAT, 1);
 		#endif
 
 		MMSP::vector<int> x(2,0);
 		for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
 			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 				const MMSP::sparse<T>& s = GRID(x);
-				double* pixel = static_cast<double*>(sparseData->GetScalarPointer(x[0], x[1], 0));
+				float* pixel = static_cast<float*>(sparseData->GetScalarPointer(x[0], x[1], 0));
 				if (mode==2) { // --max
 					// Export index of field with greatest magnitude
 					int max = 0;
@@ -345,9 +345,9 @@ template<int dim, typename T> void print_sparses(std::string filename, const MMS
 		sparseData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), MMSP::dx(GRID, 2));
 		#if VTK_MAJOR_VERSION <= 5
 		sparseData->SetNumberOfScalarComponents(1);
-		sparseData->SetScalarTypeToDouble();
+		sparseData->SetScalarTypeToFloat();
 		#else
-		sparseData->AllocateScalars(VTK_DOUBLE, 1);
+		sparseData->AllocateScalars(VTK_FLOAT, 1);
 		#endif
 
 		MMSP::vector<int> x(3,0);
@@ -355,7 +355,7 @@ template<int dim, typename T> void print_sparses(std::string filename, const MMS
 			for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
 				for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 					const MMSP::sparse<T>& s = GRID(x);
-					double* pixel = static_cast<double*>(sparseData->GetScalarPointer(x[0], x[1], x[2]));
+					float* pixel = static_cast<float*>(sparseData->GetScalarPointer(x[0], x[1], x[2]));
 					if (mode==2) { // --max
 						// Export index of field with greatest magnitude
 						int max = 0;
