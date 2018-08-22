@@ -1181,10 +1181,14 @@ template<int dim, typename T> void grid<dim,T>::input(const char* filename, int 
 	}
 
 	// grid data type error check
-	std::string type;
+	std::string type, scalar_type;
 	getline(input, type, '\n');
+	scalar_type = "grid:scalar" + type.substr(type.find_last_of(":", 8));
+	if (type != name(*this) && scalar_type == name(*this)) {
+		type = scalar_type;
+	}
 	if (type != name(*this)) {
-		std::cerr << "File read error: wrong data type (" << type << ")." << std::endl;
+		std::cerr << "File read error: wrong data type (" << type << "), expected (" << name(*this) << ")." << std::endl;
 		exit(-2);
 	}
 
