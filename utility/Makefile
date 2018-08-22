@@ -2,9 +2,13 @@
 # GNU makefile for grid conversion programs using MMSP
 # Questions/comments to gruberja@gmail.com (Jason Gruber)
 
+# VTK path
+VTK_SRC = $(shell dirname $(shell locate --limit 1 vtkImageData.h))
+VTK_LIB = $(shell dirname $(shell locate --limit 1 vtkCommonCore.so))
+
 # compilers/flags
 compiler = g++
-flags = -O2 -Wall -I ../include -I /usr/include/vtk -L /usr/lib/x86_64-linux-gnu
+flags = -O2 -Wall -I ../include -I $(VTK_SRC) -L $(VTK_LIB)
 vtklinks = -lvtkCommonCore -lvtkCommonDataModel -lvtkIOXML
 topo = ../algorithms/topology
 
