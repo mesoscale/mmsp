@@ -45,6 +45,7 @@ MMSP is nothing more than a collection of C++ header files that declare a number
  * An ISO compliant C++ compiler (e.g. GCC 2.95 or later)
  * zlib libraries for data compression (e.g. zlib 1.2.7)
  * libpng headers for mmsp2png image generation utility (e.g. libpng12-dev)
+ * libvtk headers for mmsp2vti image generation utility (e.g. libvtk6-dev)
  * MPI libraries if compiling parallel programs (e.g. Open MPI)
 
 *Documentation*

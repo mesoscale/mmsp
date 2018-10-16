@@ -2,10 +2,14 @@
 # GNU makefile for grid conversion programs using MMSP
 # Questions/comments to gruberja@gmail.com (Jason Gruber)
 
+# find VTK libraries
+VTK_SRC = -I $(shell dirname $(shell locate --limit 1 vtkImageData.h))
+VTK_LIB = -L $(shell dirname $(shell locate --limit 1 vtkCommonCore.so))
+vtklinks = -lvtkCommonCore -lvtkCommonDataModel -lvtkIOXML
+
 # compilers/flags
 compiler = g++
-flags = -O2 -Wall -pedantic -I ../include/
-
+flags = -O2 -Wall -I ../include $(VTK_SRC) $(VTK_LIB)
 topo = ../algorithms/topology
 
 # conversion programs
@@ -32,9 +36,9 @@ mmsp2pvd : mmsp2pvd.cpp
 mmsp2tsv : mmsp2tsv.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
-# convert MMSP grid file to VTK Image file type
+# convert MMSP grid file to compressed VTK Image file type
 mmsp2vti : mmsp2vti.cpp
-	$(compiler) $(flags) $< -o $@ -lz
+	$(compiler) $(flags) $< -o $@ $(vtklinks) -lz
 
 # convert MMSP grid file to XYZ point cloud file type
 mmsp2xyz : mmsp2xyz.cpp
