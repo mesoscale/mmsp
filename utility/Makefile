@@ -3,20 +3,13 @@
 # Questions/comments to gruberja@gmail.com (Jason Gruber)
 
 # find VTK libraries
-VTK_SRC = $(shell dirname $(shell locate --limit 1 vtkImageData.h))
-VTK_LIB = $(shell dirname $(shell locate --limit 1 vtkCommonCore.so))
+VTK_SRC = -I $(shell dirname $(shell locate --limit 1 vtkImageData.h))
+VTK_LIB = -L $(shell dirname $(shell locate --limit 1 vtkCommonCore.so))
 vtklinks = -lvtkCommonCore -lvtkCommonDataModel -lvtkIOXML
-
-# handle special cases of VTK installation
-VTK_DEB = $(shell locate --limit 1 vtkCommonCore-6.3.so)
-ifneq ($(VTK_DEB), "")
-	VTK_LIB = $(shell dirname $(shell locate --limit 1 vtkCommonCore-6.3.so))
-	vtklinks = -lvtkCommonCore-6.3 -lvtkCommonDataModel-6.3 -lvtkIOXML-6.3
-endif
 
 # compilers/flags
 compiler = g++
-flags = -O2 -Wall -I ../include -I $(VTK_SRC) -L $(VTK_LIB)
+flags = -O2 -Wall -I ../include $(VTK_SRC) $(VTK_LIB)
 topo = ../algorithms/topology
 
 # conversion programs
