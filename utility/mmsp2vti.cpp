@@ -167,16 +167,16 @@ template<int dim, typename T> void print_vectors(std::string filename, const MMS
 			vectorData->SetNumberOfScalarComponents(MMSP::fields(GRID));
 		#else
 		if (mode==1 || mode==2 || mode==3)
-			vectorData->AllocateScalars(VTK_FLOAT, 1);
+			vectorData->AllocateScalars(VTK_DOUBLE, 1);
 		else
-			vectorData->AllocateScalars(VTK_FLOAT, MMSP::fields(GRID));
+			vectorData->AllocateScalars(VTK_DOUBLE, MMSP::fields(GRID));
 		#endif
 
 		MMSP::vector<int> x(2,0);
 		for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
 			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
 				const MMSP::vector<T>& v = GRID(x);
-				float* pixel = static_cast<float*>(vectorData->GetScalarPointer(x[0], x[1], 0));
+				double* pixel = static_cast<double*>(vectorData->GetScalarPointer(x[0], x[1], 0));
 				if (mode==1) { // --mag
 					double sum = 0.0;
 					for (int h = 0; h < v.length(); h++)
@@ -246,7 +246,8 @@ template<int dim, typename T> void print_vectors(std::string filename, const MMS
 			}
 		}
 	}
-	vectorData->GetPointData()->GetAbstractArray(0)->SetName("vector_data");
+
+	// vectorData->GetPointData()->GetAbstractArray(0)->SetName("vector_data");
 
 	vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
 	writer->SetFileName(filename.c_str());
