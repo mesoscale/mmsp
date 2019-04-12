@@ -579,7 +579,7 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 			tsvfil << dx(GRID,0)*x[0];
 			for (int d=1; d<dim; d++)
 				tsvfil << '\t' << dx(GRID,d)*x[d];
-			tsvfil << GRID(n) << '\n';
+			tsvfil << '\t' << GRID(n) << '\n';
 		}
 	} else if (dim==2) {
 		for (int n=0; n<MMSP::nodes(GRID); n++) {
@@ -587,7 +587,7 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 			tsvfil << dx(GRID,0)*x[0];
 			for (int d=1; d<dim; d++)
 				tsvfil << '\t' << dx(GRID,d)*x[d];
-			tsvfil << GRID(n) << '\n';
+			tsvfil << '\t' << GRID(n) << '\n';
 		}
 	} else if (dim==3) {
 		for (int n=0; n<MMSP::nodes(GRID); n++) {
@@ -595,7 +595,7 @@ template <int dim, typename T> void convert_scalars(const MMSP::grid<dim,T>& GRI
 			tsvfil << dx(GRID,0)*x[0];
 			for (int d=1; d<dim; d++)
 				tsvfil << '\t' << dx(GRID,d)*x[d];
-			tsvfil << GRID(n) << '\n';
+			tsvfil << '\t' << GRID(n) << '\n';
 		}
 	}
 }
