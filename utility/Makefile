@@ -9,7 +9,7 @@ vtklinks = -lvtkCommonCore -lvtkCommonDataModel -lvtkIOXML
 
 # compilers/flags
 compiler = g++
-flags = -O1 -g -Wall -I ../include
+flags = -O2 -Wall -I ../include
 vtkflags = $(flags) $(VTK_SRC) $(VTK_LIB)
 topo = ../algorithms/topology
 
