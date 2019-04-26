@@ -5,7 +5,7 @@
 # find VTK libraries
 VTK_SRC = -I $(shell dirname $(shell locate --limit 1 vtkImageData.h))
 VTK_LIB = -L $(shell dirname $(shell locate --limit 1 vtkCommonCore.so))
-vtklinks = -lvtkCommonCore -lvtkCommonDataModel -lvtkIOXML
+vtklinks = -lvtkCommonCore -lvtkCommonDataModel -lvtkIOCore -lvtkIOXML
 
 # compilers/flags
 compiler = g++

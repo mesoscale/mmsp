@@ -100,6 +100,8 @@ template<int dim, typename T> void print_scalars(std::string filename, const MMS
 	#else
 	writer->SetInputData(scalarData);
 	#endif
+	writer->SetDataModeToBinary();
+	writer->SetCompressorTypeToZLib();
 	writer->Write();
 
 	scalarData = NULL;
@@ -256,7 +258,8 @@ template<int dim, typename T> void print_vectors(std::string filename, const MMS
 	#else
 	writer->SetInputData(vectorData);
 	#endif
-
+	writer->SetDataModeToBinary();
+	writer->SetCompressorTypeToZLib();
 	writer->Write();
 
 	vectorData = NULL;
@@ -385,6 +388,8 @@ template<int dim, typename T> void print_sparses(std::string filename, const MMS
 	#else
 	writer->SetInputData(sparseData);
 	#endif
+	writer->SetDataModeToBinary();
+	writer->SetCompressorTypeToZLib();
 	writer->Write();
 
 	sparseData = NULL;
