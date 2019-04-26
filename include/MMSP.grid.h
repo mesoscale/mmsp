@@ -411,7 +411,6 @@ public:
 	{
 		return GRID.dx[1];
 	}
-
 	// grid utility functions (z direction)
 	friend int z0(const grid& GRID)
 	{
@@ -451,33 +450,35 @@ public:
 protected:
 	T* data;        // local grid data
 
-	int nodes;			// number of nodes (excluding ghosts)
-	int cells;			// number of nodes (including ghosts)
-	int fields;			// number of fields
-	int ghosts;			// ghost cell depth
+	int nodes;      // number of nodes (excluding ghosts)
+	int cells;      // number of nodes (including ghosts)
+	int fields;     // number of fields
+	int ghosts;	    // ghost cell depth
 
-	int g0[dim];    // global lower coordinate limit (excluding ghosts)
-	int g1[dim];    // global upper coordinate limit (excluding ghosts)
+	#define dMax 3
 
-	int x0[dim];    // local lower coordinate limit (excluding ghosts)
-	int x1[dim];    // local upper coordinate limit (excluding ghosts)
-	int xx[dim];    // local cells in slice (excluding ghosts)
+	int g0[dMax];    // global lower coordinate limit (excluding ghosts)
+	int g1[dMax];    // global upper coordinate limit (excluding ghosts)
 
-	int s0[dim];    // local lower coordinate limit (including ghosts)
-	int s1[dim];    // local upper coordinate limit (including ghosts)
-	int sx[dim];    // local cells in slice (including ghosts)
+	int x0[dMax];    // local lower coordinate limit (excluding ghosts)
+	int x1[dMax];    // local upper coordinate limit (excluding ghosts)
+	int xx[dMax];    // local cells in slice (excluding ghosts)
 
-	int b0[dim];    // boundary condition at x0
-	int b1[dim];    // boundary condition at x1
+	int s0[dMax];    // local lower coordinate limit (including ghosts)
+	int s1[dMax];    // local upper coordinate limit (including ghosts)
+	int sx[dMax];    // local cells in slice (including ghosts)
 
-	double dx[dim]; // global cell spacing
+	int b0[dMax];    // boundary condition at x0
+	int b1[dMax];    // boundary condition at x1
 
-	int p0[dim];
-	int p1[dim];
-	int sp[dim];    // global processors in slice
+	double dx[dMax]; // global cell spacing
 
-	int n0[dim];    // neighbor processor at x0
-	int n1[dim];    // neighbor processor at x1
+	int p0[dMax];
+	int p1[dMax];
+	int sp[dMax];    // global processors in slice
+
+	int n0[dMax];    // neighbor processor at x0
+	int n1[dMax];    // neighbor processor at x1
 };
 
 

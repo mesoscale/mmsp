@@ -1,6 +1,7 @@
 Mesoscale Microstructure Simulation Project
 ====
 [![Build Status](https://travis-ci.org/mesoscale/mmsp.svg?branch=develop)](https://travis-ci.org/mesoscale/mmsp)
+[![DOI](https://zenodo.org/badge/19985417.svg)](https://zenodo.org/badge/latestdoi/19985417)
 
 The goal of the Mesoscale Microstructure Simulation Project (MMSP) is to provide a simple,
 consistent, and extensible programming interface for all grid and mesh based microstructure
@@ -45,6 +46,7 @@ MMSP is nothing more than a collection of C++ header files that declare a number
  * An ISO compliant C++ compiler (e.g. GCC 2.95 or later)
  * zlib libraries for data compression (e.g. zlib 1.2.7)
  * libpng headers for mmsp2png image generation utility (e.g. libpng12-dev)
+ * libvtk headers for mmsp2vti image generation utility (e.g. libvtk6-dev)
  * MPI libraries if compiling parallel programs (e.g. Open MPI)
 
 *Documentation*
@@ -53,7 +55,9 @@ The MMSP manual is a work in progress. It is currently the only source for detai
 
 *Contact us*
 
-The administrators for the MMSP source code are Jason Gruber (gruberja@gmail.com) and Trevor Keller (trevor.keller@gmail.com). Please do not hesitate to send questions or comments.
+The administrators for the MMSP source code are Jason Gruber (gruberja@gmail.com), Trevor Keller (trevor.keller@gmail.com) and Dan Lewis (lucentdan@gmail.com). Please do not hesitate to send questions or comments. Please cite using the following DOI:
+
+[![DOI](https://zenodo.org/badge/19985417.svg)](https://zenodo.org/badge/latestdoi/19985417)
 
 
 This work was supported in part by the US NSF under award #1056704 through the Metals and Metallic Nanostructures Program, Division of Materials Research. 
