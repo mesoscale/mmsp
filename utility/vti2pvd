@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Convert MMSP to VTI
+
+for f in *.dat; do
+    if [[ ! -f ${f/dat/vti} ]]; then
+        mmsp2vti $f
+    fi
+done
+
+files=($(ls -rt *.dat))
+first=${files[0]}
+PVD="${first/.dat/.pvd}"
+LEN=${#files[@]}
+
+echo "<?xml version=\"1.0\"?>" > ${PVD}
+echo "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\">" >> ${PVD}
+echo "  <Collection>" >> ${PVD}
+
+for ((i=0;i<LEN;i++)); do
+    f=${files[${i}]}
+    echo "    <DataSet timestep=\"${i}\" group=\"\" part=\"0\" file=\"${f/dat/vti}\"/>" >> ${PVD}
+done
+
+echo "  </Collection>" >> ${PVD}
+echo "</VTKFile>" >> ${PVD}
