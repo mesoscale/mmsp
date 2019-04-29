@@ -1,24 +1,38 @@
 #!/bin/bash
+# Convert MMSP data files to VTI, then build PVD summary file
 
-# Convert MMSP to VTI
+if [[ $(which parallel) == "" ]]; then
+    echo "This script depends on GNU parallel. Please install it, then try again."
+    return 1
+fi
 
-for f in *.dat; do
-    if [[ ! -f ${f/dat/vti} ]]; then
-        mmsp2vti $f
+Nthreads=$(( $(nproc)/2 ))
+
+function dat2vti {
+    if [[ ! -f ${1/dat/vti} ]]; then
+        mmsp2vti $1
     fi
-done
+}
+export -f dat2vti
 
-files=($(ls -rt *.dat))
-first=${files[0]}
+fileLst=$(ls -rt *.dat)
+fileArr=($(ls -rt *.dat))
+first=${fileArr[0]}
 PVD="${first/.dat/.pvd}"
-LEN=${#files[@]}
+LEN=${#fileArr[@]}
+
+# Convert all data fileArr in parallel
+
+parallel -j ${Nthreads} dat2vti ::: ${fileLst}
+
+# Build PVD in serial
 
 echo "<?xml version=\"1.0\"?>" > ${PVD}
 echo "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\">" >> ${PVD}
 echo "  <Collection>" >> ${PVD}
 
 for ((i=0;i<LEN;i++)); do
-    f=${files[${i}]}
+    f=${fileArr[${i}]}
     echo "    <DataSet timestep=\"${i}\" group=\"\" part=\"0\" file=\"${f/dat/vti}\"/>" >> ${PVD}
 done
 
