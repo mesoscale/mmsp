@@ -229,7 +229,6 @@ template <typename T> T global(T& value, const char* operation);
 // simple progress bar for the terminal
 void print_progress(const int step, const int steps);
 
-
 } // namespace MMSP
 
 #include "MMSP.utility.cpp"
