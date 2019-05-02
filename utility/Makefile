@@ -38,7 +38,7 @@ mmsp2tsv : mmsp2tsv.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 # convert MMSP grid file to compressed VTK Image file type
-mmsp2vti : mmsp2vti.cpp
+mmsp2vti : mmsp2vti.cpp ../include/MMSP.output.h
 	$(compiler) $(vtkflags) $< -o $@ $(vtklinks) -lz
 
 # convert MMSP grid file to XYZ point cloud file type
