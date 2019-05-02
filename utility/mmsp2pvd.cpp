@@ -3,7 +3,13 @@
 // Note: results in PVD file and a sequence of VTK image data files
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#include<sstream>
+#include <sstream>
+#include <vtkImageData.h>
+#include <vtkPointData.h>
+#include <vtkSmartPointer.h>
+#include <vtkVersion.h>
+#include <vtkXMLImageDataWriter.h>
+
 #include"MMSP.hpp"
 
 int main(int argc, char* argv[]) {

@@ -4,19 +4,522 @@
 
 #include <cmath>
 #include <fstream>
-#include <vtkImageData.h>
-#include <vtkPointData.h>
-#include <vtkSmartPointer.h>
-#include <vtkVersion.h>
-#include <vtkXMLImageDataWriter.h>
 
 namespace MMSP {
 
-template<int dim, typename T> void scalar_field_to_vtk(std::string filename, const grid<dim,T>& GRID, const int mode)
+#ifdef PNG_LIBPNG_VER
+int writePNG(const int w, const int h, const int bpp, unsigned char* imData, const char* filename)
+{
+	#ifdef MPI_VERSION
+	std::cerr << "Error: cannot write PNG in parallel." <<std::endl;
+	Abort(-1);
+	#endif
+
+	// using libpng
+	// After "A simple libpng example program,"
+	// http://zarb.org/~gc/html/libpng.html
+	// and the libpng manual, http://www.libpng.org/pub/png
+
+	png_byte color_type = PNG_COLOR_TYPE_GRAY;
+	// valid choices: PNG_COLOR_TYPE_GRAY       (bit depths 1,2,4, 8, 16)
+	//                PNG_COLOR_TYPE_GRAY_ALPHA (bit depths 8, 16)
+	//                PNG_COLOR_TYPE_PALETTE    (bit depths 1,2,4, 8)
+	//                PNG_COLOR_TYPE_RGB        (bit_depths 8, 16)
+	//                PNG_COLOR_TYPE_RGB_ALPHA  (bit_depths 8, 16)
+	//                PNG_COLOR_MASK_PALETTE
+	//                PNG_COLOR_MASK_COLOR
+	//                PNG_COLOR_MASK_ALPHA
+
+	png_byte bit_depth = 8; // valid choices: 1,2,4, 8, 16
+	png_structp png_ptr;
+	png_infop info_ptr;
+
+	png_bytepp row_pointers = new png_bytep[h];
+	for (int j=0; j<h; j++)
+		row_pointers[j] = &imData[j*w];
+
+	// Setup PNG file
+	FILE *fp = fopen(filename, "wb");
+	if (!fp) {
+		std::cerr<<"Error making image: check permissions on "<<filename<<std::endl;
+		return (-1);
+	}
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if (!png_ptr) {
+		std::cerr<<"Error making image: png_create_write_struct failed."<<std::endl;
+		return (-1);
+	}
+	info_ptr = png_create_info_struct(png_ptr);
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		std::cerr<<"Error making image: unable to init_io."<<std::endl;
+		return (-1);
+	}
+	png_init_io(png_ptr, fp);
+
+	// Write PNG header
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		std::cerr<<"Error making image: unable to write header."<<std::endl;
+		return (-1);
+	}
+	png_set_IHDR(png_ptr, info_ptr, w, h,
+	                 bit_depth, color_type, PNG_INTERLACE_NONE,
+	                 PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+
+	png_write_info(png_ptr, info_ptr);
+
+	// Write image
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		std::cerr<<"Error making image: unable to write data."<<std::endl;
+		return (-1);
+	}
+	png_write_image(png_ptr, row_pointers);
+
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		std::cerr<<"Error making image: unable to finish writing."<<std::endl;
+		return (-1);
+	}
+	png_write_end(png_ptr, NULL);
+
+	// Clean up
+	delete [] row_pointers;
+
+	fclose(fp);
+
+	return 0;
+}
+
+template <int dim, typename T>
+void scalar_field_to_png(const grid<dim,T>& GRID,
+						 const int& mode, int sliceaxis, int slicelevel,
+						 const double& zoomin, const double& zoomax,
+						 const bool coninv, const std::set<double>& levelset, const int& lvlfield,
+						 const double& contol, const unsigned int& bufsize, unsigned char* buffer)
+{
+	#ifdef MPI_VERSION
+	std::cerr << "Error: cannot write PNG in parallel." <<std::endl;
+	Abort(-1);
+	#endif
+
+	double min=zoomin;
+	double max=zoomax;
+
+	for (int n=0; n<nodes(GRID); n++) {
+		double val = GRID(n);
+		if (mode==1) // mag
+			val = std::fabs(val);
+		if (val>max)
+			max=val;
+		else if (val<min)
+			min=val;
+	}
+
+	std::cout<<"Rescaling on ["<<min<<','<<max<<"]."<<std::endl;
+
+	if (dim==1) {
+		unsigned int n=0;
+		vector<int> x(1,0);
+		for (x[0] = g0(GRID,0); x[0] < g1(GRID,0); x[0]++) {
+			double val = GRID(x);
+			if (mode==1) //mag
+				val = std::fabs(val);
+			assert(n<bufsize);
+			buffer[n] = 255*((val-min)/(max-min));
+			if (mode==4) //contour
+				for (std::set<double>::iterator it=levelset.begin(); it!=levelset.end(); it++)
+					if (std::fabs(val-*it)/std::fabs(*it)<contol)
+						buffer[n] = 255-buffer[n];
+			n++;
+		}
+	} else if (dim==2) {
+		unsigned int n=0;
+		vector<int> x(2,0);
+		for (x[1] = g1(GRID,1)-1; x[1] >= g0(GRID,1); x[1]--)
+			for (x[0] = g0(GRID,0); x[0] < g1(GRID,0); x[0]++) {
+				double val = GRID(x);
+				if (mode==1) //mag
+					val = std::fabs(val);
+				assert(n<bufsize);
+				buffer[n] = 255*((val-min)/(max-min));
+				if (mode==4) //contour
+					for (std::set<double>::iterator it=levelset.begin(); it!=levelset.end(); it++)
+						if (std::fabs(val-*it)/std::fabs(*it)<contol)
+							buffer[n] = 255-buffer[n];
+				n++;
+			}
+	} else if (dim==3) {
+		unsigned int n=0;
+		vector<int> x(3,0);
+		for (x[2] = g0(GRID,2); x[2] < g1(GRID,2); x[2]++)
+			for (x[1] = g1(GRID,1)-1; x[1] >= g0(GRID,1); x[1]--)
+				for (x[0] = g0(GRID,0); x[0] < g1(GRID,0); x[0]++) {
+					if (x[sliceaxis]!=slicelevel) // clumsy, but effective
+						continue;
+					double val = GRID(x);
+					if (mode==1) //mag
+						val = std::fabs(val);
+					assert(n<bufsize);
+					buffer[n] = 255*((val-min)/(max-min));
+					if (levelset.size()>0) //contour
+						for (std::set<double>::iterator it=levelset.begin(); it!=levelset.end(); it++)
+							if (std::fabs(val-*it)/std::fabs(*it)<contol)
+								buffer[n] = coninv ? 255 : 0;
+					n++;
+				}
+	}
+}
+
+template <int dim, typename T>
+void vector_field_to_png(const grid<dim,vector<T> >& GRID,
+						 const int& mode, int sliceaxis, int slicelevel,
+						 const double& zoomin, const double& zoomax,
+						 const bool coninv, const std::set<double>& levelset, const int& lvlfield,
+						 const double& contol, const std::set<int>& fieldset,
+						 const unsigned int& bufsize, unsigned char* buffer)
+{
+	#ifdef MPI_VERSION
+	std::cerr << "Error: cannot write PNG in parallel." <<std::endl;
+	Abort(-1);
+	#endif
+
+	double min=zoomin;
+	double max=zoomax;
+	int included = (mode==2) ? fieldset.size() : fields(GRID)-fieldset.size();
+
+	for (int n=0; n<nodes(GRID); n++) {
+		double sum=0.0;
+		if (mode==0) {        //  no option specified
+			for (int i=0; i<fields(GRID); i++)
+				if (included>1)
+					sum += pow(GRID(n)[i],2.0);
+				else
+					sum = GRID(n)[i];
+		} else if (mode==1) { //  --mag
+			for (int i=0; i<fields(GRID); i++)
+				sum += pow(GRID(n)[i],2.0);
+		} else if (mode==2) { //  --field
+			if (included>1)
+				for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++)
+					sum += pow(GRID(n)[*it],2.0);
+			else
+				sum = GRID(n)[*fieldset.begin()];
+		} else if (mode==3) { //  --exclude
+			for (int i=0; i<fields(GRID); i++) {
+				std::set<int>::iterator it=fieldset.find(i);
+				if (it == fieldset.end()) {
+					if (included>1)
+						sum += pow(GRID(n)[i],2.0);
+					else
+						sum = GRID(n)[i];
+				}
+			}
+		}
+		if (mode==1 || included!=1)
+			sum = std::sqrt(sum);
+		if (sum>max)
+			max=sum;
+		else if (sum<min)
+			min=sum;
+	}
+
+	std::cout<<"Rescaling on ["<<min<<','<<max<<"]."<<std::endl;
+
+	if (dim==1) {
+		unsigned int n=0;
+		vector<int> x(1,0);
+		for (x[0] = g0(GRID,0); x[0] < g1(GRID,0); x[0]++) {
+			double sum=0.0;
+			if (mode==0) { //         default selection
+				for (int i=0; i<fields(GRID); i++) {
+					if (included>1)
+						sum += pow(GRID(x)[i],2.0);
+					else
+						sum = GRID(x)[i];
+				}
+			} else if (mode==1) { //  --mag
+				for (int i=0; i<fields(GRID); i++)
+					sum += pow(GRID(x)[i],2.0);
+			} else if (mode==2) { //  --field
+				if (fieldset.size()==1)
+					sum = GRID(x)[*fieldset.begin()];
+				else
+					for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++)
+						sum += pow(GRID(x)[*it],2.0);
+			} else if (mode==3) { //  --exclude
+				for (int i=0; i<fields(GRID); i++) {
+					std::set<int>::iterator it=fieldset.find(i);
+					if (it == fieldset.end()) {
+						if (included>1)
+							sum += pow(GRID(x)[i],2.0);
+						else
+							sum = GRID(x)[i];
+					}
+				}
+			}
+			if (mode==1 || included!=1)
+				sum = std::sqrt(sum);
+			assert(n<bufsize);
+			buffer[n] = 255*((sum-min)/(max-min));
+			if (levelset.size()>0) // --contour
+				for (std::set<double>::iterator itl=levelset.begin(); itl!=levelset.end(); itl++)
+					if (std::fabs(GRID(x)[lvlfield]-*itl)/std::fabs(*itl)<contol)
+						buffer[n] = coninv ? 255 : 0;
+			n++;
+		}
+	} else if (dim==2) {
+		unsigned int n=0;
+		vector<int> x(2,0);
+		for (x[1] = g1(GRID,1)-1; x[1] >= g0(GRID,1); x[1]--)
+			for (x[0] = g0(GRID,0); x[0] < g1(GRID,0); x[0]++) {
+				double sum=0.0;
+				if (mode==0) { //         default selection
+					for (int i=0; i<fields(GRID); i++) {
+						if (included>1)
+							sum += pow(GRID(x)[i],2.0);
+						else
+							sum = GRID(x)[i];
+					}
+				} else if (mode==1) { //  --mag
+					for (int i=0; i<fields(GRID); i++)
+						sum += pow(GRID(x)[i],2.0);
+				} else if (mode==2) { //  --field
+					if (fieldset.size()==1) {
+						sum = GRID(x)[*fieldset.begin()];
+					} else {
+						for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++)
+							sum += pow(GRID(x)[*it],2.0);
+					}
+				} else if (mode==3) { //  --exclude
+					for (int i=0; i<fields(GRID); i++) {
+						std::set<int>::iterator it=fieldset.find(i);
+						if (it == fieldset.end()) {
+							if (included>1)
+								sum += pow(GRID(x)[i],2.0);
+							else
+								sum = GRID(x)[i];
+						}
+					}
+				}
+				if (mode==1 || included!=1)
+					sum = std::sqrt(sum);
+				assert(n<bufsize);
+				buffer[n] = 255*((sum-min)/(max-min));
+				if (levelset.size()>0) // --contour
+					for (std::set<double>::iterator itl=levelset.begin(); itl!=levelset.end(); itl++)
+						if (std::fabs(GRID(x)[lvlfield]-*itl)/std::fabs(*itl)<contol)
+							buffer[n] = coninv ? 255 : 0;
+				n++;
+			}
+	} else if (dim==3) {
+		unsigned int n=0;
+		vector<int> x(3,0);
+		for (x[2] = g0(GRID,2); x[2] < g1(GRID,2); x[2]++)
+			for (x[1] = g1(GRID,1)-1; x[1] >= g0(GRID,1); x[1]--)
+				for (x[0] = g0(GRID,0); x[0] < g1(GRID,0); x[0]++) {
+					if (x[sliceaxis]!=slicelevel) // clumsy, but effective
+						continue;
+					double sum=0.0;
+					if (mode==0) { //         default selection
+						for (int i=0; i<fields(GRID); i++) {
+							if (included>1)
+								sum += pow(GRID(x)[i],2.0);
+							else
+								sum = GRID(x)[i];
+						}
+					} else if (mode==1) { //  --mag
+						for (int i=0; i<fields(GRID); i++)
+							sum += pow(GRID(x)[i],2.0);
+					} else if (mode==2) { //  --field
+						if (fieldset.size()==1)
+							sum = GRID(x)[*fieldset.begin()];
+						else
+							for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++)
+								sum += pow(GRID(x)[*it],2.0);
+					} else if (mode==3) { //  --exclude
+						for (int i=0; i<fields(GRID); i++) {
+							std::set<int>::iterator it=fieldset.find(i);
+							if (it == fieldset.end()) {
+								if (included>1)
+									sum += pow(GRID(x)[i],2.0);
+								else
+									sum = GRID(x)[i];
+							}
+						}
+					}
+					if (mode==1 || included!=1)
+						sum = std::sqrt(sum);
+					assert(n<bufsize);
+					buffer[n] = 255*((sum-min)/(max-min));
+					if (levelset.size()>0) // --contour
+						for (std::set<double>::iterator itl=levelset.begin(); itl!=levelset.end(); itl++)
+							if (std::fabs(GRID(x)[lvlfield]-*itl)/std::fabs(*itl)<contol)
+								buffer[n] = coninv ? 255 : 0;
+					n++;
+				}
+	}
+}
+
+template <int dim, typename T>
+void sparse_field_to_png(const grid<dim,sparse<T> >& GRID,
+						 const int& mode, int sliceaxis, int slicelevel,
+						 const double& zoomin, const double& zoomax,
+						 const bool coninv, const std::set<double>& levelset, const int& lvlfield,
+						 const double& contol, const std::set<int>& fieldset,
+						 const unsigned int& bufsize, unsigned char* buffer)
+{
+	#ifdef MPI_VERSION
+	std::cerr << "Error: cannot write PNG in parallel." <<std::endl;
+	Abort(-1);
+	#endif
+
+	double min=zoomin;
+	double max=zoomax;
+	int included = fieldset.size();
+
+	for (int n=0; n<nodes(GRID); n++) {
+		double sum=0.0;
+		if (mode<2) { //         --mag or default selection
+			for (int h=0; h<GRID(n).length(); h++)
+				sum += pow(GRID(n).value(h),2.0);
+		} else if (mode==2) { //  --field
+			for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++) {
+				if (included>1)
+					sum += pow(GRID(n)[*it],2.0);
+				else
+					sum = GRID(n)[*it];
+			}
+		} else if (mode==3) { //  --exclude
+			for (int h=0; h<GRID(n).length(); h++) {
+				int i = GRID(n).index(h);
+				std::set<int>::iterator it=fieldset.find(i);
+				if (it == fieldset.end())
+					sum += pow(GRID(n).value(h),2.0);
+			}
+		}
+		if (included!=1)
+			sum = std::sqrt(sum);
+		if (sum>max)
+			max=sum;
+		else if (sum<min)
+			min=sum;
+	}
+
+	std::cout<<"Rescaling on ["<<min<<','<<max<<"]."<<std::endl;
+
+	if (dim==1) {
+		unsigned int n=0;
+		vector<int> x(1,0);
+		for (x[0] = g0(GRID,0); x[0] < g1(GRID,0); x[0]++) {
+			double sum=0.0;
+			if (mode<2) { //          --mag
+				for (int h=0; h<GRID(x).length(); h++)
+					sum += pow(GRID(x).value(h),2.0);
+			} else if (mode==2) { //  --field
+				for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++) {
+					if (included>1)
+						sum += pow(GRID(x)[*it],2.0);
+					else
+						sum = GRID(x)[*it];
+				}
+			} else if (mode==3) { //  --exclude
+				for (int h=0; h<GRID(x).length(); h++) {
+					int i = GRID(x).index(h);
+					std::set<int>::iterator it=fieldset.find(i);
+					if (it == fieldset.end())
+						sum += pow(GRID(x).value(h),2.0);
+				}
+			}
+			if (mode!=2 || included!=1)
+				sum = std::sqrt(sum);
+			assert(n<bufsize);
+			buffer[n] = 255*((sum-min)/(max-min));
+			if (levelset.size()>0) // --contour
+				for (std::set<double>::iterator itl=levelset.begin(); itl!=levelset.end(); itl++)
+					if (std::fabs(GRID(x)[lvlfield]-*itl)/std::fabs(*itl)<contol)
+						buffer[n] = coninv ? 255 : 0;
+			n++;
+		}
+	} else if (dim==2) {
+		unsigned int n=0;
+		vector<int> x(2,0);
+		for (x[1] = g1(GRID,1)-1; x[1] >= g0(GRID,1); x[1]--)
+			for (x[0] = g0(GRID,0); x[0] < g1(GRID,0); x[0]++) {
+				double sum=0.0;
+				if (mode<2) { //          --mag
+					for (int h=0; h<GRID(x).length(); h++)
+						sum += pow(GRID(x).value(h),2.0);
+				} else if (mode==2) { //  --field
+					for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++) {
+						if (included>1)
+							sum += pow(GRID(x)[*it],2.0);
+						else
+							sum = GRID(x)[*it];
+					}
+				} else if (mode==3) { //  --exclude
+					for (int h=0; h<GRID(x).length(); h++) {
+						int i = GRID(x).index(h);
+						std::set<int>::iterator it=fieldset.find(i);
+						if (it == fieldset.end())
+							sum += pow(GRID(x).value(h),2.0);
+					}
+				}
+				if (mode!=2 || included!=1)
+					sum = std::sqrt(sum);
+				assert(n<bufsize);
+				buffer[n] = 255*((sum-min)/(max-min));
+				if (levelset.size()>0) // --contour
+					for (std::set<double>::iterator itl=levelset.begin(); itl!=levelset.end(); itl++)
+						if (std::fabs(GRID(x)[lvlfield]-*itl)/std::fabs(*itl)<contol)
+							buffer[n] = coninv ? 255 : 0;
+				n++;
+			}
+	} else if (dim==3) {
+		unsigned int n=0;
+		vector<int> x(3,0);
+		for (x[2] = g0(GRID,2); x[2] < g1(GRID,2); x[2]++)
+			for (x[1] = g1(GRID,1)-1; x[1] >= g0(GRID,1); x[1]--)
+				for (x[0] = g0(GRID,0); x[0] < g1(GRID,0); x[0]++) {
+					if (x[sliceaxis]!=slicelevel) // clumsy, but effective
+						continue;
+					double sum=0.0;
+					if (mode<2) { //          --mag
+						for (int h=0; h<GRID(x).length(); h++)
+							sum += pow(GRID(x).value(h),2.0);
+					} else if (mode==2) { //  --field
+						for (std::set<int>::iterator it=fieldset.begin(); it!=fieldset.end(); it++) {
+							if (included>1)
+								sum += pow(GRID(x)[*it],2.0);
+							else
+								sum = GRID(x)[*it];
+						}
+					} else if (mode==3) { //  --exclude
+						for (int h=0; h<GRID(x).length(); h++) {
+							int i = GRID(x).index(h);
+							std::set<int>::iterator it=fieldset.find(i);
+							if (it == fieldset.end())
+								sum += pow(GRID(x).value(h),2.0);
+						}
+					}
+					if (mode!=2 || included!=1)
+						sum = std::sqrt(sum);
+					assert(n<bufsize);
+					buffer[n] = 255*((sum-min)/(max-min));
+					if (levelset.size()>0) // --contour
+						for (std::set<double>::iterator itl=levelset.begin(); itl!=levelset.end(); itl++)
+							if (std::fabs(GRID(x)[lvlfield]-*itl)/std::fabs(*itl)<contol)
+								buffer[n] = coninv ? 255 : 0;
+					n++;
+				}
+	}
+}
+#endif // PNG
+
+#ifdef VTK_VERSION
+template<int dim, typename T>
+void scalar_field_to_vtk(std::string filename, const grid<dim,T>& GRID, const int mode)
 {
 	#ifdef MPI_VERSION
 	std::cerr << "Error: cannot write VTK in parallel." <<std::endl;
-	MMSP::Abort(-1);
+	Abort(-1);
 	#endif
 
 	vtkSmartPointer<vtkImageData> scalarData = vtkSmartPointer<vtkImageData>::New();
@@ -113,12 +616,13 @@ template<int dim, typename T> void scalar_field_to_vtk(std::string filename, con
 	writer = NULL;
 }
 
-template<int dim, typename T> void vector_field_to_vtk(std::string filename, const grid<dim,vector<T> >& GRID,
-        const int mode, const int field)
+template<int dim, typename T>
+void vector_field_to_vtk(std::string filename, const grid<dim,vector<T> >& GRID,
+						 const int mode, const int field)
 {
 	#ifdef MPI_VERSION
 	std::cerr << "Error: cannot write VTK in parallel." <<std::endl;
-	MMSP::Abort(-1);
+	Abort(-1);
 	#endif
 
 	vtkSmartPointer<vtkImageData> vectorData = vtkSmartPointer<vtkImageData>::New();
@@ -276,12 +780,13 @@ template<int dim, typename T> void vector_field_to_vtk(std::string filename, con
 	writer = NULL;
 }
 
-template<int dim, typename T> void sparse_field_to_vtk(std::string filename, const grid<dim,sparse<T> >& GRID,
-        const int mode, const int field)
+template<int dim, typename T>
+void sparse_field_to_vtk(std::string filename, const grid<dim,sparse<T> >& GRID,
+						 const int mode, const int field)
 {
 	#ifdef MPI_VERSION
 	std::cerr << "Error: cannot write VTK in parallel." <<std::endl;
-	MMSP::Abort(-1);
+	Abort(-1);
 	#endif
 
 	vtkSmartPointer<vtkImageData> sparseData = vtkSmartPointer<vtkImageData>::New();
@@ -410,5 +915,6 @@ template<int dim, typename T> void sparse_field_to_vtk(std::string filename, con
 	sparseData = NULL;
 	writer = NULL;
 }
+#endif // VTK
 
 } // namespace

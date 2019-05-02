@@ -2,6 +2,12 @@
 // Convert MMSP grid data to XML VTK image data format
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
+#include <vtkImageData.h>
+#include <vtkPointData.h>
+#include <vtkSmartPointer.h>
+#include <vtkVersion.h>
+#include <vtkXMLImageDataWriter.h>
+
 #include "MMSP.hpp"
 
 int main(int argc, char* argv[])
