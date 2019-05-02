@@ -6,10 +6,10 @@
 
 namespace MMSP {
 
-	template<int dim, typename T> void print_scalars(std::string filename, const grid<dim,T>& GRID, const int mode);
-	template<int dim, typename T> void print_vectors(std::string filename, const grid<dim,vector<T> >& GRID,
+	template<int dim, typename T> void scalar_field_to_vtk(std::string filename, const grid<dim,T>& GRID, const int mode);
+	template<int dim, typename T> void vector_field_to_vtk(std::string filename, const grid<dim,vector<T> >& GRID,
 													 const int mode, const int field);
-	template<int dim, typename T> void print_sparses(std::string filename, const grid<dim,sparse<T> >& GRID,
+	template<int dim, typename T> void sparse_field_to_vtk(std::string filename, const grid<dim,sparse<T> >& GRID,
 													 const int mode, const int field);
 } // namespace
 

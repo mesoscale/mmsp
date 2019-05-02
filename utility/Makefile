@@ -30,7 +30,7 @@ mmsp2png : mmsp2png.cpp
 	$(compiler) $(flags) $< -o $@ -lz -lpng
 
 # convert MMSP grid file to ParaView Data file type
-mmsp2pvd : mmsp2pvd.cpp
+mmsp2pvd : mmsp2pvd.cpp ../include/MMSP.output.h
 	$(compiler) $(vtkflags) $< -o $@ $(vtklinks) -lz
 
 # convert MMSP grid file to tab-delimited ASCII (TSV) file type
