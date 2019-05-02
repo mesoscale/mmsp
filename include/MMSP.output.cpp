@@ -14,6 +14,11 @@ namespace MMSP {
 
 template<int dim, typename T> void print_scalars(std::string filename, const grid<dim,T>& GRID, const int mode)
 {
+	#ifdef MPI_VERSION
+	std::cerr << "Error: cannot write VTK in parallel." <<std::endl;
+	MMSP::Abort(-1);
+	#endif
+
 	vtkSmartPointer<vtkImageData> scalarData = vtkSmartPointer<vtkImageData>::New();
 
 	if (dim==1) {
@@ -111,6 +116,11 @@ template<int dim, typename T> void print_scalars(std::string filename, const gri
 template<int dim, typename T> void print_vectors(std::string filename, const grid<dim,vector<T> >& GRID,
         const int mode, const int field)
 {
+	#ifdef MPI_VERSION
+	std::cerr << "Error: cannot write VTK in parallel." <<std::endl;
+	MMSP::Abort(-1);
+	#endif
+
 	vtkSmartPointer<vtkImageData> vectorData = vtkSmartPointer<vtkImageData>::New();
 
 	if (dim==1) {
@@ -269,6 +279,11 @@ template<int dim, typename T> void print_vectors(std::string filename, const gri
 template<int dim, typename T> void print_sparses(std::string filename, const grid<dim,sparse<T> >& GRID,
         const int mode, const int field)
 {
+	#ifdef MPI_VERSION
+	std::cerr << "Error: cannot write VTK in parallel." <<std::endl;
+	MMSP::Abort(-1);
+	#endif
+
 	vtkSmartPointer<vtkImageData> sparseData = vtkSmartPointer<vtkImageData>::New();
 
 	if (dim==1) {
