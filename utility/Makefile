@@ -5,7 +5,7 @@
 # find VTK libraries
 VTK_SRC = -I $(shell dirname $(shell locate --limit 1 vtkImageData.h))
 VTK_LIB = -L $(shell dirname $(shell locate --limit 1 vtkCommonCore.so))
-vtklinks = -lvtkCommonCore -lvtkCommonDataModel -lvtkIOCore -lvtkIOXML
+VTK_LNK = -lvtkCommonCore -lvtkCommonDataModel -lvtkIOCore -lvtkIOXML
 
 # compilers/flags
 compiler = g++
@@ -26,20 +26,20 @@ utility : mmsp2vti mmsp2pvd mmsp2png mmsp2tsv mmsp2xyz \
 #
 
 # convert MMSP grid file to PNG image file type
-mmsp2png : mmsp2png.cpp
-	$(compiler) $(flags) $< -o $@ -lz -lpng
+mmsp2png : mmsp2png.cpp ../include/MMSP.output.h
+	$(compiler) $(flags) $< -o $@ -lpng -lz
 
 # convert MMSP grid file to ParaView Data file type
-mmsp2pvd : mmsp2pvd.cpp
-	$(compiler) $(vtkflags) $< -o $@ $(vtklinks) -lz
+mmsp2pvd : mmsp2pvd.cpp ../include/MMSP.output.h
+	$(compiler) $(vtkflags) $< -o $@ $(VTK_LNK) -lz
 
 # convert MMSP grid file to tab-delimited ASCII (TSV) file type
 mmsp2tsv : mmsp2tsv.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
 # convert MMSP grid file to compressed VTK Image file type
-mmsp2vti : mmsp2vti.cpp
-	$(compiler) $(vtkflags) $< -o $@ $(vtklinks) -lz
+mmsp2vti : mmsp2vti.cpp ../include/MMSP.output.h
+	$(compiler) $(vtkflags) $< -o $@ $(VTK_LNK) -lz
 
 # convert MMSP grid file to XYZ point cloud file type
 mmsp2xyz : mmsp2xyz.cpp

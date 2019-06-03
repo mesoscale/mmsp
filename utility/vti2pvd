@@ -3,7 +3,7 @@
 
 if [[ $(which parallel) == "" ]]; then
     echo "This script depends on GNU parallel. Please install it, then try again."
-    return 1
+    exit 1
 fi
 
 Nthreads=$(( $(nproc)/2 ))
@@ -21,7 +21,7 @@ first=${fileArr[0]}
 PVD="${first/.dat/.pvd}"
 LEN=${#fileArr[@]}
 
-# Convert all data fileArr in parallel
+# Convert all data files in parallel
 
 parallel -j ${Nthreads} dat2vti ::: ${fileLst}
 

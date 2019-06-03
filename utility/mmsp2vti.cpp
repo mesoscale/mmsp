@@ -2,399 +2,13 @@
 // Convert MMSP grid data to XML VTK image data format
 // Questions/comments to gruberja@gmail.com (Jason Gruber)
 
-#include <cmath>
-#include <fstream>
-#include <string>
 #include <vtkImageData.h>
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
 #include <vtkVersion.h>
 #include <vtkXMLImageDataWriter.h>
+
 #include "MMSP.hpp"
-
-template<int dim, typename T> void print_scalars(std::string filename, const MMSP::grid<dim,T>& GRID, const int mode)
-{
-	vtkSmartPointer<vtkImageData> scalarData = vtkSmartPointer<vtkImageData>::New();
-
-	if (dim==1) {
-		scalarData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID), 1, 1);
-		scalarData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1, 0, 0, 0, 0);
-		scalarData->SetSpacing(MMSP::dx(GRID), 1, 1);
-		#if VTK_MAJOR_VERSION <= 5
-		scalarData->SetScalarTypeToFloat();
-		scalarData->SetNumberOfScalarComponents(1);
-		#else
-		scalarData->AllocateScalars(VTK_FLOAT, 1);
-		#endif
-
-		MMSP::vector<int> x(1,0);
-		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
-			float* pixel = static_cast<float*>(scalarData->GetScalarPointer(x[0], 0, 0));
-			if (mode==1) { // --mag
-				*pixel = std::sqrt(GRID(x)*GRID(x));
-			} else {
-				*pixel = GRID(x);
-			}
-		}
-	} else if (dim==2) {
-		scalarData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID),
-		                       MMSP::y1(GRID)-MMSP::y0(GRID),
-		                       1);
-		scalarData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1,
-		                   MMSP::y0(GRID), MMSP::y1(GRID) - 1,
-		                   0, 0);
-		scalarData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), 1);
-		#if VTK_MAJOR_VERSION <= 5
-		scalarData->SetScalarTypeToFloat();
-		scalarData->SetNumberOfScalarComponents(1);
-		#else
-		scalarData->AllocateScalars(VTK_FLOAT, 1);
-		#endif
-
-		MMSP::vector<int> x(2,0);
-		for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
-			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
-				float* pixel = static_cast<float*>(scalarData->GetScalarPointer(x[0], x[1], 0));
-				if (mode==1) { // --mag
-					*pixel = std::sqrt(GRID(x)*GRID(x));
-				} else {
-					*pixel = GRID(x);
-				}
-			}
-		}
-	} else if (dim==3) {
-		scalarData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID),
-		                       MMSP::y1(GRID)-MMSP::y0(GRID),
-		                       MMSP::z1(GRID)-MMSP::z0(GRID));
-		scalarData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1,
-		                   MMSP::y0(GRID), MMSP::y1(GRID) - 1,
-		                   MMSP::z0(GRID), MMSP::z1(GRID) - 1);
-		scalarData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), MMSP::dx(GRID, 2));
-		#if VTK_MAJOR_VERSION <= 5
-		scalarData->SetScalarTypeToFloat();
-		scalarData->SetNumberOfScalarComponents(1);
-		#else
-		scalarData->AllocateScalars(VTK_FLOAT, 1);
-		#endif
-
-		MMSP::vector<int> x(3,0);
-		for (x[2]=MMSP::z0(GRID); x[2]<MMSP::z1(GRID); x[2]++) {
-			for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
-				for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
-					float* pixel = static_cast<float*>(scalarData->GetScalarPointer(x[0], x[1], x[2]));
-					if (mode==1) { // --mag
-						*pixel = std::sqrt(GRID(x)*GRID(x));
-					} else {
-						*pixel = GRID(x);
-					}
-				}
-			}
-		}
-	}
-	scalarData->GetPointData()->GetAbstractArray(0)->SetName("scalar_data");
-
-	vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
-	writer->SetFileName(filename.c_str());
-	#if VTK_MAJOR_VERSION <= 5
-	writer->SetInputConnection(scalarData->GetProducerPort());
-	#else
-	writer->SetInputData(scalarData);
-	#endif
-	writer->SetDataModeToBinary();
-	writer->SetCompressorTypeToZLib();
-	writer->Write();
-
-	scalarData = NULL;
-	writer = NULL;
-}
-
-template<int dim, typename T> void print_vectors(std::string filename, const MMSP::grid<dim,MMSP::vector<T> >& GRID,
-        const int mode, const int field)
-{
-	vtkSmartPointer<vtkImageData> vectorData = vtkSmartPointer<vtkImageData>::New();
-
-	if (dim==1) {
-		vectorData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID), 1, 1);
-		vectorData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1, 0, 0, 0, 0);
-		vectorData->SetSpacing(MMSP::dx(GRID), 1, 1);
-		#if VTK_MAJOR_VERSION <= 5
-		vectorData->SetScalarTypeToFloat();
-		if (mode==1 || mode==2 || mode==3)
-			vectorData->SetNumberOfScalarComponents(1);
-		else
-			vectorData->SetNumberOfScalarComponents(MMSP::fields(GRID));
-		#else
-		if (mode==1 || mode==2 || mode==3)
-			vectorData->AllocateScalars(VTK_FLOAT, 1);
-		else
-			vectorData->AllocateScalars(VTK_FLOAT, MMSP::fields(GRID));
-		#endif
-
-		MMSP::vector<int> x(1,0);
-		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
-			const MMSP::vector<T>& v = GRID(x);
-			float* pixel = static_cast<float*>(vectorData->GetScalarPointer(x[0], 0, 0));
-			if (mode==1) { // --mag
-				double sum = 0.0;
-				for (int h = 0; h < v.length(); h++)
-					sum += v[h]*v[h];
-				*pixel = std::sqrt(sum);
-			} else if (mode==2) { // --max
-				// Export index of field with greatest magnitude
-				int max = 0;
-				for (int h = 1; h < v.length(); h++)
-					if (v[h] > v[max])
-						max = h;
-				*pixel = max;
-			} else if (mode==3) { // --field
-				*pixel = v[field];
-			} else {
-				for (int h = 0; h < v.length(); h++)
-					pixel[h] = v[h];
-			}
-		}
-	} else if (dim==2) {
-		vectorData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID),
-		                       MMSP::y1(GRID)-MMSP::y0(GRID),
-		                       1);
-		vectorData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1,
-		                   MMSP::y0(GRID), MMSP::y1(GRID) - 1,
-		                   0, 0);
-		vectorData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), 1);
-		#if VTK_MAJOR_VERSION <= 5
-		vectorData->SetScalarTypeToFloat();
-		if (mode==1 || mode==2 || mode==3)
-			vectorData->SetNumberOfScalarComponents(1);
-		else
-			vectorData->SetNumberOfScalarComponents(MMSP::fields(GRID));
-		#else
-		if (mode==1 || mode==2 || mode==3)
-			vectorData->AllocateScalars(VTK_DOUBLE, 1);
-		else
-			vectorData->AllocateScalars(VTK_DOUBLE, MMSP::fields(GRID));
-		#endif
-
-		MMSP::vector<int> x(2,0);
-		for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
-			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
-				const MMSP::vector<T>& v = GRID(x);
-				double* pixel = static_cast<double*>(vectorData->GetScalarPointer(x[0], x[1], 0));
-				if (mode==1) { // --mag
-					double sum = 0.0;
-					for (int h = 0; h < v.length(); h++)
-						sum += v[h]*v[h];
-					*pixel = std::sqrt(sum);
-				} else if (mode==2) { // --max
-					// Export index of field with greatest magnitude
-					int max = 0;
-					for (int h = 1; h < v.length(); h++)
-						if (v[h] > v[max])
-							max = h;
-					*pixel = max;
-				} else if (mode==3) { // --field
-					*pixel = v[field];
-				} else {
-					for (int h = 0; h < v.length(); h++)
-						pixel[h] = v[h];
-				}
-			}
-		}
-	} else if (dim==3) {
-		vectorData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID),
-		                       MMSP::y1(GRID)-MMSP::y0(GRID),
-		                       MMSP::z1(GRID)-MMSP::z0(GRID));
-		vectorData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1,
-		                   MMSP::y0(GRID), MMSP::y1(GRID) - 1,
-		                   MMSP::z0(GRID), MMSP::z1(GRID) - 1);
-		vectorData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), MMSP::dx(GRID, 2));
-		#if VTK_MAJOR_VERSION <= 5
-		vectorData->SetScalarTypeToFloat();
-		if (mode==1 || mode==2 || mode==3)
-			vectorData->SetNumberOfScalarComponents(1);
-		else
-			vectorData->SetNumberOfScalarComponents(MMSP::fields(GRID));
-		#else
-		if (mode==1 || mode==2 || mode==3)
-			vectorData->AllocateScalars(VTK_FLOAT, 1);
-		else
-			vectorData->AllocateScalars(VTK_FLOAT, MMSP::fields(GRID));
-		#endif
-
-		MMSP::vector<int> x(3,0);
-		for (x[2]=MMSP::z0(GRID); x[2]<MMSP::z1(GRID); x[2]++) {
-			for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
-				for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
-					const MMSP::vector<T>& v = GRID(x);
-					float* pixel = static_cast<float*>(vectorData->GetScalarPointer(x[0], x[1], x[2]));
-					if (mode==1) { // --mag
-						double sum = 0.0;
-						for (int h = 0; h < v.length(); h++)
-							sum += v[h]*v[h];
-						*pixel = std::sqrt(sum);
-					} else if (mode==2) { // --max
-						// Export index of field with greatest magnitude
-						int max = 0;
-						for (int h = 1; h < v.length(); h++)
-							if (v[h] > v[max])
-								max = h;
-						*pixel = max;
-					} else if (mode==3) { // --field
-						*pixel = v[field];
-					} else {
-						for (int h = 0; h < v.length(); h++)
-							pixel[h] = v[h];
-					}
-				}
-			}
-		}
-	}
-
-	// vectorData->GetPointData()->GetAbstractArray(0)->SetName("vector_data");
-
-	vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
-	writer->SetFileName(filename.c_str());
-	#if VTK_MAJOR_VERSION <= 5
-	writer->SetInputConnection(vectorData->GetProducerPort());
-	#else
-	writer->SetInputData(vectorData);
-	#endif
-	writer->SetDataModeToBinary();
-	writer->SetCompressorTypeToZLib();
-	writer->Write();
-
-	vectorData = NULL;
-	writer = NULL;
-}
-
-template<int dim, typename T> void print_sparses(std::string filename, const MMSP::grid<dim,MMSP::sparse<T> >& GRID,
-        const int mode, const int field)
-{
-	vtkSmartPointer<vtkImageData> sparseData = vtkSmartPointer<vtkImageData>::New();
-
-	if (dim==1) {
-		sparseData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID), 1, 1);
-		sparseData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1, 0, 0, 0, 0);
-		sparseData->SetSpacing(MMSP::dx(GRID, 0), 1, 1);
-		#if VTK_MAJOR_VERSION <= 5
-		sparseData->SetNumberOfScalarComponents(1);
-		sparseData->SetScalarTypeToFloat();
-		#else
-		sparseData->AllocateScalars(VTK_FLOAT, 1);
-		#endif
-
-		MMSP::vector<int> x(1,0);
-		for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
-			const MMSP::sparse<T>& s = GRID(x);
-			float* pixel = static_cast<float*>(sparseData->GetScalarPointer(x[0], 0, 0));
-			if (mode==2) { // --max
-				// Export index of field with greatest magnitude
-				int max = 0;
-				for (int h = 1; h < s.length(); h++)
-					if (s.value(h) > s.value(max))
-						max = h;
-				*pixel =  s.index(max);
-			} else if (mode==3) { // --field
-				*pixel = s[field];
-			} else { // --mag is redundant for sparse
-				double sum = 0.0;
-				for (int h = 0; h < s.length(); h++)
-					sum += s.value(h)*s.value(h);
-				*pixel = std::sqrt(sum);
-			}
-		}
-	} else if (dim==2) {
-		sparseData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID),
-		                       MMSP::y1(GRID)-MMSP::y0(GRID),
-		                       1);
-		sparseData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1,
-		                   MMSP::y0(GRID), MMSP::y1(GRID) - 1,
-		                   0, 0);
-		sparseData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), 1);
-		#if VTK_MAJOR_VERSION <= 5
-		sparseData->SetNumberOfScalarComponents(1);
-		sparseData->SetScalarTypeToFloat();
-		#else
-		sparseData->AllocateScalars(VTK_FLOAT, 1);
-		#endif
-
-		MMSP::vector<int> x(2,0);
-		for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
-			for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
-				const MMSP::sparse<T>& s = GRID(x);
-				float* pixel = static_cast<float*>(sparseData->GetScalarPointer(x[0], x[1], 0));
-				if (mode==2) { // --max
-					// Export index of field with greatest magnitude
-					int max = 0;
-					for (int h = 1; h < s.length(); h++)
-						if (s.value(h) > s.value(max))
-							max = h;
-					*pixel =  s.index(max);
-				} else if (mode==3) { // --field
-					*pixel = s[field];
-				} else { // --mag is redundant for sparse
-					double sum = 0.0;
-					for (int h = 0; h < s.length(); h++)
-						sum += s.value(h)*s.value(h);
-					*pixel = std::sqrt(sum);
-				}
-			}
-		}
-	} else if (dim==3) {
-		sparseData->SetDimensions(MMSP::x1(GRID)-MMSP::x0(GRID),
-		                       MMSP::y1(GRID)-MMSP::y0(GRID),
-		                       MMSP::z1(GRID)-MMSP::z0(GRID));
-		sparseData->SetExtent(MMSP::x0(GRID), MMSP::x1(GRID) - 1,
-		                   MMSP::y0(GRID), MMSP::y1(GRID) - 1,
-		                   MMSP::z0(GRID), MMSP::z1(GRID) - 1);
-		sparseData->SetSpacing(MMSP::dx(GRID, 0), MMSP::dx(GRID, 1), MMSP::dx(GRID, 2));
-		#if VTK_MAJOR_VERSION <= 5
-		sparseData->SetNumberOfScalarComponents(1);
-		sparseData->SetScalarTypeToFloat();
-		#else
-		sparseData->AllocateScalars(VTK_FLOAT, 1);
-		#endif
-
-		MMSP::vector<int> x(3,0);
-		for (x[2]=MMSP::z0(GRID); x[2]<MMSP::z1(GRID); x[2]++) {
-			for (x[1]=MMSP::y0(GRID); x[1]<MMSP::y1(GRID); x[1]++) {
-				for (x[0]=MMSP::x0(GRID); x[0]<MMSP::x1(GRID); x[0]++) {
-					const MMSP::sparse<T>& s = GRID(x);
-					float* pixel = static_cast<float*>(sparseData->GetScalarPointer(x[0], x[1], x[2]));
-					if (mode==2) { // --max
-						// Export index of field with greatest magnitude
-						int max = 0;
-						for (int h = 1; h < s.length(); h++)
-							if (s.value(h) > s.value(max))
-								max = h;
-						*pixel =  s.index(max);
-					} else if (mode==3) { // --field
-						*pixel = s[field];
-					} else { // --mag is redundant for sparse
-						double sum = 0.0;
-						for (int h = 0; h < s.length(); h++)
-							sum += s.value(h)*s.value(h);
-						*pixel = std::sqrt(sum);
-					}
-				}
-			}
-		}
-	}
-	sparseData->GetPointData()->GetAbstractArray(0)->SetName("sparse_data");
-
-	vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
-	writer->SetFileName(filename.c_str());
-	#if VTK_MAJOR_VERSION <= 5
-	writer->SetInputConnection(sparseData->GetProducerPort());
-	#else
-	writer->SetInputData(sparseData);
-	#endif
-	writer->SetDataModeToBinary();
-	writer->SetCompressorTypeToZLib();
-	writer->Write();
-
-	sparseData = NULL;
-	writer = NULL;
-}
 
 int main(int argc, char* argv[])
 {
@@ -495,134 +109,134 @@ int main(int argc, char* argv[])
 		if (bool_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::scalar<bool> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::scalar<bool> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::scalar<bool> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			}
 		} else if (unsigned_char_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::scalar<unsigned char> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::scalar<unsigned char> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::scalar<unsigned char> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			}
 		} else if (char_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::scalar<char> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::scalar<char> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::scalar<char> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			}
 		} else if (unsigned_int_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::scalar<unsigned int> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::scalar<unsigned int> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::scalar<unsigned int> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			}
 		} else if (int_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::scalar<int> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::scalar<int> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::scalar<int> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			}
 		} else if (unsigned_long_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::scalar<unsigned long> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::scalar<unsigned long> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::scalar<unsigned long> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			}
 		} else if (long_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::scalar<long> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::scalar<long> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::scalar<long> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			}
 		} else if (unsigned_short_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::scalar<unsigned short> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::scalar<unsigned short> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::scalar<unsigned short> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			}
 		} else if (short_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::scalar<short> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::scalar<short> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::scalar<short> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			}
 		} else if (float_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::scalar<float> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::scalar<float> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::scalar<float> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			}
 		} else if (long_double_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::scalar<long double> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::scalar<long double> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::scalar<long double> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			}
 		} else if (double_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::scalar<double> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::scalar<double> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::scalar<double> > GRID(argv[fileindex]);
-				print_scalars(filename.str(), GRID, flatten);
+				scalar_field_to_vtk(filename.str(), GRID, flatten);
 			}
 		}
 	}
@@ -631,134 +245,134 @@ int main(int argc, char* argv[])
 		if (bool_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::vector<bool> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::vector<bool> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::vector<bool> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (unsigned_char_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::vector<unsigned char> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::vector<unsigned char> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::vector<unsigned char> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (char_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::vector<char> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::vector<char> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::vector<char> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (unsigned_int_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::vector<unsigned int> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::vector<unsigned int> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::vector<unsigned int> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (int_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::vector<int> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::vector<int> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::vector<int> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (unsigned_long_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::vector<unsigned long> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::vector<unsigned long> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::vector<unsigned long> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (long_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::vector<long> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::vector<long> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::vector<long> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (unsigned_short_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::vector<unsigned short> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::vector<unsigned short> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::vector<unsigned short> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (short_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::vector<short> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::vector<short> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::vector<short> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (float_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::vector<float> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::vector<float> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::vector<float> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (long_double_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::vector<long double> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::vector<long double> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::vector<long double> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (double_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::vector<double> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::vector<double> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::vector<double> > GRID(argv[fileindex]);
-				print_vectors(filename.str(), GRID, flatten, field);
+				vector_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		}
 	}
@@ -767,134 +381,134 @@ int main(int argc, char* argv[])
 		if (bool_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::sparse<bool> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::sparse<bool> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::sparse<bool> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (unsigned_char_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::sparse<unsigned char> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::sparse<unsigned char> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::sparse<unsigned char> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (char_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::sparse<char> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::sparse<char> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::sparse<char> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (unsigned_int_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::sparse<unsigned int> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::sparse<unsigned int> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::sparse<unsigned int> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (int_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::sparse<int> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::sparse<int> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::sparse<int> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (unsigned_long_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::sparse<unsigned long> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::sparse<unsigned long> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::sparse<unsigned long> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (long_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::sparse<long> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::sparse<long> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::sparse<long> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (unsigned_short_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::sparse<unsigned short> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::sparse<unsigned short> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::sparse<unsigned short> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (short_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::sparse<short> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::sparse<short> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::sparse<short> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (float_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::sparse<float> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::sparse<float> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::sparse<float> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (long_double_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::sparse<long double> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::sparse<long double> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::sparse<long double> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		} else if (double_type) {
 			if (dim == 1) {
 				MMSP::grid<1, MMSP::sparse<double> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 2) {
 				MMSP::grid<2, MMSP::sparse<double> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			} else if (dim == 3) {
 				MMSP::grid<3, MMSP::sparse<double> > GRID(argv[fileindex]);
-				print_sparses(filename.str(), GRID, flatten, field);
+				sparse_field_to_vtk(filename.str(), GRID, flatten, field);
 			}
 		}
 	}
