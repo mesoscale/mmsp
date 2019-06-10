@@ -285,6 +285,10 @@ public:
 	{
 		return GRID.g1[i];
 	}
+	friend int glength(const grid& GRID, int i)
+	{
+		return GRID.g1[i] - GRID.g0[i];
+	}
 	friend int b0(const grid& GRID, int i)
 	{
 		return GRID.b0[i];
