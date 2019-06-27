@@ -170,6 +170,8 @@ fi
 echo "---------------------------------------------------------------------------"
 
 exdirs=("beginners_diffusion/" \
+"HeatConduction/heterogeneous" \
+"HeatConduction/homogeneous" \
 "coarsening/grain_growth/anisotropic/Monte_Carlo/" \
 "coarsening/grain_growth/anisotropic/phase_field/" \
 "coarsening/grain_growth/anisotropic/sparsePF/" \
