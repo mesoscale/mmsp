@@ -2179,6 +2179,29 @@ template <int dim, typename T> vector<T> grad(const grid<dim, T>& GRID, const ve
 	return gradient(GRID, x);
 }
 
+template <int dim, typename T> vector<T> gradientnew(const grid<dim, T>& GRID, const vector<int>& x)
+{
+	vector<T> gradientnew(dim);
+	vector<int> s = x;
+
+	for (int i=0; i<dim; i++) {
+		s[i] += 1;
+		const T& yh = GRID(s);
+		s[i] -= 1;
+		const T& yl = GRID(s);
+//		s[i] += 1;
+
+		double weight = 1.0 / (1.0 * dx(GRID, i));
+		gradientnew[i] = weight * (yh - yl);
+	}
+	return gradientnew;
+}
+
+template <int dim, typename T> vector<T> gradnew(const grid<dim, T>& GRID, const vector<int>& x)
+{
+	return gradientnew(GRID, x);
+}
+
 template <int dim, typename T> vector<T> divergence(const grid<dim, vector<T> >& GRID, const vector<int>& x)
 {
 	vector<T> divergence(dim, 0.0);
