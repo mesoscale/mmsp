@@ -50,11 +50,11 @@ void generate(int dim, const char* filename)
 template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int steps)
 {
 	int id = 0;
-	int np = 1;
 	static int iterations = 1;
 	#ifdef MPI_VERSION
-	id = MPI::COMM_WORLD.Get_rank();
-	np = MPI::COMM_WORLD.Get_size();
+    int np;
+    MPI_Comm_rank(MPI_COMM_WORLD, &id);
+    MPI_Comm_size(MPI_COMM_WORLD, &np);
 	#endif
 
 	ghostswap(oldGrid);
@@ -87,8 +87,6 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 
 	ghostswap(oldGrid);
 
-	int minus = 0;
-	int plus = 0;
 	for (int step = 0; step < steps; step++) {
 		if (id == 0)
 			print_progress(step, steps);

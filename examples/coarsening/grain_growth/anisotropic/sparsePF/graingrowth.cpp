@@ -88,7 +88,7 @@ template <int dim, typename T> void update(grid<dim,sparse<T> >& oldGrid, int st
 {
 	int rank=0;
 	#ifdef MPI_VERSION
-	rank = MPI::COMM_WORLD.Get_rank();
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	#endif
 	double dt = 0.01;
 	double width = 8.0;

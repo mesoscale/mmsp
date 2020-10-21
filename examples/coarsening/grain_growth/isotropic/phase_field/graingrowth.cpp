@@ -74,7 +74,7 @@ template <int dim, typename T> void update(grid<dim,vector<T> >& oldGrid, int st
 {
 	int rank=0;
     #ifdef MPI_VERSION
-    rank = MPI::COMM_WORLD.Get_rank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     #endif
 
 	ghostswap(oldGrid);
@@ -138,7 +138,7 @@ TEST(grid1DTest, Finite) {
 	#ifdef MPI_VERSION
 	for (int i=0; i<2; i++) {
 		double myLen(length[i]);
-		MPI::COMM_WORLD.Allreduce(&myLen,&length[i],1,MPI_DOUBLE,MPI_SUM);
+		MPI_Allreduce(&myLen,&length[i],1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
 	}
 	#endif
 	for (int n=0; n<MMSP::nodes(myGrid1D); n++)
@@ -160,7 +160,7 @@ TEST(grid2DTest, Finite) {
 	#ifdef MPI_VERSION
 	for (int i=0; i<2; i++) {
 		double myAre(area[i]);
-		MPI::COMM_WORLD.Allreduce(&myAre,&area[i],1,MPI_DOUBLE,MPI_SUM);
+		MPI_Allreduce(&myAre,&area[i],1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
 	}
 	#endif
 	for (int n=0; n<MMSP::nodes(myGrid2D); n++)
@@ -182,7 +182,7 @@ TEST(grid3DTest, Finite) {
 	#ifdef MPI_VERSION
 	for (int i=0; i<1; i++) {
 		double myVol(volume[i]);
-		MPI::COMM_WORLD.Allreduce(&myAre,&volume[i],1,MPI_DOUBLE,MPI_SUM);
+		MPI_Allreduce(&myAre,&volume[i],1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
 	}
 	#endif
 	for (int n=0; n<MMSP::nodes(myGrid3D); n++)

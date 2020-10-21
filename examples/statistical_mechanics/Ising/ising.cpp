@@ -47,7 +47,7 @@ template <int dim> void update(grid<dim,int>& spinGrid, int steps)
 {
 	int rank=0;
     #ifdef MPI_VERSION
-    rank = MPI::COMM_WORLD.Get_rank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     #endif
 
 	ghostswap(spinGrid);
