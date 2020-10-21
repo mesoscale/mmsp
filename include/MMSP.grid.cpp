@@ -161,20 +161,21 @@ void grid<dim,T>::setup(bool SINGLE)
 
 	#ifdef MPI_VERSION
 	// get global grid data, set neighbor processors
-	unsigned int rank = MPI::COMM_WORLD.Get_rank();
-	unsigned int np = MPI::COMM_WORLD.Get_size();
+	int rank = 0, np = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
 	// if bool SINGLE is set to true,
 	// we generate grid data only on proc 0
 	if (not SINGLE) {
 		// compute integral factors of "np"
 		int nfac = 0;
-		for (unsigned int i=1; i<=np; i++)
+		for (int i=1; i<=np; i++)
 			if ((np / i)*i == np) nfac += 1;
 
 		int* factors = new int[nfac];
 		nfac = 0;
-		for (unsigned int i=1; i<=np; i++)
+		for (int i=1; i<=np; i++)
 			if ((np / i)*i == np) {
 				factors[nfac] = i;
 				nfac += 1;
@@ -208,7 +209,7 @@ void grid<dim,T>::setup(bool SINGLE)
 			}
 
 			// compute the product of "dim" factors
-			unsigned int product = 1;
+			int product = 1;
 			for (int j=0; j<dim; j++)
 				product *= factors[combo[j]];
 
@@ -321,7 +322,7 @@ void grid<dim,T>::setup(bool SINGLE)
 		resize(data[i], fields);
 
 	#ifdef MPI_VERSION
-	MPI::COMM_WORLD.Barrier();
+	MPI_Barrier(MPI_COMM_WORLD);
 	#endif
 }
 
@@ -413,7 +414,9 @@ template<int dim, typename T> MMSP::vector<int> grid<dim,T>::position(int i) con
 template<int dim, typename T> void grid<dim,T>::ghostswap()
 {
 	#ifdef MPI_VERSION
-	MPI::COMM_WORLD.Barrier();
+	MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Request requests[2];
+    MPI_Status  statuses[2];
 	for (int i=0; i<dim; i++) {
 		if (1) {
 			// send to processor above and receive from processor below
@@ -438,21 +441,23 @@ template<int dim, typename T> void grid<dim,T>::ghostswap()
 			unsigned long recv_size = 0;
 
 			// Small data transfer: blocking Sendrecv should scale -- but don't plan on it.
-			MPI::Request requests[2];
-			requests[0] = MPI::COMM_WORLD.Isend(&send_size, 1, MPI_UNSIGNED_LONG, send_proc, 100); // send number of ghosts
-			requests[1] = MPI::COMM_WORLD.Irecv(&recv_size, 1, MPI_UNSIGNED_LONG, recv_proc, 100); // receive number of ghosts
-			MPI::Request::Waitall(2, requests);
-			MPI::COMM_WORLD.Barrier();
+            MPI_Irecv(&recv_size, 1, MPI_UNSIGNED_LONG, recv_proc, 100, MPI_COMM_WORLD, &requests[0]); // receive number of ghosts
+            MPI_Isend(&send_size, 1, MPI_UNSIGNED_LONG, send_proc, 100, MPI_COMM_WORLD, &requests[1]);// send number of ghosts
+            MPI_Waitall(2, requests, statuses);
+			MPI_Barrier(MPI_COMM_WORLD);
+
 			char* send_buffer = new char[send_size];
 			char* recv_buffer = new char[recv_size];
 			send_size = this->to_buffer(send_buffer, send_min, send_max);
 
 			// Large data transfer requires non-blocking communication
-			requests[0] = MPI::COMM_WORLD.Isend(send_buffer, send_size, MPI_CHAR, send_proc, 200); // send ghosts
-			requests[1] = MPI::COMM_WORLD.Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 200); // receive ghosts
-			MPI::Request::Waitall(2, requests);
-			MPI::COMM_WORLD.Barrier();
+            MPI_Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 200, MPI_COMM_WORLD, &requests[0]); // receive ghosts
+            MPI_Isend(send_buffer, send_size, MPI_CHAR, send_proc, 200, MPI_COMM_WORLD, &requests[1]);// send ghosts
+            MPI_Waitall(2, requests, statuses);
+			MPI_Barrier(MPI_COMM_WORLD);
+
 			this->from_buffer(recv_buffer, recv_min, recv_max); // populate ghost cell data from buffer
+
 			delete [] send_buffer;
 			send_buffer=NULL;
 			delete [] recv_buffer;
@@ -482,20 +487,20 @@ template<int dim, typename T> void grid<dim,T>::ghostswap()
 			unsigned long recv_size = 0;
 
 			// Small data transfer: blocking Sendrecv should scale -- but don't plan on it.
-			MPI::Request requests[2];
-			requests[0] = MPI::COMM_WORLD.Isend(&send_size, 1, MPI_UNSIGNED_LONG, send_proc, 300); // send number of ghosts
-			requests[1] = MPI::COMM_WORLD.Irecv(&recv_size, 1, MPI_UNSIGNED_LONG, recv_proc, 300); // receive number of incoming ghosts
-			MPI::Request::Waitall(2, requests);
-			MPI::COMM_WORLD.Barrier();
+            MPI_Irecv(&recv_size, 1, MPI_UNSIGNED_LONG, recv_proc, 300, MPI_COMM_WORLD, &requests[0]); // receive number of incoming ghosts
+            MPI_Isend(&send_size, 1, MPI_UNSIGNED_LONG, send_proc, 300, MPI_COMM_WORLD, &requests[1]);// send number of ghosts
+            MPI_Waitall(2, requests, statuses);
+			MPI_Barrier(MPI_COMM_WORLD);
+
 			char* send_buffer = new char[send_size];
 			char* recv_buffer = new char[recv_size];
 			send_size = this->to_buffer(send_buffer, send_min, send_max);
 
 			// Large data transfer requires non-blocking communication
-			requests[0] = MPI::COMM_WORLD.Isend(send_buffer, send_size, MPI_CHAR, send_proc, 400); // send ghosts
-			requests[1] = MPI::COMM_WORLD.Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 400); // receive ghosts
-			MPI::Request::Waitall(2, requests);
-			MPI::COMM_WORLD.Barrier();
+            MPI_Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 400, MPI_COMM_WORLD, &requests[0]); // receive ghosts
+            MPI_Isend(send_buffer, send_size, MPI_CHAR, send_proc, 400, MPI_COMM_WORLD, &requests[1]);// send ghosts
+            MPI_Waitall(2, requests, statuses);
+			MPI_Barrier(MPI_COMM_WORLD);
 
 			this->from_buffer(recv_buffer, recv_min, recv_max); // populate ghost cell data from buffer
 
@@ -505,16 +510,19 @@ template<int dim, typename T> void grid<dim,T>::ghostswap()
 			recv_buffer=NULL;
 		}
 	}
-	MPI::COMM_WORLD.Barrier();
+	MPI_Barrier(MPI_COMM_WORLD);
 	#endif
 }
 
 template<int dim, typename T> void grid<dim,T>::ghostswap(const int sublattice)   // ghostswap for Monte Carlo communiation reduction.
 {
 	#ifdef MPI_VERSION
-	MPI::COMM_WORLD.Barrier();
+	MPI_Barrier(MPI_COMM_WORLD);
 	for (int i=0; i<dim; i++) {
 		if (1) {
+            MPI_Request requests[2];
+            MPI_Status  statuses[2];
+
 			// send to processor above and receive from processor below
 			int send_proc = n1[i];
 			int recv_proc = n0[i];
@@ -753,20 +761,20 @@ template<int dim, typename T> void grid<dim,T>::ghostswap(const int sublattice) 
 			unsigned long recv_size = 0;
 
 			// Small data transfer: blocking Sendrecv should scale -- but don't plan on it.
-			MPI::Request requests[2];
-			requests[0] = MPI::COMM_WORLD.Isend(&send_size, 1, MPI_UNSIGNED_LONG, send_proc, 100); // send number of ghosts
-			requests[1] = MPI::COMM_WORLD.Irecv(&recv_size, 1, MPI_UNSIGNED_LONG, recv_proc, 100); // receive number of ghosts
-			MPI::Request::Waitall(2, requests);
-			MPI::COMM_WORLD.Barrier();
+            MPI_Irecv(&recv_size, 1, MPI_UNSIGNED_LONG, recv_proc, 100, MPI_COMM_WORLD, &requests[0]); // receive number of ghosts
+            MPI_Isend(&send_size, 1, MPI_UNSIGNED_LONG, send_proc, 100, MPI_COMM_WORLD, &requests[1]);// send number of ghosts
+            MPI_Waitall(2, requests, statuses);
+			MPI_Barrier(MPI_COMM_WORLD);
+
 			char* send_buffer = new char[send_size];
 			char* recv_buffer = new char[recv_size];
 			send_size = this->to_buffer_save(send_buffer, send_min, send_max);
 
 			// Large data transfer requires non-blocking communication
-			requests[0] = MPI::COMM_WORLD.Isend(send_buffer, send_size, MPI_CHAR, send_proc, 200); // send ghosts
-			requests[1] = MPI::COMM_WORLD.Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 200); // receive ghosts
-			MPI::Request::Waitall(2, requests);
-			MPI::COMM_WORLD.Barrier();
+            MPI_Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 200, MPI_COMM_WORLD, &requests[0]); // receive ghosts
+            MPI_Isend(send_buffer, send_size, MPI_CHAR, send_proc, 200, MPI_COMM_WORLD, &requests[1]);// send ghosts
+            MPI_Waitall(2, requests, statuses);
+			MPI_Barrier(MPI_COMM_WORLD);
 
 			this->from_buffer_save(recv_buffer, recv_min, recv_max); // populate ghost cell data from buffer
 
@@ -777,6 +785,9 @@ template<int dim, typename T> void grid<dim,T>::ghostswap(const int sublattice) 
 		}
 
 		if (1) {
+            MPI_Request requests[2];
+            MPI_Status  statuses[2];
+
 			// send to processor below and receive from processor above
 			int send_proc = n0[i];
 			int recv_proc = n1[i];
@@ -1015,21 +1026,20 @@ template<int dim, typename T> void grid<dim,T>::ghostswap(const int sublattice) 
 			unsigned long recv_size = 0;
 
 			// Small data transfer: blocking Sendrecv should scale -- but don't plan on it.
-			MPI::Request requests[2];
-			requests[0] = MPI::COMM_WORLD.Isend(&send_size, 1, MPI_UNSIGNED_LONG, send_proc, 300); // send number of ghosts
-			requests[1] = MPI::COMM_WORLD.Irecv(&recv_size, 1, MPI_UNSIGNED_LONG, recv_proc, 300); // receive number of incoming ghosts
-			MPI::Request::Waitall(2, requests);
-			MPI::COMM_WORLD.Barrier();
+            MPI_Irecv(&recv_size, 1, MPI_UNSIGNED_LONG, recv_proc, 300, MPI_COMM_WORLD, &requests[0]); // receive number of incoming ghosts
+            MPI_Isend(&send_size, 1, MPI_UNSIGNED_LONG, send_proc, 300, MPI_COMM_WORLD, &requests[1]); // send number of ghosts
+            MPI_Waitall(2, requests, statuses);
+			MPI_Barrier(MPI_COMM_WORLD);
+
 			char* send_buffer = new char[send_size];
 			char* recv_buffer = new char[recv_size];
-
 			send_size = this->to_buffer_save(send_buffer, send_min, send_max);
 
 			// Large data transfer requires non-blocking communication
-			requests[0] = MPI::COMM_WORLD.Isend(send_buffer, send_size, MPI_CHAR, send_proc, 400); // send ghosts
-			requests[1] = MPI::COMM_WORLD.Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 400); // receive ghosts
-			MPI::Request::Waitall(2, requests);
-			MPI::COMM_WORLD.Barrier();
+            MPI_Irecv(recv_buffer, recv_size, MPI_CHAR, recv_proc, 400, MPI_COMM_WORLD, &requests[0]); // receive ghosts
+            MPI_Isend(send_buffer, send_size, MPI_CHAR, send_proc, 400, MPI_COMM_WORLD, &requests[1]); // send ghosts
+            MPI_Waitall(2, requests, statuses);
+			MPI_Barrier(MPI_COMM_WORLD);
 
 			this->from_buffer_save(recv_buffer, recv_min, recv_max); // populate ghost cell data from buffer
 
@@ -1039,7 +1049,7 @@ template<int dim, typename T> void grid<dim,T>::ghostswap(const int sublattice) 
 			recv_buffer=NULL;
 		}
 	}
-	MPI::COMM_WORLD.Barrier();
+	MPI_Barrier(MPI_COMM_WORLD);
 	#endif
 }
 
@@ -1341,14 +1351,14 @@ template<int dim, typename T> void grid<dim,T>::read(std::ifstream& file, int GH
 	}
 
 	#ifdef MPI_VERSION
-	MPI::COMM_WORLD.Barrier();
+	MPI_Barrier(MPI_COMM_WORLD);
 	#endif
 }
 
 template<int dim, typename T> void grid<dim,T>::output(const char* filename) const
 {
 	#ifndef MPI_VERSION
-	unsigned int np=1;
+	int np=1;
 	// file open error check
 	std::ofstream output(filename);
 	if (!output) {
@@ -1399,9 +1409,10 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 	// C-style strings are null-terminated ('\0') by definition
 	for (unsigned int i=0; i<FILENAME_MAX && filename[i]!='\0'; i++)
 		fname[i]=filename[i];
-	MPI::COMM_WORLD.Barrier();
-	unsigned int rank = MPI::COMM_WORLD.Get_rank();
-	unsigned int np = MPI::COMM_WORLD.Get_size();
+	MPI_Barrier(MPI_COMM_WORLD);
+	int rank = 0, np = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &np);
 	MPIO_Request request;
 	MPI_Status status;
 	int mpi_err = 0;
@@ -1427,7 +1438,7 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 			std::cerr << "File output error: could not open " << fname << "." << std::endl;
 			exit(-1);
 		}
-		MPI::COMM_WORLD.Barrier();
+		MPI_Barrier(MPI_COMM_WORLD);
 
 		// Generate MMSP header from rank 0
 		unsigned long header_offset=0;
@@ -1462,8 +1473,8 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 			header=NULL;
 		}
 		MPI_File_sync(output);
-		MPI::COMM_WORLD.Barrier();
-		MPI::COMM_WORLD.Bcast(&header_offset, 1, MPI_UNSIGNED_LONG, 0); // broadcast header size from rank 0
+		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Bcast(&header_offset, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD); // broadcast header size from rank 0
 
 		// get grid data to write
 		char* buffer=NULL;
@@ -1472,16 +1483,16 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 
 		// Compute file offsets based on buffer sizes
 		unsigned long* datasizes = new unsigned long[np];
-		MPI::COMM_WORLD.Allgather(&size_of_buffer, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
+		MPI_Allgather(&size_of_buffer, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
 
 		// Calculate disk space
 		unsigned long filesize=0;
-		for (unsigned int i=0; i<np; ++i)
+		for (int i=0; i<np; ++i)
 			filesize+=datasizes[i];
 
 		unsigned long* offsets = new unsigned long[np];
 		offsets[0]=header_offset;
-		for (unsigned int n=1; n<np; ++n) {
+		for (int n=1; n<np; ++n) {
 			assert(datasizes[n] < static_cast<unsigned long>(std::numeric_limits<int>::max()));
 			offsets[n]=offsets[n-1]+datasizes[n-1];
 		}
@@ -1491,14 +1502,16 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 		#endif
 
 		// Write buffer to disk
-		MPI::COMM_WORLD.Barrier();
+		MPI_Barrier(MPI_COMM_WORLD);
 		MPI_File_write_at_all(output, offsets[rank], buffer, datasizes[rank], MPI_CHAR, &status);
 		#ifdef GRIDDEBUG
-		int error, write_errors=0;
+		int error, errclass, write_errors=0;
 		MPI_Get_count(&status, MPI_INT, &error);
-		if (error!=0)
-			std::cerr<<"  Error on Rank "<<rank<<": "<<MPI::Get_error_class(error-1)<<std::endl;
-		MPI::COMM_WORLD.Allreduce(&error, &write_errors, 1, MPI_INT, MPI_SUM);
+		if (error!=0) {
+            MPI_Error_class(error, &errclass);
+			std::cerr<<"  Error on Rank "<<rank<<": "<<errclass<<std::endl;
+        }
+		MPI_Allreduce(&error, &write_errors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 		if (rank==0)
 			std::cout<<"  Write finished on "<<write_errors<<'/'<<np<<" ranks."<<std::endl;
 		assert(write_errors==0);
@@ -1508,12 +1521,12 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 
 		// Make sure everything's written before closing the file.
 		MPI_File_sync(output);
-		MPI::COMM_WORLD.Barrier();
+		MPI_Barrier(MPI_COMM_WORLD);
 
 		MPI_Offset actual_size;
 		MPI_File_get_size(output, &actual_size);
 
-		MPI::COMM_WORLD.Barrier();
+		MPI_Barrier(MPI_COMM_WORLD);
 		MPI_File_close(&output);
 
 		if (rank==0) {
@@ -1541,7 +1554,7 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 		char* databuffer=NULL;
 		char* headbuffer=NULL;
 		char* filebuffer=NULL;
-		unsigned int* writeranks=NULL;
+		int* writeranks=NULL;
 		MPI_Request* recvrequests = NULL;
 		MPI_Status* recvstatuses = NULL;
 		int mpi_err = 0;
@@ -1572,27 +1585,27 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 			memcpy(headbuffer+header_offset, reinterpret_cast<const char*>(&np), sizeof(np));
 			header_offset+=sizeof(rank);
 		}
-		MPI::COMM_WORLD.Bcast(&header_offset, 1, MPI_UNSIGNED_LONG, 0); // broadcast header size from rank 0
+		MPI_Bcast(&header_offset, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD); // broadcast header size from rank 0
 		#ifdef GRIDDEBUG
 		if (rank==0) std::cout<<"Prepared file header."<<std::endl;
 		#endif
-		MPI::COMM_WORLD.Barrier();
+		MPI_Barrier(MPI_COMM_WORLD);
 
 		// Compute file offsets based on buffer sizes
 		datasizes = new unsigned long[np];
-		MPI::COMM_WORLD.Allgather(&size_of_buffer, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG);
+		MPI_Allgather(&size_of_buffer, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
 		#ifdef GRIDDEBUG
 		if (rank==0) std::cout<<"Synchronized data sizes."<<std::endl;
 		#endif
 
 		// Determine disk space requirement
 		unsigned long filesize=header_offset;
-		for (unsigned int i=0; i<np; ++i) filesize+=datasizes[i];
-		MPI::COMM_WORLD.Barrier();
+		for (int i=0; i<np; ++i) filesize+=datasizes[i];
+		MPI_Barrier(MPI_COMM_WORLD);
 
 		offsets = new unsigned long[np];
 		offsets[0]=header_offset;
-		for (unsigned int n=1; n<np; ++n) {
+		for (int n=1; n<np; ++n) {
 			assert(datasizes[n] < static_cast<unsigned long>(std::numeric_limits<int>::max()));
 			offsets[n]=offsets[n-1]+datasizes[n-1];
 		}
@@ -1603,9 +1616,9 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 		#endif
 
 		// Calculate number of  writers & write size
-		unsigned long blocks = filesize/blocksize;
+		unsigned int blocks = filesize/blocksize;
 		while (blocks*blocksize<filesize)	++blocks;
-		const unsigned int nwriters = (blocks>np)?np:blocks;
+		const unsigned int nwriters = (int(blocks)>np)?np:blocks;
 		const unsigned long writesize=blocksize*(blocks/nwriters);
 		assert(writesize % blocksize==0);
 		const unsigned long excessblocks=blocks % nwriters;
@@ -1615,10 +1628,10 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 		#endif
 
 		// Scan to determine which ranks are writers
-		writeranks = new unsigned int[nwriters+1];
+		writeranks = new int[nwriters+1];
 		aoffsets = new unsigned long[nwriters];
 		writeranks[nwriters]=np-1; // generalization for last writer's benefit
-		unsigned int temprank=0;
+		int temprank=0;
 		for (unsigned int w=0; w<nwriters; w++) {
 			unsigned long ws=(w<=excessblocks)?writesize+blocksize:writesize;
 			// file offset of the w^th writer
@@ -1661,7 +1674,7 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 		}
 		// Collect block misalignments
 		misalignments = new unsigned long[np];
-		MPI::COMM_WORLD.Allgather(&deficiency, 1, MPI_UNSIGNED_LONG, misalignments, 1, MPI_UNSIGNED_LONG);
+		MPI_Allgather(&deficiency, 1, MPI_UNSIGNED_LONG, misalignments, 1, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
 
 		#ifdef GRIDDEBUG
 		if (datasizes[rank]-deficiency>ws)
@@ -1669,9 +1682,9 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 		#endif
 
 		// Accumulate data
-		const unsigned int silentranks=writeranks[nextwriter]-rank; // number of MPI ranks between this rank and the next writer
+		const int silentranks=writeranks[nextwriter]-rank; // number of MPI ranks between this rank and the next writer
 		MPI_Request sendrequest;
-		MPI::COMM_WORLD.Barrier();
+		MPI_Barrier(MPI_COMM_WORLD);
 		if (isWriter) {
 			// This rank is a writer.
 			assert(misalignments[rank] < datasizes[rank]);
@@ -1700,8 +1713,8 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 				recvrequests = new MPI_Request[silentranks];
 				recvstatuses = new MPI_Status[silentranks];
 			}
-			for (unsigned int i=0; i<silentranks && rank+i+1<np; i++) {
-				unsigned int recv_proc = rank+i+1;
+			for (int i=0; i<silentranks && rank+i+1<np; i++) {
+				int recv_proc = rank+i+1;
 				assert(recv_proc!=rank && recv_proc<np);
 				#ifdef GRIDDEBUG
 				if (recv_proc<rank || recv_proc>np)
@@ -1713,7 +1726,7 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 				if (p+recv_size>filebuffer+ws)
 					std::fprintf(stderr, "Error on Rank %u, receiving from %i: %lu B > %lu B\n", rank, recv_proc, p-filebuffer, ws-recv_size);
 				#endif
-				MPI_Irecv(p, recv_size, MPI_CHAR, recv_proc, recv_proc, MPI::COMM_WORLD, &recvrequests[i]);
+				MPI_Irecv(p, recv_size, MPI_CHAR, recv_proc, recv_proc, MPI_COMM_WORLD, &recvrequests[i]);
 				p+=recv_size;
 			}
 			#ifdef GRIDDEBUG
@@ -1723,17 +1736,17 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 			if (rank>0 && misalignments[rank]>0) {
 				q=databuffer;
 				assert(writeranks[prevwriter]<rank);
-				MPI_Isend(q, misalignments[rank], MPI_CHAR, writeranks[prevwriter], rank, MPI::COMM_WORLD, &sendrequest);
+				MPI_Isend(q, misalignments[rank], MPI_CHAR, writeranks[prevwriter], rank, MPI_COMM_WORLD, &sendrequest);
 			}
 		}
 		if (misalignments[rank] >= datasizes[rank]) {
 			assert(writeranks[prevwriter]<rank && writeranks[prevwriter]<np);
-			MPI_Isend(databuffer, datasizes[rank], MPI_CHAR, writeranks[prevwriter], rank, MPI::COMM_WORLD, &sendrequest);
+			MPI_Isend(databuffer, datasizes[rank], MPI_CHAR, writeranks[prevwriter], rank, MPI_COMM_WORLD, &sendrequest);
 		}
 		if (recvrequests != NULL)
 			MPI_Waitall(silentranks, recvrequests, recvstatuses);
 		if (rank>0) MPI_Wait(&sendrequest, &status);
-		MPI::COMM_WORLD.Barrier();
+		MPI_Barrier(MPI_COMM_WORLD);
 
 		// file open error check
 		#ifdef GRIDDEBUG
@@ -1751,7 +1764,7 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 			std::cerr << "File output error: could not open " << fname << "." << std::endl;
 			exit(-1);
 		}
-		MPI::COMM_WORLD.Barrier();
+		MPI_Barrier(MPI_COMM_WORLD);
 
 		// Write to disk
 		if (filebuffer!=NULL) {
@@ -1773,7 +1786,7 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 		}
 
 		MPI_File_sync(output);
-		MPI::COMM_WORLD.Barrier();
+		MPI_Barrier(MPI_COMM_WORLD);
 
 		MPI_File_close(&output);
 		if (recvrequests!=NULL) {

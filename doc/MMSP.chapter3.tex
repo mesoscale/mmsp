@@ -34,7 +34,7 @@ and
     MMSP::Finalize();
 \end{verbatim}
 \end{shadebox}
-What do these lines do?  For single processor programs, they do absolutely nothing -- they could actually be removed without any consequences.  However, for programs that use the message passing interface (MPI), they act as wrappers for the similarly named {\tt MPI::Init} and {\tt MPI::Finalize} commands.  It's useful to include them here because they'll allow us to write programs that may be compiled for both single or multiple processor environments.
+What do these lines do?  For single processor programs, they do absolutely nothing -- they could actually be removed without any consequences.  However, for programs that use the message passing interface (MPI), they act as wrappers for the similarly named {\tt MPI_Init} and {\tt MPI_Finalize} commands.  It's useful to include them here because they'll allow us to write programs that may be compiled for both single or multiple processor environments.
 
 Programmers familiar with {\tt c++} will notice that there's obviously some \MMSP\ namespace being used here.  For those less familiar, namespaces are a somewhat recent addition to {\tt c++} that are used as a means of avoiding naming conflicts.  We can avoid using namespace resolution so frequently if we use an appropriate {\tt using} statement, i.e. 
 \begin{shadebox}

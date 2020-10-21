@@ -117,7 +117,8 @@ TYPED_TEST(gridTest, testSize) {
 	#ifndef MPI_VERSION
 	EXPECT_EQ(MMSP::nodes(this->grid1D),64);
 	#else
-	int np = MPI::COMM_WORLD.Get_size();
+	int np = 0;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 	EXPECT_LE(MMSP::nodes(this->grid1D),1+64/np);
 	#endif
 	EXPECT_EQ(this->grid1D.buffer_size(),MMSP::nodes(this->grid1D)*sizeof(TypeParam));
