@@ -6,9 +6,9 @@
 incdir = ../../../../include
 
 # compilers/flags
-compiler = g++ -O3
-pcompiler = mpic++ -O3
-flags = -I $(incdir)
+compiler = g++
+pcompiler = mpic++
+flags = -O3 -Wall -I $(incdir)
 pflags = $(flags) -include mpi.h
 
 # the program
