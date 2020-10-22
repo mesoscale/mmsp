@@ -1593,7 +1593,8 @@ template<int dim, typename T> void grid<dim,T>::output(const char* filename) con
 
 		// Compute file offsets based on buffer sizes
 		datasizes = new unsigned long[np];
-		MPI_Allgather(&size_of_buffer, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
+        const unsigned long* size_pointer = &size_of_buffer; // because OpenMPI is annoying about the first pointer being const
+		MPI_Allgather(size_pointer, 1, MPI_UNSIGNED_LONG, datasizes, 1, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
 		#ifdef GRIDDEBUG
 		if (rank==0) std::cout<<"Synchronized data sizes."<<std::endl;
 		#endif
