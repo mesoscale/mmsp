@@ -6,10 +6,10 @@
 incdir = ../../../../include
 
 # compilers/flags
-compiler = g++ -O3
-pcompiler = mpic++ -O3
-flags = -I $(incdir)
-pflags = $(flags) -include mpi.h
+compiler = g++
+pcompiler = mpic++
+flags = -O3 -Wall -I $(incdir)
+pflags = $(flags) -fpermissive -include mpi.h
 
 # the program
 solidification.out: solidification.cpp

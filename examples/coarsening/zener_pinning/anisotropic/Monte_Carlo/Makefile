@@ -8,8 +8,8 @@ incdir = ../../../../../include
 # compilers/flags
 compiler = g++
 pcompiler = mpic++
-flags = -O3 -I $(incdir)
-pflags = $(flags) -include mpi.h
+flags = -O3 -Wall -I $(incdir)
+pflags = $(flags) -fpermissive -include mpi.h
 
 # the program
 zener: zener.cpp

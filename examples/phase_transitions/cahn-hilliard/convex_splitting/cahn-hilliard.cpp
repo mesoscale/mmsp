@@ -180,7 +180,7 @@ template<int dim, typename T> void reportEnergy(const MMSP::grid<dim,vector<T> >
 {
 	int rank=0;
 	#ifdef MPI_VERSION
-	rank = MPI::COMM_WORLD.Get_rank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	#endif
 
 	double dV = 1.0;
@@ -205,8 +205,8 @@ template<int dim, typename T> void reportEnergy(const MMSP::grid<dim,vector<T> >
 	#ifdef MPI_VERSION
 	double localEnergy = energy;
 	double localMass = mass;
-	MPI::COMM_WORLD.Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0);
-	MPI::COMM_WORLD.Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0);
+	MPI_Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	#endif
 	//if (rank==0)
 	//	std::cout<<'0'<<'\t'<<dV*energy<<'\t'<<dV*mass<<std::endl;
@@ -278,7 +278,7 @@ void update(grid<dim,vector<T> >& oldGrid, int steps)
 {
 	int rank=0;
 	#ifdef MPI_VERSION
-	rank = MPI::COMM_WORLD.Get_rank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	#endif
 
 	ghostswap(oldGrid);
@@ -296,7 +296,7 @@ void update(grid<dim,vector<T> >& oldGrid, int steps)
 	double gridSize = static_cast<double>(nodes(oldGrid));
 	#ifdef MPI_VERSION
 	double localGridSize = gridSize;
-	MPI::COMM_WORLD.Allreduce(&localGridSize, &gridSize, 1, MPI_DOUBLE, MPI_SUM);
+	MPI_Allreduce(&localGridSize, &gridSize, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	#endif
 
 	double lapWeight = 0.0;
@@ -416,9 +416,9 @@ void update(grid<dim,vector<T> >& oldGrid, int steps)
 
 				#ifdef MPI_VERSION
 				double localResidual=residual;
-				MPI::COMM_WORLD.Allreduce(&localResidual, &residual, 1, MPI_DOUBLE, MPI_SUM);
+				MPI_Allreduce(&localResidual, &residual, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 				double localNormB=normB;
-				MPI::COMM_WORLD.Allreduce(&localNormB, &normB, 1, MPI_DOUBLE, MPI_SUM);
+				MPI_Allreduce(&localNormB, &normB, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 				#endif
 
 				residual = sqrt(residual/normB)/(2.0*gridSize);
@@ -429,7 +429,8 @@ void update(grid<dim,vector<T> >& oldGrid, int steps)
 		if (iter==max_iter) {
 			if (rank==0)
 				std::cerr<<"    Solver stagnated on step "<<step<<": "<<iter<<" iterations with residual="<<residual<<std::endl;
-				MMSP::Abort(-1);
+
+            MMSP::Abort(-1);
 		}
 
 		/*
@@ -448,8 +449,8 @@ void update(grid<dim,vector<T> >& oldGrid, int steps)
 		#ifdef MPI_VERSION
 		double localEnergy = energy;
 		double localMass = mass;
-		MPI::COMM_WORLD.Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0);
-		MPI::COMM_WORLD.Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0);
+		MPI_Reduce(&localEnergy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&localMass, &mass, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		#endif
 		if (rank==0)
 			std::cout<<iter<<'\t'<<dV*energy<<'\t'<<dV*mass<<std::endl;

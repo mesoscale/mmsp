@@ -1,4 +1,3 @@
-// generators.cpp
 // Implementations of methods to initialize MMSP grids
 #ifndef _GENERATORS_CPP_
 #define _GENERATORS_CPP_
@@ -81,9 +80,9 @@ MMSP::vector<int> getPosition(const DistanceVoxel& dv) {
 
 template<int dim, typename T>
 void exact_voronoi(MMSP::grid<dim, MMSP::sparse<T> >& grid, const std::vector<std::vector<MMSP::vector<int> > >& seeds) {
-	int id=0;
+	int id = 0;
 	#ifdef MPI_VERSION
-	id=MPI::COMM_WORLD.Get_rank();
+	MPI_Comm_rank(MPI_COMM_WORLD, &id);
 	#endif
   // Exact Voronoi tessellation from seeds, based on Euclidean distance function. Runtime is O(Nseeds*L*W*H).
   // seeds must contain every seed from every rank.
@@ -193,7 +192,7 @@ void approximate_voronoi(MMSP::grid<dim, MMSP::sparse<T> >& grid, const std::vec
   #endif
   int id = 0;
 	#ifdef MPI_VERSION
-  id = MPI::COMM_WORLD.Get_rank();
+	MPI_Comm_rank(MPI_COMM_WORLD, &id);
 	#endif
   // Perform the tessellation, using fast-marching fanciness
   if (dim == 2) {
@@ -400,7 +399,9 @@ void approximate_voronoi(MMSP::grid<dim, MMSP::sparse<T> >& grid, const std::vec
   }
 	#ifdef DEBUG
 	#ifdef MPI_VERSION
-	if (MPI::COMM_WORLD.Get_rank()==0)
+	int id = 0;
+	MPI_Comm_rank(MPI_COMM_WORLD, &id);
+	if (id==0)
 	#endif
 	std::cout<<"Completed approximate tessellation ("<<time(NULL)-tstart<<" sec)."<<std::endl;
 	#endif
@@ -409,23 +410,24 @@ void approximate_voronoi(MMSP::grid<dim, MMSP::sparse<T> >& grid, const std::vec
 void seedswap(std::vector<std::vector<MMSP::vector<int> > >& seeds)
 {
 	#ifdef MPI_VERSION
-  int id=MPI::COMM_WORLD.Get_rank();
-  int np=MPI::COMM_WORLD.Get_size();
+    int id=0, np=0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &id);
+    MPI_Comm_size(MPI_COMM_WORLD, &np);
   // Exchange seeds between all processors
   int send_size=3*seeds[id].size(); // number of integers
   int* send_buffer = new int[send_size]; // number of integers
   send_size = seeds_to_buffer(seeds[id], send_buffer);
 	int* seed_sizes = new int[np];
-  MPI::COMM_WORLD.Barrier();
-	MPI::COMM_WORLD.Allgather(&send_size, 1, MPI_INT, seed_sizes, 1, MPI_INT);
+    MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Allgather(&send_size, 1, MPI_INT, seed_sizes, 1, MPI_INT, MPI_COMM_WORLD);
 	int total_size=0;
 	for (int i=0; i<np; ++i) total_size+=seed_sizes[i];
 	int* offsets = new int[np];
 	offsets[0]=0;
 	for (int i=1; i<np; ++i) offsets[i]=seed_sizes[i-1]+offsets[i-1];
 	int* seed_block = new int[total_size];
-  MPI::COMM_WORLD.Barrier();
-	MPI::COMM_WORLD.Allgatherv(send_buffer, send_size, MPI_INT, seed_block, seed_sizes, offsets, MPI_INT);
+    MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Allgatherv(send_buffer, send_size, MPI_INT, seed_block, seed_sizes, offsets, MPI_INT, MPI_COMM_WORLD);
 	delete [] send_buffer; send_buffer=NULL;
 
 	for (int i=0; i<np; ++i) {
@@ -437,8 +439,8 @@ void seedswap(std::vector<std::vector<MMSP::vector<int> > >& seeds)
 	delete [] seed_block; seed_block=NULL;
   int vote=1;
   int total_procs=0;
-  MPI::COMM_WORLD.Barrier();
-  MPI::COMM_WORLD.Allreduce(&vote, &total_procs, 1, MPI_INT, MPI_SUM);
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Allreduce(&vote, &total_procs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   #ifdef DEBUG
   if (id==0) std::cout<<"Synchronized "<<np*seeds[id].size()<<" seeds on "<<total_procs<<" ranks."<<std::endl;
   #endif
@@ -448,11 +450,10 @@ void seedswap(std::vector<std::vector<MMSP::vector<int> > >& seeds)
 template<int dim>
 void seeds_from_poisson_process(const int x0[dim], const int x1[dim], const int g0[dim], const int g1[dim], const int& nseeds, std::vector<std::vector<MMSP::vector<int> > >& seeds)
 {
-  int id=0;
-  int np=1;
+    int id=0, np=1;
 	#ifdef MPI_VERSION
-  id=MPI::COMM_WORLD.Get_rank();
-  np=MPI::COMM_WORLD.Get_size();
+  MPI_Comm_rank(MPI_COMM_WORLD, &id);
+  MPI_Comm_size(MPI_COMM_WORLD, &np);
 	#endif
   std::vector<MMSP::vector<int> > local_seeds; // blank for now
   seeds.clear();
@@ -482,7 +483,7 @@ void seeds_to_file(const int g0[dim], const int g1[dim], const std::vector<std::
 {
   int id=0;
 	#ifdef MPI_VERSION
-  id=MPI::COMM_WORLD.Get_rank();
+  MPI_Comm_rank(MPI_COMM_WORLD, &id);
 	#endif
 	if (id==0) {
 		std::ofstream output(filename);
@@ -496,18 +497,17 @@ void seeds_to_file(const int g0[dim], const int g1[dim], const std::vector<std::
 		output.close();
 	}
 	#ifdef MPI_VERSION
-	MPI::COMM_WORLD.Barrier();
+	MPI_Barrier(MPI_COMM_WORLD);
 	#endif
 }
 
 template<int dim>
 void seeds_from_file(const int x0[dim], const int x1[dim], const int g0[dim], const int g1[dim], const char* seedfilename, std::vector<std::vector<MMSP::vector<int> > >& seeds)
 {
-  int id=0;
-  int np=1;
+    int id=0, np=1;
 	#ifdef MPI_VERSION
-  id=MPI::COMM_WORLD.Get_rank();
-  np=MPI::COMM_WORLD.Get_size();
+  MPI_Comm_rank(MPI_COMM_WORLD, &id);
+  MPI_Comm_size(MPI_COMM_WORLD, &np);
 	#endif
 	std::ifstream input(seedfilename);
 	if (!input) {
@@ -547,11 +547,10 @@ void seeds_from_file(const int x0[dim], const int x1[dim], const int g0[dim], co
 template<int dim>
 void honeycomb_seeds(const int x0[dim], const int x1[dim], const int g0[dim], const int g1[dim], const int a, std::vector<std::vector<MMSP::vector<int> > >& seeds)
 {
-  int id=0;
-  int np=1;
+    int id=0, np=1;
 	#ifdef MPI_VERSION
-  id=MPI::COMM_WORLD.Get_rank();
-  np=MPI::COMM_WORLD.Get_size();
+  MPI_Comm_rank(MPI_COMM_WORLD, &id);
+  MPI_Comm_size(MPI_COMM_WORLD, &np);
 	#endif
   std::vector<MMSP::vector<int> > local_seeds; // blank for now
   seeds.clear();
@@ -597,7 +596,7 @@ void tessellate(MMSP::grid<dim, MMSP::sparse<T> >& grid, const int& nseeds) {
 	approximate_voronoi<dim,T>(grid, seeds);
 	#else
   exact_voronoi<dim,T>(grid, seeds);
-	MPI::COMM_WORLD.Barrier();
+  MPI_Barrier(MPI_COMM_WORLD);
 	#endif
 } // tessellate
 

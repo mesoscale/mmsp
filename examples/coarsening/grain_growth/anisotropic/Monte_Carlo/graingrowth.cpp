@@ -64,7 +64,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 {
 	int rank = 0;
 	#ifdef MPI_VERSION
-	rank = MPI::COMM_WORLD.Get_rank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	#endif
 
 	ghostswap(mcGrid);
@@ -181,7 +181,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 			// This particular algorithm requires that srand() be called here.
 			unsigned long seed=time(NULL);
 			#ifdef MPI_VERSION
-			MPI::COMM_WORLD.Bcast(&seed, 1, MPI_UNSIGNED_LONG, 0);
+			MPI_Bcast(&seed, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 			#endif
 			srand(seed); // Also, time(NULL)+rank is an INCORRECT seed for this purpose.
 
@@ -368,7 +368,7 @@ template <int dim> void update(grid<dim, int>& mcGrid, int steps)
 			} // hh
 
 			#ifdef MPI_VERSION
-			MPI::COMM_WORLD.Barrier();
+			MPI_Barrier(MPI_COMM_WORLD);
 			#endif
 			ghostswap(mcGrid, sublattice); // once looped over a "color", ghostswap.
 		}//loop over sublattice

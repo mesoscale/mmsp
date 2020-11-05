@@ -9,8 +9,8 @@ incdir = ../../../../include
 # compilers/flags
 compiler = g++
 pcompiler = mpic++
-flags = -O3 -DVANILLA -I $(incdir)
-pflags = $(flags) -include mpi.h
+flags = -O3 -Wall -DVANILLA -I $(incdir)
+pflags = $(flags) -fpermissive -include mpi.h
 
 # the program
 cahn-hilliard: cahn-hilliard.cpp

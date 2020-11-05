@@ -14,7 +14,7 @@ namespace MMSP
 void Init(int argc, char* argv[])
 {
 	#ifdef MPI_VERSION
-	MPI::Init(argc, argv);
+	MPI_Init(&argc, &argv);
 	#endif
 }
 
@@ -22,7 +22,7 @@ void Init(int argc, char* argv[])
 void Finalize()
 {
 	#ifdef MPI_VERSION
-	MPI::Finalize();
+	MPI_Finalize();
 	#endif
 }
 
@@ -30,7 +30,7 @@ void Finalize()
 void Abort(int err)
 {
 	#ifdef MPI_VERSION
-	MPI::COMM_WORLD.Abort(err);
+	MPI_Abort(MPI_COMM_WORLD, err);
 	#endif
 	exit(err);
 }
@@ -64,17 +64,19 @@ template <typename T> T global(T& value, const char* operation)
 	T global = value;
 
 	#ifdef MPI_VERSION
-	int rank = MPI::COMM_WORLD.Get_rank();
-	int np = MPI::COMM_WORLD.Get_size();
+	int rank = 0, np = 1;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    MPI_Status status;
 
 	if (rank == 0) {
 		// receive local values
 		for (int i = 1; i < np; i++) {
 			T temp;
 			int size;
-			MPI::COMM_WORLD.Recv(&size, 1, MPI_INT, i, 100);
+            MPI_Recv(&size, 1, MPI_INT, i, 100, MPI_COMM_WORLD, &status);
 			char* buffer = new char[size];
-			MPI::COMM_WORLD.Recv(buffer, size, MPI_CHAR, i, 200);
+			MPI_Recv(buffer, size, MPI_CHAR, i, 200, MPI_COMM_WORLD, &status);
 			from_buffer(temp, buffer);
 			if (buffer != NULL) {
 				delete [] buffer;
@@ -93,10 +95,10 @@ template <typename T> T global(T& value, const char* operation)
 		// send global value
 		for (int i = 1; i < np; i++) {
 			int size = buffer_size(global);
-			MPI::COMM_WORLD.Send(&size, 1, MPI_INT, i, 300);
+			MPI_Send(&size, 1, MPI_INT, i, 300, MPI_COMM_WORLD);
 			char* buffer = new char[size];
 			to_buffer(global, buffer);
-			MPI::COMM_WORLD.Send(buffer, size, MPI_CHAR, i, 400);
+			MPI_Send(buffer, size, MPI_CHAR, i, 400, MPI_COMM_WORLD);
 			if (buffer != NULL) {
 				delete [] buffer;
 				buffer=NULL;
@@ -107,19 +109,19 @@ template <typename T> T global(T& value, const char* operation)
 	else {
 		// send local value
 		int size = buffer_size(value);
-		MPI::COMM_WORLD.Send(&size, 1, MPI_INT, 0, 100);
+		MPI_Send(&size, 1, MPI_INT, 0, 100, MPI_COMM_WORLD);
 		char* buffer = new char[size];
 		to_buffer(value, buffer);
-		MPI::COMM_WORLD.Send(buffer, size, MPI_CHAR, 0, 200);
+		MPI_Send(buffer, size, MPI_CHAR, 0, 200, MPI_COMM_WORLD);
 		if (buffer != NULL) {
 			delete [] buffer;
 			buffer=NULL;
 		}
 
 		// receive global value
-		MPI::COMM_WORLD.Recv(&size, 1, MPI_INT, 0, 300);
+		MPI_Recv(&size, 1, MPI_INT, 0, 300, MPI_COMM_WORLD, &status);
 		buffer = new char[size];
-		MPI::COMM_WORLD.Recv(buffer, size, MPI_CHAR, 0, 400);
+		MPI_Recv(buffer, size, MPI_CHAR, 0, 400, MPI_COMM_WORLD, &status);
 		from_buffer(global, buffer);
 		if (buffer != NULL) {
 			delete [] buffer;
@@ -127,7 +129,7 @@ template <typename T> T global(T& value, const char* operation)
 		}
 	}
 
-	MPI::COMM_WORLD.Barrier();
+	MPI_Barrier(MPI_COMM_WORLD);
 	#endif
 
 	return global;
@@ -139,8 +141,13 @@ void print_progress(const int step, const int steps)
 	Prints timestamps and a 20-point progress bar to stdout.
 	Call once inside the update function (or equivalent).
 
-	for (int step=0; step<steps; step++) {
-		if (MPI::COMM_WORLD.Get_rank()==0)
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    ...
+
+    for (int step=0; step<steps; step++) {
+		if (rank==0)
 			print_progress(step, steps);
 		...
 		for (int n=0; n<nodes(grid); n++) {
