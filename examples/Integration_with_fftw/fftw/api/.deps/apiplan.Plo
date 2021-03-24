@@ -1,0 +1,153 @@
+apiplan.lo: apiplan.c ../api/api.h ../api/fftw3.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/stdio.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/features.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/sys/cdefs.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/wordsize.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/gnu/stubs.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/gnu/stubs-64.h \
+ /home/arun/anaconda3/lib/gcc/x86_64-conda_cos6-linux-gnu/7.3.0/include/stddef.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/types.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/typesizes.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/libio.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/_G_config.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/wchar.h \
+ /home/arun/anaconda3/lib/gcc/x86_64-conda_cos6-linux-gnu/7.3.0/include/stdarg.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/stdio_lim.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/sys_errlist.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/stdio.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/stdio2.h \
+ ../kernel/ifftw.h ../config.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/stdlib.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/waitflags.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/waitstatus.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/endian.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/endian.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/byteswap.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/sys/types.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/time.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/sys/select.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/select.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/sigset.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/time.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/sys/sysmacros.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/pthreadtypes.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/alloca.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/stdlib.h \
+ /home/arun/anaconda3/lib/gcc/x86_64-conda_cos6-linux-gnu/7.3.0/include-fixed/limits.h \
+ /home/arun/anaconda3/lib/gcc/x86_64-conda_cos6-linux-gnu/7.3.0/include-fixed/syslimits.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/limits.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/posix1_lim.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/local_lim.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/linux/limits.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/posix2_lim.h \
+ /home/arun/anaconda3/lib/gcc/x86_64-conda_cos6-linux-gnu/7.3.0/include/stdint.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/stdint.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/wchar.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/inttypes.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/sys/time.h \
+ /home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/xlocale.h \
+ ../rdft/rdft.h ../rdft/codelet-rdft.h
+
+../api/api.h:
+
+../api/fftw3.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/stdio.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/features.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/sys/cdefs.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/wordsize.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/gnu/stubs.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/gnu/stubs-64.h:
+
+/home/arun/anaconda3/lib/gcc/x86_64-conda_cos6-linux-gnu/7.3.0/include/stddef.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/types.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/typesizes.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/libio.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/_G_config.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/wchar.h:
+
+/home/arun/anaconda3/lib/gcc/x86_64-conda_cos6-linux-gnu/7.3.0/include/stdarg.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/stdio_lim.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/sys_errlist.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/stdio.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/stdio2.h:
+
+../kernel/ifftw.h:
+
+../config.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/stdlib.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/waitflags.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/waitstatus.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/endian.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/endian.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/byteswap.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/sys/types.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/time.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/sys/select.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/select.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/sigset.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/time.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/sys/sysmacros.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/pthreadtypes.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/alloca.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/stdlib.h:
+
+/home/arun/anaconda3/lib/gcc/x86_64-conda_cos6-linux-gnu/7.3.0/include-fixed/limits.h:
+
+/home/arun/anaconda3/lib/gcc/x86_64-conda_cos6-linux-gnu/7.3.0/include-fixed/syslimits.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/limits.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/posix1_lim.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/local_lim.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/linux/limits.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/posix2_lim.h:
+
+/home/arun/anaconda3/lib/gcc/x86_64-conda_cos6-linux-gnu/7.3.0/include/stdint.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/stdint.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/bits/wchar.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/inttypes.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/sys/time.h:
+
+/home/arun/anaconda3/x86_64-conda_cos6-linux-gnu/sysroot/usr/include/xlocale.h:
+
+../rdft/rdft.h:
+
+../rdft/codelet-rdft.h:

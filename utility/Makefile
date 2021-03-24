@@ -37,6 +37,14 @@ mmsp2pvd : mmsp2pvd.cpp ../include/MMSP.output.h
 mmsp2tsv : mmsp2tsv.cpp
 	$(compiler) $(flags) $< -o $@ -lz
 
+# convert MMSP grid file to comma-delimited ASCII (CSV) file type
+mmsp2csv : mmsp2csv.cpp
+	$(compiler) $(flags) $< -o $@ -lz
+
+# convert MMSP grid file to comma-delimited ASCII (TXT) file type
+mmsp2txt : mmsp2txt.cpp
+	$(compiler) $(flags) $< -o $@ -lz
+
 # convert MMSP grid file to compressed VTK Image file type
 mmsp2vti : mmsp2vti.cpp ../include/MMSP.output.h
 	$(compiler) $(vtkflags) $< -o $@ $(VTK_LNK) -lz
